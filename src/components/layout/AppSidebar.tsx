@@ -22,7 +22,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import zyonLogoSquare from "@/assets/zyon-logo-square.png";
+import zyonLogoIcon from "@/assets/zyon-logo-icon.png";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -44,18 +44,12 @@ export function AppSidebar() {
     <Sidebar className="border-r border-sidebar-border">
       <SidebarContent className="bg-sidebar">
         {/* Logo Section */}
-        <div className="flex items-center gap-3 px-4 py-6">
+        <div className="flex items-center justify-center px-4 py-6">
           <img 
-            src={zyonLogoSquare} 
+            src={zyonLogoIcon} 
             alt="Zyon Shipping" 
-            className="h-10 w-10"
+            className="h-12 w-12"
           />
-          {!collapsed && (
-            <div>
-              <p className="text-sidebar-foreground font-semibold text-lg">Zyon Shipping</p>
-              <p className="text-sidebar-foreground/70 text-sm">ERP Maritime</p>
-            </div>
-          )}
         </div>
 
         {/* Navigation Menu */}
