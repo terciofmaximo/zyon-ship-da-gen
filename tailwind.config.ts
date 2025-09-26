@@ -74,6 +74,11 @@ export default {
         "gradient-primary": "var(--gradient-primary)",
         "gradient-secondary": "var(--gradient-secondary)",
         "gradient-hero": "var(--gradient-hero)",
+        "gradient-accent": "var(--gradient-accent)",
+      },
+      fontFamily: {
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif'],
+        degular: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'], // Using Inter as fallback since Degular requires license
       },
       boxShadow: {
         soft: "var(--shadow-soft)",

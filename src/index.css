@@ -2,33 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Maritime ERP Design System - Professional Financial Software Theme */
+/* Zyon Shipping ERP Design System - Based on Official Brand Identity */
 
 @layer base {
   :root {
-    --background: 210 11% 98%;
-    --foreground: 210 60% 8%;
+    --background: 0 0% 100%;
+    --foreground: 210 100% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 210 60% 8%;
+    --card-foreground: 210 100% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 210 60% 8%;
+    --popover-foreground: 210 100% 12%;
 
-    --primary: 210 85% 40%;
+    /* Zyon Primary Blue - From logo and website */
+    --primary: 198 84% 60%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 210 85% 35%;
+    --primary-hover: 198 84% 55%;
 
-    --secondary: 210 25% 95%;
-    --secondary-foreground: 210 60% 15%;
-    --secondary-hover: 210 25% 90%;
+    /* Zyon Secondary Navy - From website dark blue */
+    --secondary: 210 100% 12%;
+    --secondary-foreground: 0 0% 100%;
+    --secondary-hover: 210 100% 15%;
 
-    --muted: 210 15% 96%;
-    --muted-foreground: 210 25% 45%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 210 40% 45%;
 
-    --accent: 195 85% 45%;
-    --accent-foreground: 0 0% 100%;
-    --accent-hover: 195 85% 40%;
+    /* Zyon Accent Orange/Yellow - From logo accents */
+    --accent: 45 97% 54%;
+    --accent-foreground: 210 100% 12%;
+    --accent-hover: 45 97% 50%;
 
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
@@ -46,51 +49,52 @@
 
     --radius: 0.75rem;
 
-    /* Maritime Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    /* Zyon Brand Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
     --gradient-secondary: linear-gradient(180deg, hsl(var(--secondary)), hsl(var(--muted)));
-    --gradient-hero: linear-gradient(135deg, hsl(210 85% 40%), hsl(195 85% 45%));
+    --gradient-hero: linear-gradient(135deg, hsl(198 84% 60%), hsl(210 100% 12%));
+    --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--primary)));
 
     /* Professional Shadows */
     --shadow-soft: 0 2px 8px hsl(210 60% 8% / 0.08);
     --shadow-medium: 0 4px 16px hsl(210 60% 8% / 0.12);
     --shadow-strong: 0 8px 32px hsl(210 60% 8% / 0.16);
 
-    /* Sidebar */
-    --sidebar-background: 210 25% 97%;
-    --sidebar-foreground: 210 60% 15%;
-    --sidebar-primary: 210 85% 40%;
+    /* Sidebar with Zyon branding */
+    --sidebar-background: 210 100% 12%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 198 84% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 25% 92%;
-    --sidebar-accent-foreground: 210 60% 15%;
-    --sidebar-border: 210 20% 88%;
-    --sidebar-ring: 210 85% 40%;
+    --sidebar-accent: 210 100% 15%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 210 100% 18%;
+    --sidebar-ring: 198 84% 60%;
   }
 
   .dark {
-    --background: 210 60% 6%;
-    --foreground: 210 15% 92%;
+    --background: 210 100% 6%;
+    --foreground: 0 0% 95%;
 
-    --card: 210 50% 8%;
-    --card-foreground: 210 15% 92%;
+    --card: 210 100% 8%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 210 50% 8%;
-    --popover-foreground: 210 15% 92%;
+    --popover: 210 100% 8%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 210 85% 50%;
-    --primary-foreground: 210 60% 6%;
-    --primary-hover: 210 85% 45%;
+    --primary: 198 84% 65%;
+    --primary-foreground: 210 100% 6%;
+    --primary-hover: 198 84% 60%;
 
-    --secondary: 210 35% 12%;
-    --secondary-foreground: 210 15% 92%;
-    --secondary-hover: 210 35% 15%;
+    --secondary: 210 100% 15%;
+    --secondary-foreground: 0 0% 95%;
+    --secondary-hover: 210 100% 18%;
 
-    --muted: 210 35% 12%;
-    --muted-foreground: 210 15% 65%;
+    --muted: 210 100% 10%;
+    --muted-foreground: 210 40% 65%;
 
-    --accent: 195 85% 55%;
-    --accent-foreground: 210 60% 6%;
-    --accent-hover: 195 85% 50%;
+    --accent: 45 97% 60%;
+    --accent-foreground: 210 100% 6%;
+    --accent-hover: 45 97% 55%;
 
     --success: 142 76% 46%;
     --success-foreground: 210 60% 6%;
@@ -106,22 +110,23 @@
     --input-border: 210 35% 22%;
     --ring: 210 85% 50%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
     --gradient-secondary: linear-gradient(180deg, hsl(var(--secondary)), hsl(var(--muted)));
-    --gradient-hero: linear-gradient(135deg, hsl(210 85% 50%), hsl(195 85% 55%));
+    --gradient-hero: linear-gradient(135deg, hsl(198 84% 65%), hsl(210 100% 15%));
+    --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--primary)));
 
     --shadow-soft: 0 2px 8px hsl(210 60% 6% / 0.4);
     --shadow-medium: 0 4px 16px hsl(210 60% 6% / 0.5);
     --shadow-strong: 0 8px 32px hsl(210 60% 6% / 0.6);
 
-    --sidebar-background: 210 50% 8%;
-    --sidebar-foreground: 210 15% 92%;
-    --sidebar-primary: 210 85% 50%;
-    --sidebar-primary-foreground: 210 60% 6%;
-    --sidebar-accent: 210 35% 12%;
-    --sidebar-accent-foreground: 210 15% 92%;
-    --sidebar-border: 210 35% 18%;
-    --sidebar-ring: 210 85% 50%;
+    --sidebar-background: 210 100% 8%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 198 84% 65%;
+    --sidebar-primary-foreground: 210 100% 6%;
+    --sidebar-accent: 210 100% 12%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 210 100% 15%;
+    --sidebar-ring: 198 84% 65%;
   }
 }
 
