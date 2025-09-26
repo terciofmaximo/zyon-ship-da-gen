@@ -6,6 +6,7 @@ import { Ship, Calculator, FileCheck } from "lucide-react";
 import { ShipDataForm } from "./ShipDataForm";
 import { CostEntryForm } from "./CostEntryForm";
 import { ReviewForm } from "./ReviewForm";
+import type { ShipData, CostData } from "@/types";
 
 const steps = [
   { id: 1, title: "Ship Data", icon: Ship, description: "Enter vessel information" },
@@ -15,14 +16,14 @@ const steps = [
 
 export function NewPDAWizard() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [shipData, setShipData] = useState<any>({});
-  const [costData, setCostData] = useState<any>({});
+  const [shipData, setShipData] = useState<Partial<ShipData>>({});
+  const [costData, setCostData] = useState<Partial<CostData>>({});
 
-  const handleNext = (data: any) => {
+  const handleNext = (data: Partial<ShipData> | Partial<CostData>) => {
     if (currentStep === 1) {
-      setShipData(data);
+      setShipData(data as Partial<ShipData>);
     } else if (currentStep === 2) {
-      setCostData(data);
+      setCostData(data as Partial<CostData>);
     }
     setCurrentStep(currentStep + 1);
   };

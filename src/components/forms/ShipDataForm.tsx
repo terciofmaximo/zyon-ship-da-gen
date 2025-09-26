@@ -5,10 +5,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Ship, MapPin, Package, Calendar } from "lucide-react";
+import type { ShipData } from "@/types";
 
 interface ShipDataFormProps {
-  onNext: (data: any) => void;
-  initialData: any;
+  onNext: (data: ShipData) => void;
+  initialData: Partial<ShipData>;
 }
 
 export function ShipDataForm({ onNext, initialData }: ShipDataFormProps) {

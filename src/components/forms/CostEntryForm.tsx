@@ -6,12 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calculator, DollarSign, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import type { ShipData, CostData } from "@/types";
 
 interface CostEntryFormProps {
-  onNext: (data: any) => void;
+  onNext: (data: CostData) => void;
   onBack: () => void;
-  shipData: any;
-  initialData: any;
+  shipData: Partial<ShipData>;
+  initialData: Partial<CostData>;
 }
 
 // Mock calculation functions

@@ -3,44 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FileText, Download, Send, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-
-interface ShipData {
-  vesselName: string;
-  imoNumber?: string;
-  dwt: string;
-  loa: string;
-  exchangeRate: string;
-  port: string;
-  cargoType?: string;
-  terminal?: string;
-  arrivalDate: string;
-  departureDate?: string;
-}
-
-interface CostData {
-  pilotageIn: number;
-  pilotageOut: number;
-  towageIn: number;
-  towageOut: number;
-  dockage: number;
-  waterway: number;
-  portDues: number;
-  security: number;
-  customs: number;
-  immigration: number;
-  quarantine: number;
-  agencyFee: number;
-  clearance: number;
-}
+import type { ShipData, CostData } from "@/types";
 
 interface ReviewFormProps {
   onBack: () => void;
-  shipData: ShipData;
-  costData: CostData;
+  shipData: Partial<ShipData>;
+  costData: Partial<CostData>;
 }
 
 export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
-  const totalUSD = Object.values(costData).reduce((sum: number, cost: number) => sum + cost, 0);
+  const totalUSD = Object.values(costData).reduce((sum: number, cost: number) => sum + (cost || 0), 0);
   const totalBRL = totalUSD * parseFloat(shipData.exchangeRate || "5.25");
 
   const handleGeneratePDF = () => {
@@ -130,15 +102,15 @@ export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
             </TableHeader>
             <TableBody>
               {costItems.map((item, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">{item.label}</TableCell>
-                  <TableCell className="text-right">
-                    ${item.value.toFixed(2)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    R$ {(item.value * parseFloat(shipData.exchangeRate)).toFixed(2)}
-                  </TableCell>
-                </TableRow>
+                 <TableRow key={index}>
+                   <TableCell className="font-medium">{item.label}</TableCell>
+                   <TableCell className="text-right">
+                     ${(item.value || 0).toFixed(2)}
+                   </TableCell>
+                   <TableCell className="text-right">
+                     R$ {((item.value || 0) * parseFloat(shipData.exchangeRate || "5.25")).toFixed(2)}
+                   </TableCell>
+                 </TableRow>
               ))}
               <TableRow className="border-t-2 border-primary font-bold">
                 <TableCell>TOTAL</TableCell>
