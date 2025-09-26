@@ -1,30 +1,35 @@
-import { Header } from "@/components/layout/Header";
 import { DashboardStats } from "@/components/layout/DashboardStats";
 import { NewPDAWizard } from "@/components/forms/NewPDAWizard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/layout/AppSidebar";
 import { FileText, Plus, History, Settings } from "lucide-react";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
-      <main className="container mx-auto px-6 py-8 space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              Maritime Operations Dashboard
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Streamlined Disbursement Account Management
-            </p>
-          </div>
-          <Button className="px-6">
-            <Plus className="h-4 w-4 mr-2" />
-            Quick PDA
-          </Button>
-        </div>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <AppSidebar />
+        <SidebarInset className="flex-1">
+          <header className="flex h-16 shrink-0 items-center gap-2 px-4 border-b">
+            <SidebarTrigger className="-ml-1" />
+            <div className="flex-1" />
+            <Button className="px-6">
+              <Plus className="h-4 w-4 mr-2" />
+              Quick PDA
+            </Button>
+          </header>
+          
+          <main className="container mx-auto px-6 py-8 space-y-8">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                Maritime Operations Dashboard
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                Streamlined Disbursement Account Management
+              </p>
+            </div>
 
         <DashboardStats />
 
@@ -100,7 +105,9 @@ const Index = () => {
           </div>
         </div>
       </main>
-    </div>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 };
 

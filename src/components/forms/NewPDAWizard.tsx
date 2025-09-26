@@ -36,8 +36,8 @@ export function NewPDAWizard() {
 
   return (
     <Card className="shadow-medium">
-      <CardHeader className="bg-gradient-secondary">
-        <CardTitle className="flex items-center gap-3">
+      <CardHeader className="bg-card">
+        <CardTitle className="flex items-center gap-3 text-card-foreground">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
             {(() => {
               const IconComponent = steps[currentStep - 1].icon;
