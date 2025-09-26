@@ -48,7 +48,7 @@ export function AppSidebar() {
           <img 
             src={zyonLogoIcon} 
             alt="Zyon Shipping" 
-            className="h-12 w-12"
+            className="h-8 w-auto"
           />
         </div>
 
