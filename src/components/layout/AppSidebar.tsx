@@ -20,6 +20,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import zyonLogoFinal from "@/assets/zyon-logo-final.png";
 
@@ -36,6 +37,8 @@ const menuItems = [
 ];
 
 export function AppSidebar() {
+  const { state } = useSidebar();
+  const collapsed = state === "collapsed";
 
   return (
     <Sidebar className="border-r border-sidebar-border">
@@ -68,7 +71,7 @@ export function AppSidebar() {
                       }
                     >
                       <item.icon className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                      <span className="truncate">{item.title}</span>
+                      {!collapsed && <span className="truncate">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -84,10 +87,12 @@ export function AppSidebar() {
           <div className="flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 bg-sidebar-accent rounded-full flex-shrink-0">
             <User className="h-3 w-3 sm:h-4 sm:w-4 text-sidebar-accent-foreground" />
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sidebar-foreground text-xs sm:text-sm font-medium truncate">Administrator</p>
-            <p className="text-sidebar-foreground/70 text-xs truncate">admin@zyonshipping.com</p>
-          </div>
+          {!collapsed && (
+            <div className="min-w-0 flex-1">
+              <p className="text-sidebar-foreground text-xs sm:text-sm font-medium truncate">Administrator</p>
+              <p className="text-sidebar-foreground/70 text-xs truncate">admin@zyonshipping.com</p>
+            </div>
+          )}
         </div>
       </SidebarFooter>
     </Sidebar>
