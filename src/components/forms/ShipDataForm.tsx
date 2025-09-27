@@ -38,7 +38,7 @@ export function ShipDataForm({ onNext, initialData }: ShipDataFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -66,7 +66,7 @@ export function ShipDataForm({ onNext, initialData }: ShipDataFormProps) {
                 placeholder="e.g. 9876543"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="dwt">DWT (tons) *</Label>
                 <Input
@@ -151,7 +151,7 @@ export function ShipDataForm({ onNext, initialData }: ShipDataFormProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="arrivalDate">Arrival Date *</Label>
               <Input
@@ -187,7 +187,7 @@ export function ShipDataForm({ onNext, initialData }: ShipDataFormProps) {
       </Card>
 
       <div className="flex justify-end">
-        <Button type="submit" className="px-8">
+        <Button type="submit" className="px-4 sm:px-8 w-full sm:w-auto">
           Next: Cost Entry
         </Button>
       </div>

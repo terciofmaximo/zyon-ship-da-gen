@@ -105,45 +105,54 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
             <Calculator className="h-5 w-5 text-primary" />
             Cost Breakdown - {shipData.vesselName}
           </CardTitle>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
             <span>DWT: {shipData.dwt}t</span>
             <span>LOA: {shipData.loa}m</span>
-            <span>Exchange Rate: {shipData.exchangeRate} BRL/USD</span>
+            <span>Rate: {shipData.exchangeRate} BRL/USD</span>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Description</TableHead>
-                <TableHead>Amount (USD)</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Notes</TableHead>
+                <TableHead className="min-w-[150px]">Description</TableHead>
+                <TableHead className="min-w-[120px]">Amount (USD)</TableHead>
+                <TableHead className="hidden sm:table-cell">Type</TableHead>
+                <TableHead className="hidden md:table-cell">Notes</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {costItems.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.label}</TableCell>
+                  <TableCell className="font-medium text-xs sm:text-sm">
+                    <div className="flex flex-col">
+                      <span>{item.label}</span>
+                      <div className="sm:hidden flex gap-2 mt-1">
+                        <Badge variant={item.auto ? "secondary" : "outline"} className="text-xs">
+                          {item.auto ? "Auto" : "Manual"}
+                        </Badge>
+                      </div>
+                    </div>
+                  </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                       <Input
                         type="number"
                         step="0.01"
                         value={item.value}
                         onChange={(e) => handleCostChange(item.id, e.target.value)}
-                        className="w-32"
+                        className="w-20 sm:w-32 text-xs sm:text-sm"
                         disabled={item.auto}
                       />
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     <Badge variant={item.auto ? "secondary" : "outline"}>
                       {item.auto ? "Auto" : "Manual"}
                     </Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden md:table-cell">
                     {item.auto && (
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Info className="h-3 w-3" />
@@ -160,16 +169,16 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
 
       <Card className="bg-gradient-secondary">
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div className="space-y-2">
               <Label className="text-base font-semibold">Total (USD)</Label>
-              <div className="text-3xl font-bold text-primary">
+              <div className="text-2xl sm:text-3xl font-bold text-primary">
                 ${totalUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </div>
             </div>
             <div className="space-y-2">
               <Label className="text-base font-semibold">Total (BRL)</Label>
-              <div className="text-3xl font-bold text-accent">
+              <div className="text-2xl sm:text-3xl font-bold text-accent">
                 R$ {totalBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </div>
             </div>
@@ -177,11 +186,11 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
         </CardContent>
       </Card>
 
-      <div className="flex justify-between">
-        <Button type="button" variant="outline" onClick={onBack}>
+      <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0">
+        <Button type="button" variant="outline" onClick={onBack} className="w-full sm:w-auto">
           Back: Ship Data
         </Button>
-        <Button type="submit">
+        <Button type="submit" className="w-full sm:w-auto">
           Next: Review & Export
         </Button>
       </div>

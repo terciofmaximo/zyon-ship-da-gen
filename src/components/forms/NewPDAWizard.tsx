@@ -52,7 +52,7 @@ export function NewPDAWizard() {
             {steps.map((step) => (
               <div
                 key={step.id}
-                className={`flex flex-col items-center text-center ${
+                className={`flex flex-col items-center text-center flex-1 ${
                   step.id === currentStep
                     ? "text-primary"
                     : step.id < currentStep
@@ -61,7 +61,7 @@ export function NewPDAWizard() {
                 }`}
               >
                 <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-full border-2 ${
+                  className={`flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-full border-2 text-xs sm:text-sm ${
                     step.id === currentStep
                       ? "border-primary bg-primary text-primary-foreground"
                       : step.id < currentStep
@@ -71,16 +71,16 @@ export function NewPDAWizard() {
                 >
                   {step.id}
                 </div>
-                <div className="mt-2">
-                  <p className="text-sm font-medium">{step.title}</p>
-                  <p className="text-xs text-muted-foreground">{step.description}</p>
+                <div className="mt-1 sm:mt-2 px-1">
+                  <p className="text-xs sm:text-sm font-medium leading-tight">{step.title}</p>
+                  <p className="text-xs text-muted-foreground hidden sm:block leading-tight">{step.description}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-6">
+      <CardContent className="p-3 sm:p-4 lg:p-6">
         {currentStep === 1 && (
           <ShipDataForm onNext={handleNext} initialData={shipData} />
         )}

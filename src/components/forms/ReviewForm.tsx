@@ -54,75 +54,87 @@ export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
             <FileText className="h-5 w-5 text-primary" />
             PDA Review - {shipData.vesselName}
           </CardTitle>
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="outline">IMO: {shipData.imoNumber}</Badge>
-            <Badge variant="outline">DWT: {shipData.dwt}t</Badge>
-            <Badge variant="outline">LOA: {shipData.loa}m</Badge>
-            <Badge variant="outline">{shipData.port}</Badge>
+          <div className="flex flex-wrap gap-1 sm:gap-2">
+            <Badge variant="outline" className="text-xs">IMO: {shipData.imoNumber}</Badge>
+            <Badge variant="outline" className="text-xs">DWT: {shipData.dwt}t</Badge>
+            <Badge variant="outline" className="text-xs">LOA: {shipData.loa}m</Badge>
+            <Badge variant="outline" className="text-xs">{shipData.port}</Badge>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
             <div className="space-y-2">
-              <h4 className="font-semibold text-sm text-muted-foreground">VESSEL DETAILS</h4>
-              <div className="space-y-1 text-sm">
-                <div>Name: {shipData.vesselName}</div>
+              <h4 className="font-semibold text-xs sm:text-sm text-muted-foreground">VESSEL DETAILS</h4>
+              <div className="space-y-1 text-xs sm:text-sm">
+                <div className="truncate">Name: {shipData.vesselName}</div>
                 <div>Cargo: {shipData.cargoType}</div>
                 <div>Terminal: {shipData.terminal}</div>
               </div>
             </div>
             <div className="space-y-2">
-              <h4 className="font-semibold text-sm text-muted-foreground">SCHEDULE</h4>
-              <div className="space-y-1 text-sm">
+              <h4 className="font-semibold text-xs sm:text-sm text-muted-foreground">SCHEDULE</h4>
+              <div className="space-y-1 text-xs sm:text-sm">
                 <div>Arrival: {shipData.arrivalDate}</div>
                 <div>Departure: {shipData.departureDate}</div>
-                <div>Exchange Rate: {shipData.exchangeRate}</div>
+                <div>Rate: {shipData.exchangeRate}</div>
               </div>
             </div>
             <div className="space-y-2">
-              <h4 className="font-semibold text-sm text-muted-foreground">TOTALS</h4>
+              <h4 className="font-semibold text-xs sm:text-sm text-muted-foreground">TOTALS</h4>
               <div className="space-y-1">
-                <div className="text-lg font-bold text-primary">
+                <div className="text-base sm:text-lg font-bold text-primary">
                   ${totalUSD.toFixed(2)}
                 </div>
-                <div className="text-lg font-bold text-accent">
+                <div className="text-base sm:text-lg font-bold text-accent">
                   R$ {totalBRL.toFixed(2)}
                 </div>
               </div>
             </div>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Description</TableHead>
-                <TableHead className="text-right">Amount (USD)</TableHead>
-                <TableHead className="text-right">Amount (BRL)</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {costItems.map((item, index) => (
-                 <TableRow key={index}>
-                   <TableCell className="font-medium">{item.label}</TableCell>
-                   <TableCell className="text-right">
-                     ${(item.value || 0).toFixed(2)}
-                   </TableCell>
-                   <TableCell className="text-right">
-                     R$ {((item.value || 0) * parseFloat(shipData.exchangeRate || "5.25")).toFixed(2)}
-                   </TableCell>
-                 </TableRow>
-              ))}
-              <TableRow className="border-t-2 border-primary font-bold">
-                <TableCell>TOTAL</TableCell>
-                <TableCell className="text-right text-primary">
-                  ${totalUSD.toFixed(2)}
-                </TableCell>
-                <TableCell className="text-right text-accent">
-                  R$ {totalBRL.toFixed(2)}
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="min-w-[150px]">Description</TableHead>
+                  <TableHead className="text-right min-w-[100px]">USD</TableHead>
+                  <TableHead className="text-right min-w-[100px] hidden sm:table-cell">BRL</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {costItems.map((item, index) => (
+                   <TableRow key={index}>
+                     <TableCell className="font-medium text-xs sm:text-sm">{item.label}</TableCell>
+                     <TableCell className="text-right text-xs sm:text-sm">
+                       <div className="flex flex-col sm:block">
+                         <span>${(item.value || 0).toFixed(2)}</span>
+                         <span className="sm:hidden text-muted-foreground text-xs">
+                           R$ {((item.value || 0) * parseFloat(shipData.exchangeRate || "5.25")).toFixed(2)}
+                         </span>
+                       </div>
+                     </TableCell>
+                     <TableCell className="text-right text-xs sm:text-sm hidden sm:table-cell">
+                       R$ {((item.value || 0) * parseFloat(shipData.exchangeRate || "5.25")).toFixed(2)}
+                     </TableCell>
+                   </TableRow>
+                ))}
+                <TableRow className="border-t-2 border-primary font-bold">
+                  <TableCell className="text-xs sm:text-sm">TOTAL</TableCell>
+                  <TableCell className="text-right text-primary text-xs sm:text-sm">
+                    <div className="flex flex-col sm:block">
+                      <span>${totalUSD.toFixed(2)}</span>
+                      <span className="sm:hidden text-accent text-xs">
+                        R$ {totalBRL.toFixed(2)}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right text-accent text-xs sm:text-sm hidden sm:table-cell">
+                    R$ {totalBRL.toFixed(2)}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -131,28 +143,28 @@ export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
           <CardTitle>Actions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button onClick={handleGeneratePDF} className="h-12">
-              <Download className="h-4 w-4 mr-2" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            <Button onClick={handleGeneratePDF} className="h-10 sm:h-12 text-xs sm:text-sm">
+              <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               Generate PDF
             </Button>
-            <Button onClick={handleConvertToFDA} variant="outline" className="h-12">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Convert to FDA
+            <Button onClick={handleConvertToFDA} variant="outline" className="h-10 sm:h-12 text-xs sm:text-sm">
+              <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Convert to </span>FDA
             </Button>
-            <Button onClick={handleSendToBilling} variant="secondary" className="h-12">
-              <Send className="h-4 w-4 mr-2" />
+            <Button onClick={handleSendToBilling} variant="secondary" className="h-10 sm:h-12 text-xs sm:text-sm sm:col-span-2 lg:col-span-1">
+              <Send className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               Send to Billing
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      <div className="flex justify-between">
-        <Button type="button" variant="outline" onClick={onBack}>
+      <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0">
+        <Button type="button" variant="outline" onClick={onBack} className="w-full sm:w-auto">
           Back: Cost Entry
         </Button>
-        <Button onClick={handleGeneratePDF} className="px-8">
+        <Button onClick={handleGeneratePDF} className="px-4 sm:px-8 w-full sm:w-auto">
           Complete PDA
         </Button>
       </div>
