@@ -22,7 +22,7 @@ export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
   const [showDownloadMessage, setShowDownloadMessage] = useState(false);
 
   const generateAndDownloadPdaPdf = async (pdaId: string) => {
-    console.info('[PDF] click', { pdaId });
+    console.info('[PDA] Generate PDF click', { pdaId });
     
     try {
       const response = await fetch(`https://hxdrffemnrxklrrfnllo.supabase.co/functions/v1/generate-pda-pdf`, {
@@ -32,7 +32,7 @@ export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
           'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4ZHJmZmVtbnJ4a2xycmZubGxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MjI3MjgsImV4cCI6MjA3NDQ5ODcyOH0.LIwvXuk48EK5NQyse0XtJpOPRUQtBqegX9loVtbvq4g`,
           'Accept': 'application/pdf'
         },
-        credentials: 'include',
+        
         body: JSON.stringify({
           shipData,
           costData,
