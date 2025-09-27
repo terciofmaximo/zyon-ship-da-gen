@@ -9,8 +9,7 @@ import {
   Settings,
   User
 } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { NavLink } from "react-router-dom";
 
 import {
   Sidebar,
@@ -23,7 +22,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import zyonLogoFinal from "/assets/zyon-logo-final.png";
+import zyonLogoFinal from "@/assets/zyon-logo-final.png";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -40,7 +39,6 @@ const menuItems = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const pathname = usePathname();
 
   return (
     <Sidebar className="border-r border-sidebar-border">
@@ -61,17 +59,20 @@ export function AppSidebar() {
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <Link 
-                      href={item.url}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                        pathname === item.url
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground" 
-                          : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                      }`}
+                    <NavLink 
+                      to={item.url}
+                      end
+                      className={({ isActive }) => 
+                        `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                          isActive 
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground" 
+                            : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                        }`
+                      }
                     >
                       <item.icon className="h-5 w-5" />
                       {!collapsed && <span>{item.title}</span>}
-                    </Link>
+                    </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

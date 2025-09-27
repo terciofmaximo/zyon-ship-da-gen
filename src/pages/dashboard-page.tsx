@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Activity, Clock, FileText, Plus, TrendingUp } from 'lucide-react'
 
-export default function DashboardPage() {
+export function DashboardPage() {
   return (
     <div className="flex-1 space-y-6 p-6">
       {/* Header */}
@@ -13,15 +13,15 @@ export default function DashboardPage() {
         <div className="flex items-center gap-4">
           <SidebarTrigger />
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Maritime Operations Dashboard</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Dashboard Operações Marítimas</h1>
             <p className="text-muted-foreground">
-              Manage vessel operations, disbursement accounts, and financial documentation
+              Gerencie operações de navios, contas de desembolso e documentação financeira
             </p>
           </div>
         </div>
         <Button className="gap-2">
           <Plus className="h-4 w-4" />
-          Quick PDA
+          PDA Rápido
         </Button>
       </div>
 
@@ -42,24 +42,24 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Activity className="h-5 w-5" />
-                Recent Activity
+                Atividade Recente
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3 text-sm">
                 <div className="h-2 w-2 bg-primary rounded-full" />
-                <span className="text-muted-foreground">MSC MAYA PDA completed</span>
-                <span className="ml-auto text-xs text-muted-foreground">2h ago</span>
+                <span className="text-muted-foreground">PDA MSC MAYA concluído</span>
+                <span className="ml-auto text-xs text-muted-foreground">2h atrás</span>
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <div className="h-2 w-2 bg-accent rounded-full" />
-                <span className="text-muted-foreground">New vessel arrival scheduled</span>
-                <span className="ml-auto text-xs text-muted-foreground">4h ago</span>
+                <span className="text-muted-foreground">Nova chegada de navio agendada</span>
+                <span className="ml-auto text-xs text-muted-foreground">4h atrás</span>
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <div className="h-2 w-2 bg-success rounded-full" />
-                <span className="text-muted-foreground">FDA document exported</span>
-                <span className="ml-auto text-xs text-muted-foreground">6h ago</span>
+                <span className="text-muted-foreground">Documento FDA exportado</span>
+                <span className="ml-auto text-xs text-muted-foreground">6h atrás</span>
               </div>
             </CardContent>
           </Card>
@@ -67,21 +67,21 @@ export default function DashboardPage() {
           {/* Quick Actions */}
           <Card>
             <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Frequently used operations</CardDescription>
+              <CardTitle>Ações Rápidas</CardTitle>
+              <CardDescription>Operações utilizadas frequentemente</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <Button variant="outline" className="w-full justify-start">
                 <FileText className="h-4 w-4 mr-2" />
-                View Recent PDAs
+                Ver PDAs Recentes
               </Button>
               <Button variant="outline" className="w-full justify-start">
                 <Clock className="h-4 w-4 mr-2" />
-                Schedule Management
+                Gerenciar Cronogramas
               </Button>
               <Button variant="outline" className="w-full justify-start">
                 <TrendingUp className="h-4 w-4 mr-2" />
-                Financial Reports
+                Relatórios Financeiros
               </Button>
             </CardContent>
           </Card>
