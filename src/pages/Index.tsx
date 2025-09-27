@@ -2,36 +2,21 @@ import { DashboardStats } from "@/components/layout/DashboardStats";
 import { NewPDAWizard } from "@/components/forms/NewPDAWizard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/layout/AppSidebar";
 import { FileText, Plus, History, Settings } from "lucide-react";
 
 const Index = () => {
   return (
-    <SidebarProvider defaultOpen={true}>
-      <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar />
-        <SidebarInset className="flex-1">
-          <header className="flex h-14 sm:h-16 shrink-0 items-center gap-2 px-3 sm:px-4 border-b">
-            <SidebarTrigger className="-ml-1" />
-            <div className="flex-1" />
-            <Button className="px-3 sm:px-6">
-              <Plus className="h-4 w-4 mr-0 sm:mr-2" />
-              <span className="hidden sm:inline">Quick PDA</span>
-            </Button>
-          </header>
-          
-          <main className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 space-y-6 sm:space-y-8">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                Maritime Operations Dashboard
-              </h1>
-              <p className="text-muted-foreground mt-2 text-sm sm:text-base">
-                Streamlined Disbursement Account Management
-              </p>
-            </div>
+    <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 space-y-6 sm:space-y-8">
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+          Maritime Operations Dashboard
+        </h1>
+        <p className="text-muted-foreground mt-2 text-sm sm:text-base">
+          Streamlined Disbursement Account Management
+        </p>
+      </div>
 
-        <DashboardStats />
+      <DashboardStats />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           <div className="lg:col-span-2">
@@ -104,10 +89,7 @@ const Index = () => {
             </Card>
           </div>
         </div>
-      </main>
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
+    </div>
   );
 };
 

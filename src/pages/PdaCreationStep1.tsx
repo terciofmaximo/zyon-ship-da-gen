@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { Ship, MapPin, Calendar, Check, ChevronsUpDown } from "lucide-react";
+import { Ship, MapPin, Calendar, Check, ChevronsUpDown, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { cn } from "@/lib/utils";
+import { cn, formatRange } from "@/lib/utils";
 import { VESSEL_TYPES } from "@/lib/vesselData";
 import { pdaStep1Schema, type PDAStep1Data } from "@/schemas/pdaSchema";
 
@@ -57,7 +57,8 @@ export default function PdaCreationStep1() {
     if (vesselName && vesselName !== selectedVessel) {
       const vessel = VESSEL_TYPES.find(v => v.classification === vesselName);
       if (vessel) {
-        setValue("dwt", vessel.minDwt.toString());
+        // Display formatted range in UI, store min value in form
+        setValue("dwt", formatRange(vessel.minDwt, vessel.maxDwt, "tons"));
         setValue("loa", vessel.loa.toString());
         setValue("beam", vessel.beam.toString());
         setValue("draft", vessel.draft.toString());
@@ -72,21 +73,100 @@ export default function PdaCreationStep1() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
-        <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-            Create New PDA - Step 1: Ship Data
-          </h1>
-          <p className="text-muted-foreground">
-            Enter vessel information and port details
-          </p>
-        </div>
+    <div className="container mx-auto px-4 py-6 max-w-6xl">
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+          Create New PDA - Step 1: Ship Data
+        </h1>
+        <p className="text-muted-foreground">
+          Enter vessel information and port details
+        </p>
+      </div>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Vessel Information */}
-            <Card className="shadow-medium">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {/* Schedule & Financial - moved to top */}
+          <Card className="shadow-medium">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <DollarSign className="h-5 w-5 text-primary" />
+                Schedule & Financial
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <FormField
+                  control={form.control}
+                  name="from"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>From *</FormLabel>
+                      <FormControl>
+                        <Input {...field} disabled className="bg-muted" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="to"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>To *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select client" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {clients.map((client) => (
+                            <SelectItem key={client} value={client}>
+                              {client}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Date *</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="exchangeRate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Exchange Rate (USD/BRL) *</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Vessel Information */}
+          <Card className="shadow-medium">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Ship className="h-5 w-5 text-primary" />
@@ -178,7 +258,7 @@ export default function PdaCreationStep1() {
                       <FormItem>
                         <FormLabel>DWT (tons) *</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="25000" {...field} />
+                          <Input placeholder="e.g. 65,000 - 80,000 tons" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -313,94 +393,13 @@ export default function PdaCreationStep1() {
               </CardContent>
             </Card>
 
-            {/* Schedule & Financial */}
-            <Card className="shadow-medium">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Calendar className="h-5 w-5 text-primary" />
-                  Schedule & Financial
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="from"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>From *</FormLabel>
-                        <FormControl>
-                          <Input {...field} disabled className="bg-muted" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="to"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>To *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select client" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {clients.map((client) => (
-                              <SelectItem key={client} value={client}>
-                                {client}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="date"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Date *</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="exchangeRate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Exchange Rate (USD/BRL) *</FormLabel>
-                        <FormControl>
-                          <Input type="number" step="0.01" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="flex justify-end">
-              <Button type="submit" className="px-8">
-                Next: Cost Entry
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </div>
+          <div className="flex justify-end">
+            <Button type="submit" className="px-8">
+              Next: Cost Entry
+            </Button>
+          </div>
+        </form>
+      </Form>
     </div>
   );
 }
