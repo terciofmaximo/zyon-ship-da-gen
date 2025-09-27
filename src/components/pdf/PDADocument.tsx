@@ -80,10 +80,8 @@ export const generatePDAHTML = ({ shipData, costData }: PDADocumentProps): strin
     }
     
     .logo {
-      font-size: 24px;
-      font-weight: bold;
-      color: #2563eb;
-      margin-bottom: 5px;
+      height: 80px;
+      margin-bottom: 15px;
     }
     
     .title {
@@ -206,23 +204,7 @@ export const generatePDAHTML = ({ shipData, costData }: PDADocumentProps): strin
       margin-top: 40px;
       border-top: 1px solid #e2e8f0;
       padding-top: 20px;
-    }
-    
-    .signature-section {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 40px;
-      margin-top: 30px;
-    }
-    
-    .signature-box {
       text-align: center;
-    }
-    
-    .signature-line {
-      border-bottom: 1px solid #333;
-      margin-bottom: 5px;
-      height: 40px;
     }
     
     .print-button {
@@ -249,7 +231,7 @@ export const generatePDAHTML = ({ shipData, costData }: PDADocumentProps): strin
   <button class="print-button no-print" onclick="window.print()">🖨️ Save as PDF</button>
   
   <div class="header">
-    <div class="logo">ZYON MARITIME</div>
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" class="logo" alt="Zyon Shipping" />
     <div class="title">PORT DISBURSEMENT ACCOUNT (PDA)</div>
     <div class="subtitle">Generated on ${currentDate}</div>
   </div>
@@ -343,21 +325,8 @@ export const generatePDAHTML = ({ shipData, costData }: PDADocumentProps): strin
   </div>
   
   <div class="footer">
-    <div class="signature-section">
-      <div class="signature-box">
-        <div class="signature-line"></div>
-        <div>Agent Signature</div>
-        <div style="font-size: 10px; color: #64748b; margin-top: 5px;">Date: _______________</div>
-      </div>
-      <div class="signature-box">
-        <div class="signature-line"></div>
-        <div>Captain/Chief Officer Signature</div>
-        <div style="font-size: 10px; color: #64748b; margin-top: 5px;">Date: _______________</div>
-      </div>
-    </div>
-    
-    <div style="text-align: center; margin-top: 30px; font-size: 10px; color: #64748b;">
-      This document was generated electronically by ZYON MARITIME PDA System
+    <div style="font-size: 10px; color: #64748b;">
+      This document was generated electronically by Zyon Shipping PDA System
     </div>
   </div>
 </body>

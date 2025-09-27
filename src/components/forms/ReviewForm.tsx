@@ -222,9 +222,9 @@ export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <div className="flex flex-col">
-              <Button onClick={handleGeneratePDF} className="h-10 sm:h-12 text-xs sm:text-sm bg-primary text-primary-foreground hover:bg-primary-hover">
-                <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                Generate PDF
+              <Button onClick={handleGeneratePDF} className="h-10 sm:h-12 text-xs sm:text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg flex items-center justify-center gap-2 transition-colors">
+                <Download className="h-3 w-3 sm:h-4 sm:w-4" />
+                Save as PDF
               </Button>
               {showDownloadMessage && (
                 <p className="text-xs text-muted-foreground mt-2">
@@ -268,8 +268,9 @@ export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
         <Button type="button" variant="outline" onClick={onBack} className="w-full sm:w-auto">
           Back: Cost Entry
         </Button>
-        <Button onClick={handleGeneratePDF} className="px-4 sm:px-8 w-full sm:w-auto">
-          Complete PDA
+        <Button onClick={handleGeneratePDF} className="px-4 sm:px-8 w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg flex items-center justify-center gap-2 transition-colors">
+          <Download className="h-4 w-4" />
+          Save as PDF
         </Button>
       </div>
     </div>
