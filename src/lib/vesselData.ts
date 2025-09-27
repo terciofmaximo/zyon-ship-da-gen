@@ -10,7 +10,7 @@ export interface VesselType {
 
 export const VESSEL_TYPES: VesselType[] = [
   {
-    classification: 'Handymax TBN',
+    classification: 'MV Handymax TBN',
     type: 'Bulk Carrier',
     minDwt: 35000,
     maxDwt: 50000,
@@ -19,7 +19,7 @@ export const VESSEL_TYPES: VesselType[] = [
     draft: 10,
   },
   {
-    classification: 'Panamax TBN',
+    classification: 'MV Panamax TBN',
     type: 'Bulk Carrier',
     minDwt: 65000,
     maxDwt: 80000,
@@ -28,7 +28,7 @@ export const VESSEL_TYPES: VesselType[] = [
     draft: 12,
   },
   {
-    classification: 'Capesize TBN',
+    classification: 'MV Capesize TBN',
     type: 'Bulk Carrier',
     minDwt: 170000,
     maxDwt: 180000,
@@ -37,7 +37,7 @@ export const VESSEL_TYPES: VesselType[] = [
     draft: 18,
   },
   {
-    classification: 'Valemax TBN',
+    classification: 'MV Valemax TBN',
     type: 'Bulk Carrier',
     minDwt: 320000,
     maxDwt: 400000,
@@ -46,7 +46,7 @@ export const VESSEL_TYPES: VesselType[] = [
     draft: 25,
   },
   {
-    classification: 'Coastal Tanker MT',
+    classification: 'MT Coastal Tanker',
     type: 'Motor Tanker',
     minDwt: 1000,
     maxDwt: 50000,
@@ -55,7 +55,7 @@ export const VESSEL_TYPES: VesselType[] = [
     draft: 16,
   },
   {
-    classification: 'Aframax MT',
+    classification: 'MT Aframax',
     type: 'Motor Tanker',
     minDwt: 80000,
     maxDwt: 120000,
@@ -64,7 +64,7 @@ export const VESSEL_TYPES: VesselType[] = [
     draft: 20,
   },
   {
-    classification: 'Suezmax MT',
+    classification: 'MT Suezmax',
     type: 'Motor Tanker',
     minDwt: 125000,
     maxDwt: 180000,
@@ -73,7 +73,7 @@ export const VESSEL_TYPES: VesselType[] = [
     draft: 23,
   },
   {
-    classification: 'VLCC MT',
+    classification: 'MT VLCC',
     type: 'Motor Tanker',
     minDwt: 200000,
     maxDwt: 320000,
@@ -82,7 +82,7 @@ export const VESSEL_TYPES: VesselType[] = [
     draft: 28,
   },
   {
-    classification: 'ULCC MT',
+    classification: 'MT ULCC',
     type: 'Motor Tanker',
     minDwt: 320000,
     maxDwt: 550000,

@@ -2,13 +2,16 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { Ship, MapPin, Calendar } from "lucide-react";
+import { Ship, MapPin, Calendar, Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 import { VESSEL_TYPES } from "@/lib/vesselData";
 import { pdaStep1Schema, type PDAStep1Data } from "@/schemas/pdaSchema";
 
@@ -23,6 +26,7 @@ const clients = [
 ];
 
 export default function PdaCreationStep1() {
+  const [open, setOpen] = useState(false);
   const [selectedVessel, setSelectedVessel] = useState<string>("");
 
   const form = useForm<PDAStep1Data>({
@@ -95,22 +99,57 @@ export default function PdaCreationStep1() {
                     control={form.control}
                     name="vesselName"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Vessel's Name *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="e.g. MV Panamax TBN" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {VESSEL_TYPES.map((vessel) => (
-                              <SelectItem key={vessel.classification} value={vessel.classification}>
-                                {vessel.classification}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Ship's Name *</FormLabel>
+                        <Popover open={open} onOpenChange={setOpen}>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={open}
+                                className={cn(
+                                  "w-full justify-between",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value
+                                  ? VESSEL_TYPES.find((vessel) => vessel.classification === field.value)?.classification
+                                  : "e.g. MV Panamax TBN"}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0 bg-popover border border-border shadow-medium" align="start">
+                            <Command className="bg-popover">
+                              <CommandInput placeholder="Search ship type..." className="h-9" />
+                              <CommandList>
+                                <CommandEmpty>No ship type found.</CommandEmpty>
+                                <CommandGroup>
+                                  {VESSEL_TYPES.map((vessel) => (
+                                    <CommandItem
+                                      key={vessel.classification}
+                                      value={vessel.classification}
+                                      onSelect={(currentValue) => {
+                                        field.onChange(currentValue === field.value ? "" : currentValue);
+                                        setOpen(false);
+                                      }}
+                                      className="hover:bg-accent hover:text-accent-foreground"
+                                    >
+                                      {vessel.classification}
+                                      <Check
+                                        className={cn(
+                                          "ml-auto h-4 w-4",
+                                          field.value === vessel.classification ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                         <FormMessage />
                       </FormItem>
                     )}
