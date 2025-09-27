@@ -16,9 +16,69 @@ export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
   const totalUSD = Object.values(costData).reduce((sum: number, cost: number) => sum + (cost || 0), 0);
   const totalBRL = totalUSD * parseFloat(shipData.exchangeRate || "5.25");
 
-  const handleGeneratePDF = () => {
-    // Mock PDF generation
-    console.log("Generating PDA PDF...");
+  const handleGeneratePDF = async () => {
+    try {
+      console.log("Generating PDA PDF...");
+      
+      // Prepare cost comments object
+      const costComments = {
+        pilotageIn: '',
+        towageIn: '',
+        lightDues: '',
+        dockage: '',
+        linesman: '',
+        launchBoat: '',
+        immigration: '',
+        freePratique: '',
+        shippingAssociation: '',
+        clearance: '',
+        paperlessPort: '',
+        agencyFee: '',
+        waterway: '',
+      };
+
+      const pdfData = {
+        shipData,
+        costData,
+        costComments,
+        remarks: (shipData as any).remarks || '',
+      };
+
+      const response = await fetch(`https://hxdrffemnrxklrrfnllo.supabase.co/functions/v1/generate-pda-pdf`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4ZHJmZmVtbnJ4a2xycmZubGxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MjI3MjgsImV4cCI6MjA3NDQ5ODcyOH0.LIwvXuk48EK5NQyse0XtJpOPRUQtBqegX9loVtbvq4g`,
+        },
+        body: JSON.stringify(pdfData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate PDF');
+      }
+
+      // Create blob and download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      // Generate filename
+      const vesselName = shipData.vesselName?.replace(/[^a-zA-Z0-9]/g, '_') || 'Unknown';
+      const portName = shipData.portName?.replace(/[^a-zA-Z0-9]/g, '_') || 'Unknown';
+      const date = shipData.date?.replace(/\//g, '-') || new Date().toISOString().split('T')[0];
+      
+      a.download = `PDA_${vesselName}_${portName}_${date}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      console.log("PDF generated and downloaded successfully");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      // You could add a toast notification here
+    }
   };
 
   const handleConvertToFDA = () => {
