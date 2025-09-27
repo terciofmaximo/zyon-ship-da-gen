@@ -3,11 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FileText, Download, Send, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import type { ShipData, CostData } from "@/types";
+import type { CostData } from "@/types";
+import type { PDAStep1Data } from "@/schemas/pdaSchema";
 
 interface ReviewFormProps {
   onBack: () => void;
-  shipData: Partial<ShipData>;
+  shipData: Partial<PDAStep1Data>;
   costData: Partial<CostData>;
 }
 
@@ -58,7 +59,7 @@ export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
             <Badge variant="outline" className="text-xs">IMO: {shipData.imoNumber}</Badge>
             <Badge variant="outline" className="text-xs">DWT: {shipData.dwt}t</Badge>
             <Badge variant="outline" className="text-xs">LOA: {shipData.loa}m</Badge>
-            <Badge variant="outline" className="text-xs">{shipData.port}</Badge>
+            <Badge variant="outline" className="text-xs">{shipData.portName}</Badge>
           </div>
         </CardHeader>
         <CardContent>
@@ -67,15 +68,15 @@ export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
               <h4 className="font-semibold text-xs sm:text-sm text-muted-foreground">VESSEL DETAILS</h4>
               <div className="space-y-1 text-xs sm:text-sm">
                 <div className="truncate">Name: {shipData.vesselName}</div>
-                <div>Cargo: {shipData.cargoType}</div>
-                <div>Terminal: {shipData.terminal}</div>
+                <div>Cargo: {shipData.cargo}</div>
+                <div>Terminal: {shipData.berth}</div>
               </div>
             </div>
             <div className="space-y-2">
               <h4 className="font-semibold text-xs sm:text-sm text-muted-foreground">SCHEDULE</h4>
               <div className="space-y-1 text-xs sm:text-sm">
-                <div>Arrival: {shipData.arrivalDate}</div>
-                <div>Departure: {shipData.departureDate}</div>
+                <div>Date: {shipData.date}</div>
+                <div>Days alongside: {shipData.daysAlongside}</div>
                 <div>Rate: {shipData.exchangeRate}</div>
               </div>
             </div>

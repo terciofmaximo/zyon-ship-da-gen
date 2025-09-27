@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Ship, Calculator, FileCheck } from "lucide-react";
-import { ShipDataForm } from "./ShipDataForm";
+import PdaCreationStep1 from "../../pages/PdaCreationStep1";
 import { CostEntryForm } from "./CostEntryForm";
 import { ReviewForm } from "./ReviewForm";
 import type { ShipData, CostData } from "@/types";
+import type { PDAStep1Data } from "@/schemas/pdaSchema";
 
 const steps = [
   { id: 1, title: "Ship Data", icon: Ship, description: "Enter vessel information" },
@@ -16,12 +17,12 @@ const steps = [
 
 export function NewPDAWizard() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [shipData, setShipData] = useState<Partial<ShipData>>({});
+  const [shipData, setShipData] = useState<Partial<PDAStep1Data>>({});
   const [costData, setCostData] = useState<Partial<CostData>>({});
 
-  const handleNext = (data: Partial<ShipData> | Partial<CostData>) => {
+  const handleNext = (data: Partial<PDAStep1Data> | Partial<CostData>) => {
     if (currentStep === 1) {
-      setShipData(data as Partial<ShipData>);
+      setShipData(data as Partial<PDAStep1Data>);
     } else if (currentStep === 2) {
       setCostData(data as Partial<CostData>);
     }
@@ -82,7 +83,7 @@ export function NewPDAWizard() {
       </CardHeader>
       <CardContent className="p-3 sm:p-4 lg:p-6">
         {currentStep === 1 && (
-          <ShipDataForm onNext={handleNext} initialData={shipData} />
+          <PdaCreationStep1 onNext={handleNext} initialData={shipData} />
         )}
         {currentStep === 2 && (
           <CostEntryForm 

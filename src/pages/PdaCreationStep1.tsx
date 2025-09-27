@@ -36,31 +36,37 @@ const vesselSuggestions = [
   { value: "MT ULCC", label: "MT ULCC" },
 ];
 
-export default function PdaCreationStep1() {
+interface PdaCreationStep1Props {
+  onNext?: (data: PDAStep1Data) => void;
+  initialData?: Partial<PDAStep1Data>;
+}
+
+export default function PdaCreationStep1({ onNext, initialData }: PdaCreationStep1Props = {}) {
+
   const [selectedVessel, setSelectedVessel] = useState<string>("");
 
   const form = useForm<PDAStep1Data>({
     resolver: zodResolver(pdaStep1Schema),
     defaultValues: {
-      vesselName: "",
-      imoNumber: "",
-      dwt: "",
-      loa: "",
-      beam: "",
-      draft: "",
-      portName: "",
-      berth: "",
-      daysAlongside: "",
-      cargo: "",
-      quantity: "",
-      from: "Zyon Shipping",
-      to: "",
-      toClientId: "",
-      date: format(new Date(), "yyyy-MM-dd"),
-      exchangeRate: "5.25",
-      exchangeRateSource: "MANUAL",
-      exchangeRateSourceUrl: "",
-      exchangeRateTimestamp: "",
+      vesselName: initialData?.vesselName || "",
+      imoNumber: initialData?.imoNumber || "",
+      dwt: initialData?.dwt || "",
+      loa: initialData?.loa || "",
+      beam: initialData?.beam || "",
+      draft: initialData?.draft || "",
+      portName: initialData?.portName || "",
+      berth: initialData?.berth || "",
+      daysAlongside: initialData?.daysAlongside || "",
+      cargo: initialData?.cargo || "",
+      quantity: initialData?.quantity || "",
+      from: initialData?.from || "Zyon Shipping",
+      to: initialData?.to || "",
+      toClientId: initialData?.toClientId || "",
+      date: initialData?.date || format(new Date(), "yyyy-MM-dd"),
+      exchangeRate: initialData?.exchangeRate || "5.25",
+      exchangeRateSource: initialData?.exchangeRateSource || "MANUAL",
+      exchangeRateSourceUrl: initialData?.exchangeRateSourceUrl || "",
+      exchangeRateTimestamp: initialData?.exchangeRateTimestamp || "",
     },
   });
 
@@ -124,7 +130,9 @@ export default function PdaCreationStep1() {
 
   const onSubmit = (data: PDAStep1Data) => {
     console.log("PDA Step 1 Data:", data);
-    // Simular navegação para próximo passo
+    if (onNext) {
+      onNext(data);
+    }
   };
 
   return (

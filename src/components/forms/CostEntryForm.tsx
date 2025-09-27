@@ -10,12 +10,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { Calculator, Info, AlertCircle, Edit3, DollarSign } from "lucide-react";
 import { ExchangeRateBadge } from "@/components/ui/exchange-rate-badge";
-import type { ShipData, CostData } from "@/types";
+import type { CostData } from "@/types";
+import type { PDAStep1Data } from "@/schemas/pdaSchema";
 
 interface CostEntryFormProps {
   onNext: (data: CostData) => void;
   onBack: () => void;
-  shipData: Partial<ShipData>;
+  shipData: Partial<PDAStep1Data>;
   initialData: Partial<CostData>;
 }
 
