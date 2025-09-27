@@ -1,0 +1,141 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Zyon Shipping ERP Design System - Based on Official Brand Identity */
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 210 100% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 100% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 100% 12%;
+
+    /* Zyon Primary Blue - From logo and website */
+    --primary: 198 84% 60%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 198 84% 55%;
+
+    /* Zyon Secondary Navy - From website dark blue */
+    --secondary: 210 100% 12%;
+    --secondary-foreground: 0 0% 100%;
+    --secondary-hover: 210 100% 15%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 210 40% 45%;
+
+    /* Zyon Accent Orange/Yellow - From logo accents */
+    --accent: 45 97% 54%;
+    --accent-foreground: 210 100% 12%;
+    --accent-hover: 45 97% 50%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 210 60% 8%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 20% 88%;
+    --input: 210 20% 94%;
+    --input-border: 210 25% 85%;
+    --ring: 210 85% 40%;
+
+    --radius: 0.75rem;
+
+    /* Zyon Brand Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+    --gradient-secondary: linear-gradient(180deg, hsl(var(--secondary)), hsl(var(--muted)));
+    --gradient-hero: linear-gradient(135deg, hsl(198 84% 60%), hsl(210 100% 12%));
+    --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--primary)));
+
+    /* Professional Shadows */
+    --shadow-soft: 0 2px 8px hsl(210 60% 8% / 0.08);
+    --shadow-medium: 0 4px 16px hsl(210 60% 8% / 0.12);
+    --shadow-strong: 0 8px 32px hsl(210 60% 8% / 0.16);
+
+    /* Sidebar with Zyon branding */
+    --sidebar-background: 210 100% 12%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 198 84% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 100% 15%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 210 100% 18%;
+    --sidebar-ring: 198 84% 60%;
+  }
+
+  .dark {
+    --background: 210 100% 6%;
+    --foreground: 0 0% 95%;
+
+    --card: 210 100% 8%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 210 100% 8%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 198 84% 65%;
+    --primary-foreground: 210 100% 6%;
+    --primary-hover: 198 84% 60%;
+
+    --secondary: 210 100% 15%;
+    --secondary-foreground: 0 0% 95%;
+    --secondary-hover: 210 100% 18%;
+
+    --muted: 210 100% 10%;
+    --muted-foreground: 210 40% 65%;
+
+    --accent: 45 97% 60%;
+    --accent-foreground: 210 100% 6%;
+    --accent-hover: 45 97% 55%;
+
+    --success: 142 76% 46%;
+    --success-foreground: 210 60% 6%;
+
+    --warning: 38 92% 60%;
+    --warning-foreground: 210 60% 6%;
+
+    --destructive: 0 84% 70%;
+    --destructive-foreground: 210 60% 6%;
+
+    --border: 210 35% 18%;
+    --input: 210 35% 14%;
+    --input-border: 210 35% 22%;
+    --ring: 210 85% 50%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+    --gradient-secondary: linear-gradient(180deg, hsl(var(--secondary)), hsl(var(--muted)));
+    --gradient-hero: linear-gradient(135deg, hsl(198 84% 65%), hsl(210 100% 15%));
+    --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--primary)));
+
+    --shadow-soft: 0 2px 8px hsl(210 60% 6% / 0.4);
+    --shadow-medium: 0 4px 16px hsl(210 60% 6% / 0.5);
+    --shadow-strong: 0 8px 32px hsl(210 60% 6% / 0.6);
+
+    --sidebar-background: 210 100% 8%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 198 84% 65%;
+    --sidebar-primary-foreground: 210 100% 6%;
+    --sidebar-accent: 210 100% 12%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 210 100% 15%;
+    --sidebar-ring: 198 84% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
