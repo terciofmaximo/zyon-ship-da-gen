@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import PDAList from "./pages/PDAList";
+import PDAReview from "./pages/PDAReview";
 import { NewPDAWizard } from "@/components/forms/NewPDAWizard";
 
 const queryClient = new QueryClient();
@@ -18,7 +20,9 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<DashboardLayout><Index /></DashboardLayout>} />
+          <Route path="/pda" element={<DashboardLayout><PDAList /></DashboardLayout>} />
           <Route path="/pda/new" element={<DashboardLayout><NewPDAWizard /></DashboardLayout>} />
+          <Route path="/pda/:id/review" element={<DashboardLayout><PDAReview /></DashboardLayout>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

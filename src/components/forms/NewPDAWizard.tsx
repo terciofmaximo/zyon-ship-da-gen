@@ -6,6 +6,7 @@ import { Ship, Calculator, FileCheck } from "lucide-react";
 import PdaCreationStep1 from "../../pages/PdaCreationStep1";
 import { CostEntryForm } from "./CostEntryForm";
 import { ReviewForm } from "./ReviewForm";
+import { usePDA } from "@/hooks/usePDA";
 import type { ShipData, CostData } from "@/types";
 import type { PDAStep1Data } from "@/schemas/pdaSchema";
 
@@ -24,23 +25,54 @@ export function NewPDAWizard() {
   const [costData, setCostData] = useState<Partial<CostData>>({});
   const [remarks, setRemarks] = useState<string>("");
   const [comments, setComments] = useState<Record<string, string>>({});
+  const [savedPdaId, setSavedPdaId] = useState<string | null>(null);
+  const { savePDA } = usePDA();
 
-  const handleNext = (
+  const handleNext = async (
     data: Partial<PDAStep1Data> | Partial<CostData>, 
     remarksData?: string, 
     commentsData?: Record<string, string>
   ) => {
     if (currentStep === 1) {
-      setShipData(data as Partial<PDAStep1Data>);
+      const updatedShipData = data as Partial<PDAStep1Data>;
+      setShipData(updatedShipData);
+      
+      // Save PDA on first step completion
+      try {
+        const savedPda = await savePDA({
+          shipData: updatedShipData,
+          costData: {}
+        });
+        setSavedPdaId(savedPda.id);
+      } catch (error) {
+        console.error("Error saving PDA:", error);
+        return; // Don't proceed if save fails
+      }
     } else if (currentStep === 2) {
-      setCostData(data as Partial<CostData>);
+      const updatedCostData = data as Partial<CostData>;
+      setCostData(updatedCostData);
       if (remarksData) setRemarks(remarksData);
       if (commentsData) setComments(commentsData);
-      setShipData(prev => ({ 
-        ...prev, 
+      
+      const updatedShipData = { 
+        ...shipData, 
         remarks: remarksData, 
         comments: commentsData 
-      }));
+      };
+      setShipData(updatedShipData);
+      
+      // Update PDA with cost data
+      if (savedPdaId) {
+        try {
+          await savePDA({
+            shipData: updatedShipData,
+            costData: updatedCostData
+          }, savedPdaId);
+        } catch (error) {
+          console.error("Error updating PDA:", error);
+          return; // Don't proceed if save fails
+        }
+      }
     }
     setCurrentStep(currentStep + 1);
   };

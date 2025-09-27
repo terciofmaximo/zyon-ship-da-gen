@@ -16,9 +16,10 @@ interface ReviewFormProps {
     comments?: Record<string, string>;
   };
   costData: Partial<CostData>;
+  pdaId?: string | null;
 }
 
-export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
+export function ReviewForm({ onBack, shipData, costData, pdaId }: ReviewFormProps) {
   const { toast } = useToast();
   const totalUSD = Object.values(costData).reduce((sum: number, cost: number) => sum + (cost || 0), 0);
   const totalBRL = totalUSD * parseFloat(shipData.exchangeRate || "5.25");
