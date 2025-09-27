@@ -17,14 +17,30 @@ const steps = [
 
 export function NewPDAWizard() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [shipData, setShipData] = useState<Partial<PDAStep1Data>>({});
+  const [shipData, setShipData] = useState<Partial<PDAStep1Data> & {
+    remarks?: string;
+    comments?: Record<string, string>;
+  }>({});
   const [costData, setCostData] = useState<Partial<CostData>>({});
+  const [remarks, setRemarks] = useState<string>("");
+  const [comments, setComments] = useState<Record<string, string>>({});
 
-  const handleNext = (data: Partial<PDAStep1Data> | Partial<CostData>) => {
+  const handleNext = (
+    data: Partial<PDAStep1Data> | Partial<CostData>, 
+    remarksData?: string, 
+    commentsData?: Record<string, string>
+  ) => {
     if (currentStep === 1) {
       setShipData(data as Partial<PDAStep1Data>);
     } else if (currentStep === 2) {
       setCostData(data as Partial<CostData>);
+      if (remarksData) setRemarks(remarksData);
+      if (commentsData) setComments(commentsData);
+      setShipData(prev => ({ 
+        ...prev, 
+        remarks: remarksData, 
+        comments: commentsData 
+      }));
     }
     setCurrentStep(currentStep + 1);
   };

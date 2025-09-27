@@ -16,7 +16,7 @@ import type { CostData } from "@/types";
 import type { PDAStep1Data } from "@/schemas/pdaSchema";
 
 interface CostEntryFormProps {
-  onNext: (data: CostData) => void;
+  onNext: (data: CostData, remarks?: string, comments?: Record<keyof CostData, string>) => void;
   onBack: () => void;
   shipData: Partial<PDAStep1Data>;
   initialData: Partial<CostData>;
@@ -195,7 +195,7 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onNext(costs);
+    onNext(costs, remarks, comments);
   };
 
   const totalUSD = Object.values(costs).reduce((sum, cost) => sum + cost, 0);
