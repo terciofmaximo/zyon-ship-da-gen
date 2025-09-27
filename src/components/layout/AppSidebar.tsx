@@ -41,7 +41,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
 
   return (
-    <Sidebar className="border-r border-sidebar-border">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarContent className="bg-sidebar">
         {/* Logo Section */}
         <div className="flex items-center justify-center px-4 py-4 sm:py-6">

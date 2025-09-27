@@ -10,16 +10,16 @@ import {
 
 export function Header() {
   return (
-    <header className="border-b bg-sidebar shadow-soft">
+    <header className="border-b bg-background shadow-soft">
       <div className="flex h-16 items-center justify-between px-6">
         <div className="flex items-center gap-4">
-          <SidebarTrigger />
+          <SidebarTrigger className="h-8 w-8" />
         </div>
 
         <div className="flex items-center gap-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+              <Button variant="ghost" size="sm" className="text-foreground hover:bg-accent hover:text-accent-foreground">
                 <Settings className="h-4 w-4 mr-2" />
                 Admin
               </Button>
@@ -33,7 +33,7 @@ export function Header() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+              <Button variant="ghost" size="sm" className="text-foreground hover:bg-accent hover:text-accent-foreground">
                 <User className="h-4 w-4 mr-2" />
                 Operations Analyst
               </Button>
