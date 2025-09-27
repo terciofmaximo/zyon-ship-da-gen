@@ -19,72 +19,79 @@ export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [showDownloadMessage, setShowDownloadMessage] = useState(false);
 
-  const handleGeneratePDF = async () => {
+  const generateAndDownloadPdaPdf = async (pdaId: string) => {
     try {
-      console.log("Generating PDA PDF...");
+      console.info('[PDA] Generate PDF click', { pdaId });
       
-      // Prepare cost comments object
-      const costComments = {
-        pilotageIn: '',
-        towageIn: '',
-        lightDues: '',
-        dockage: '',
-        linesman: '',
-        launchBoat: '',
-        immigration: '',
-        freePratique: '',
-        shippingAssociation: '',
-        clearance: '',
-        paperlessPort: '',
-        agencyFee: '',
-        waterway: '',
-      };
-
-      const pdfData = {
-        shipData,
-        costData,
-        costComments,
-        remarks: (shipData as any).remarks || '',
-      };
-
       const response = await fetch(`https://hxdrffemnrxklrrfnllo.supabase.co/functions/v1/generate-pda-pdf`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4ZHJmZmVtbnJ4a2xycmZubGxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MjI3MjgsImV4cCI6MjA3NDQ5ODcyOH0.LIwvXuk48EK5NQyse0XtJpOPRUQtBqegX9loVtbvq4g`,
+          'Accept': 'application/pdf'
         },
-        body: JSON.stringify(pdfData),
+        body: JSON.stringify({
+          shipData,
+          costData,
+          costComments: {
+            pilotageIn: '', towageIn: '', lightDues: '', dockage: '', linesman: '',
+            launchBoat: '', immigration: '', freePratique: '', shippingAssociation: '',
+            clearance: '', paperlessPort: '', agencyFee: '', waterway: ''
+          },
+          remarks: (shipData as any).remarks || ''
+        }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to generate PDF');
+      const disp = response.headers.get('Content-Disposition') || '';
+      
+      // Case 1: PDF stream response
+      if (response.ok && response.headers.get('Content-Type')?.includes('application/pdf')) {
+        const blob = await response.blob();
+        setPdfBlob(blob);
+        
+        const url = URL.createObjectURL(blob);
+        const filename = /filename="([^"]+)"/.exec(disp)?.[1] || generateFilename();
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        
+        setShowDownloadMessage(true);
+        return;
       }
 
-      // Create blob and download
-      const blob = await response.blob();
-      setPdfBlob(blob);
-      
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      
-      // Generate filename
-      const vesselName = shipData.vesselName?.replace(/[^a-zA-Z0-9]/g, '_') || 'Unknown';
-      const portName = shipData.portName?.replace(/[^a-zA-Z0-9]/g, '_') || 'Unknown';
-      const date = shipData.date?.replace(/\//g, '-') || new Date().toISOString().split('T')[0];
-      
-      a.download = `PDA_${vesselName}_${portName}_${date}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+      // Case 2: JSON response with fileUrl
+      const data = await response.json();
+      if (data?.fileUrl) {
+        const a = document.createElement('a');
+        a.href = data.fileUrl;
+        a.download = data.filename || generateFilename();
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        return;
+      }
 
-      setShowDownloadMessage(true);
-      console.log("PDF generated and downloaded successfully");
+      throw new Error(`Unexpected response: ${response.status}`);
     } catch (error) {
-      console.error("Error generating PDF:", error);
-      // You could add a toast notification here
+      console.error('[PDA] Generate PDF error', error);
+      // Add toast notification for error
     }
+  };
+
+  const generateFilename = () => {
+    const vesselName = shipData.vesselName?.replace(/[^a-zA-Z0-9]/g, '_') || 'Unknown';
+    const portName = shipData.portName?.replace(/[^a-zA-Z0-9]/g, '_') || 'Unknown';
+    const date = shipData.date?.replace(/\//g, '-') || new Date().toISOString().split('T')[0];
+    return `PDA_${vesselName}_${portName}_${date}.pdf`;
+  };
+
+  const handleGeneratePDF = async () => {
+    const pdaId = `${shipData.vesselName}_${Date.now()}`;
+    await generateAndDownloadPdaPdf(pdaId);
   };
 
   const handleConvertToFDA = () => {

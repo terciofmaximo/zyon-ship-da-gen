@@ -485,6 +485,7 @@ serve(async (req) => {
           ...corsHeaders,
           'Content-Type': 'application/pdf',
           'Content-Disposition': `attachment; filename="PDA_${data.shipData.vesselName.replace(/[^a-zA-Z0-9]/g, '_')}_${data.shipData.portName.replace(/[^a-zA-Z0-9]/g, '_')}_${data.shipData.date.replace(/\//g, '-')}.pdf"`,
+          'Cache-Control': 'no-store',
         },
       });
     }
@@ -496,6 +497,7 @@ serve(async (req) => {
         ...corsHeaders,
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="PDA_${data.shipData.vesselName.replace(/[^a-zA-Z0-9]/g, '_')}_${data.shipData.portName.replace(/[^a-zA-Z0-9]/g, '_')}_${data.shipData.date.replace(/\//g, '-')}.pdf"`,
+        'Cache-Control': 'no-store',
       },
     });
 
