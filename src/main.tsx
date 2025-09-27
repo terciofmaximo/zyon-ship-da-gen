@@ -4,6 +4,8 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App.tsx'
 import './index.css'
 
+console.log('🚀 Main.tsx loaded - checking for TypeScript config issues');
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
