@@ -139,21 +139,21 @@ export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-secondary">
+      <Card className="bg-transparent shadow-soft rounded-xl">
         <CardHeader>
           <CardTitle>Actions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            <Button onClick={handleGeneratePDF} className="h-10 sm:h-12 text-xs sm:text-sm">
+            <Button onClick={handleGeneratePDF} className="h-10 sm:h-12 text-xs sm:text-sm bg-primary text-primary-foreground hover:bg-primary-hover">
               <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               Generate PDF
             </Button>
-            <Button onClick={handleConvertToFDA} variant="outline" className="h-10 sm:h-12 text-xs sm:text-sm">
+            <Button onClick={handleConvertToFDA} className="h-10 sm:h-12 text-xs sm:text-sm bg-primary text-primary-foreground hover:bg-primary-hover">
               <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Convert to </span>FDA
             </Button>
-            <Button onClick={handleSendToBilling} variant="secondary" className="h-10 sm:h-12 text-xs sm:text-sm sm:col-span-2 lg:col-span-1">
+            <Button onClick={handleSendToBilling} className="h-10 sm:h-12 text-xs sm:text-sm bg-primary text-primary-foreground hover:bg-primary-hover sm:col-span-2 lg:col-span-1">
               <Send className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               Send to Billing
             </Button>
