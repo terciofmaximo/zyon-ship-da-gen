@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -15,6 +16,8 @@ interface ReviewFormProps {
 export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
   const totalUSD = Object.values(costData).reduce((sum: number, cost: number) => sum + (cost || 0), 0);
   const totalBRL = totalUSD * parseFloat(shipData.exchangeRate || "5.25");
+  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
+  const [showDownloadMessage, setShowDownloadMessage] = useState(false);
 
   const handleGeneratePDF = async () => {
     try {
@@ -59,6 +62,8 @@ export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
 
       // Create blob and download
       const blob = await response.blob();
+      setPdfBlob(blob);
+      
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -74,6 +79,7 @@ export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
 
+      setShowDownloadMessage(true);
       console.log("PDF generated and downloaded successfully");
     } catch (error) {
       console.error("Error generating PDF:", error);
@@ -205,10 +211,37 @@ export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            <Button onClick={handleGeneratePDF} className="h-10 sm:h-12 text-xs sm:text-sm bg-primary text-primary-foreground hover:bg-primary-hover">
-              <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              Generate PDF
-            </Button>
+            <div className="flex flex-col">
+              <Button onClick={handleGeneratePDF} className="h-10 sm:h-12 text-xs sm:text-sm bg-primary text-primary-foreground hover:bg-primary-hover">
+                <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                Generate PDF
+              </Button>
+              {showDownloadMessage && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  If the download didn't start automatically,{" "}
+                  <button
+                    onClick={() => {
+                      if (pdfBlob) {
+                        const url = window.URL.createObjectURL(pdfBlob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        const vesselName = shipData.vesselName?.replace(/[^a-zA-Z0-9]/g, '_') || 'Unknown';
+                        const portName = shipData.portName?.replace(/[^a-zA-Z0-9]/g, '_') || 'Unknown';
+                        const date = shipData.date?.replace(/\//g, '-') || new Date().toISOString().split('T')[0];
+                        a.download = `PDA_${vesselName}_${portName}_${date}.pdf`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+                      }
+                    }}
+                    className="text-primary hover:underline"
+                  >
+                    click here
+                  </button>
+                </p>
+              )}
+            </div>
             <Button onClick={handleConvertToFDA} className="h-10 sm:h-12 text-xs sm:text-sm bg-primary text-primary-foreground hover:bg-primary-hover">
               <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Convert to </span>FDA
