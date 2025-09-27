@@ -11,7 +11,10 @@ import { generatePDAHTML } from "@/components/pdf/PDADocument";
 
 interface ReviewFormProps {
   onBack: () => void;
-  shipData: Partial<PDAStep1Data>;
+  shipData: Partial<PDAStep1Data> & {
+    remarks?: string;
+    comments?: Record<string, string>;
+  };
   costData: Partial<CostData>;
 }
 
@@ -61,7 +64,9 @@ export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
       
       const htmlContent = generatePDAHTML({ 
         shipData: formattedShipData, 
-        costData: formattedCostData 
+        costData: formattedCostData,
+        remarks: shipData.remarks,
+        comments: shipData.comments
       });
       
       const newWindow = window.open('', '_blank');

@@ -3,9 +3,11 @@ import { ShipData, CostData } from "@/types";
 interface PDADocumentProps {
   shipData: ShipData;
   costData: CostData;
+  remarks?: string;
+  comments?: Record<keyof CostData, string>;
 }
 
-export const generatePDAHTML = ({ shipData, costData }: PDADocumentProps): string => {
+export const generatePDAHTML = ({ shipData, costData, remarks, comments }: PDADocumentProps): string => {
   const currentDate = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long', 
@@ -15,19 +17,19 @@ export const generatePDAHTML = ({ shipData, costData }: PDADocumentProps): strin
   const exchangeRate = parseFloat(shipData.exchangeRate);
   
   const costItems = [
-    { description: "Pilotage (In)", usd: costData.pilotageIn },
-    { description: "Towage (In)", usd: costData.towageIn },
-    { description: "Light Dues", usd: costData.lightDues },
-    { description: "Dockage", usd: costData.dockage },
-    { description: "Linesman", usd: costData.linesman },
-    { description: "Launch Boat", usd: costData.launchBoat },
-    { description: "Immigration", usd: costData.immigration },
-    { description: "Free Pratique", usd: costData.freePratique },
-    { description: "Shipping Association", usd: costData.shippingAssociation },
-    { description: "Clearance", usd: costData.clearance },
-    { description: "Paperless Port", usd: costData.paperlessPort },
-    { description: "Agency Fee", usd: costData.agencyFee },
-    { description: "Waterway", usd: costData.waterway },
+    { id: "pilotageIn", description: "Pilotage (In)", usd: costData.pilotageIn },
+    { id: "towageIn", description: "Towage (In)", usd: costData.towageIn },
+    { id: "lightDues", description: "Light Dues", usd: costData.lightDues },
+    { id: "dockage", description: "Dockage", usd: costData.dockage },
+    { id: "linesman", description: "Linesman", usd: costData.linesman },
+    { id: "launchBoat", description: "Launch Boat", usd: costData.launchBoat },
+    { id: "immigration", description: "Immigration", usd: costData.immigration },
+    { id: "freePratique", description: "Free Pratique", usd: costData.freePratique },
+    { id: "shippingAssociation", description: "Shipping Association", usd: costData.shippingAssociation },
+    { id: "clearance", description: "Clearance", usd: costData.clearance },
+    { id: "paperlessPort", description: "Paperless Port", usd: costData.paperlessPort },
+    { id: "agencyFee", description: "Agency Fee", usd: costData.agencyFee },
+    { id: "waterway", description: "Waterway", usd: costData.waterway },
   ];
 
   const totalUSD = costItems.reduce((sum, item) => sum + item.usd, 0);
@@ -231,7 +233,7 @@ export const generatePDAHTML = ({ shipData, costData }: PDADocumentProps): strin
   <button class="print-button no-print" onclick="window.print()">🖨️ Save as PDF</button>
   
   <div class="header">
-    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" class="logo" alt="Zyon Shipping" />
+    <img src="/zyon-logo.png" class="logo" alt="Zyon Shipping" />
     <div class="title">PORT DISBURSEMENT ACCOUNT (PDA)</div>
     <div class="subtitle">Generated on ${currentDate}</div>
   </div>
@@ -305,6 +307,7 @@ export const generatePDAHTML = ({ shipData, costData }: PDADocumentProps): strin
           <th>Description</th>
           <th>Amount (USD)</th>
           <th>Amount (BRL)</th>
+          <th>Comments</th>
         </tr>
       </thead>
       <tbody>
@@ -313,19 +316,38 @@ export const generatePDAHTML = ({ shipData, costData }: PDADocumentProps): strin
             <td>${item.description}</td>
             <td class="amount">$${item.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             <td class="amount">R$${(item.usd * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td style="font-size: 10px;">${comments?.[item.id as keyof CostData] || ''}</td>
           </tr>
         `).join('')}
         <tr class="total-row">
           <td><strong>TOTAL</strong></td>
           <td class="amount"><strong>$${totalUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></td>
           <td class="amount"><strong>R$${totalBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></td>
+          <td></td>
         </tr>
       </tbody>
     </table>
   </div>
   
+  ${remarks ? `
+  <div class="costs-section">
+    <h3>Remarks</h3>
+    <div style="white-space: pre-wrap; font-size: 11px; line-height: 1.4; margin-bottom: 20px;">
+      ${remarks.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>')}
+    </div>
+  </div>
+  ` : ''}
+  
   <div class="footer">
-    <div style="font-size: 10px; color: #64748b;">
+    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #dc3545; margin-bottom: 20px;">
+      <div style="font-size: 10px; color: #dc3545; font-weight: bold; text-align: center;">
+        CONFIDENTIAL COMMUNICATION
+      </div>
+      <div style="font-size: 10px; color: #6c757d; text-align: center; margin-top: 5px;">
+        This communication is confidential and intended for the designated recipient(s) only. Unauthorized use or disclosure is strictly prohibited.
+      </div>
+    </div>
+    <div style="font-size: 10px; color: #64748b; text-align: center;">
       This document was generated electronically by Zyon Shipping PDA System
     </div>
   </div>
