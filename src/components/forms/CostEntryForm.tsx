@@ -1,11 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calculator, DollarSign, Info } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+import { Calculator, Info, AlertCircle, Edit3, DollarSign } from "lucide-react";
+import { ExchangeRateBadge } from "@/components/ui/exchange-rate-badge";
 import type { ShipData, CostData } from "@/types";
 
 interface CostEntryFormProps {
@@ -15,62 +19,174 @@ interface CostEntryFormProps {
   initialData: Partial<CostData>;
 }
 
-// Mock calculation functions
-const calculatePilotage = (dwt: number, loa: number) => {
-  const baseFee = 1200;
-  const dwtFactor = dwt * 0.08;
-  const loaFactor = loa * 15;
-  return Math.round(baseFee + dwtFactor + loaFactor);
+interface CostItem {
+  id: keyof CostData;
+  order: number;
+  label: string;
+  defaultComment: string;
+}
+
+// Fixed 13 cost items with default comments
+const COST_ITEMS: CostItem[] = [
+  { id: "pilotageIn", order: 1, label: "Pilot IN/OUT", defaultComment: "DWT range tariff +10% for draft ≥11m" },
+  { id: "towageIn", order: 2, label: "Towage IN/OUT", defaultComment: "DWT range tariff. For reference only" },
+  { id: "lightDues", order: 3, label: "Light dues", defaultComment: "DWT range tariff. Please see details below" },
+  { id: "dockage", order: 4, label: "Dockage (Wharfage)", defaultComment: "LOA + 30m x 1.45 x [22] hours alongside" },
+  { id: "linesman", order: 5, label: "Linesman (mooring/unmooring)", defaultComment: "Lumpsum charge" },
+  { id: "launchBoat", order: 6, label: "Launch boat (mooring/unmooring)", defaultComment: "Lumpsum charge: Inbound launch hire" },
+  { id: "immigration", order: 7, label: "Immigration tax (Funapol)", defaultComment: "Inbound immigration processing" },
+  { id: "freePratique", order: 8, label: "Free pratique tax", defaultComment: "Sanitary clearance for international arrival" },
+  { id: "shippingAssociation", order: 9, label: "Shipping association", defaultComment: "Agency syndicate fee levied per vessel" },
+  { id: "clearance", order: 10, label: "Clearance", defaultComment: "Customs & Harbor Master expenses" },
+  { id: "paperlessPort", order: 11, label: "Paperless Port System", defaultComment: "Mandatory digital port system fee" },
+  { id: "agencyFee", order: 12, label: "Agency fee", defaultComment: "Lumpsum value" },
+  { id: "waterway", order: 13, label: "Waterway channel (Table I)", defaultComment: "DWT Range x factor tariff. Please see details below" },
+];
+
+// Agency address for PDF generation (not displayed in this screen)
+const AGENCY_ADDRESS = "Rua V09, Nº15, Quadra 11, Parque Shalon, São Luís - MA\nPostal Code: 65073-110 / E-mail: ops.slz@zyonshipping.com.br";
+
+// Default remarks content
+const DEFAULT_REMARKS = `**Pilotage IN/OUT** – Pilotage charges as per DWT range. A 10% surcharge applies for vessels with DWT ≥ 100,000 or draft ≥ 11m when berthing.
+
+**Towage IN/OUT**
+
+**Light Dues** – Texto + tabela de faixas DWT/Cost (USD):
+
+| DWT | COST (USD) |
+|-----|------------|
+| Less than 1,000 | Exempted |
+| From 1,000 to 50,000 | $1,500.00 |
+| From 50,000 to 100,000 | $2,250.00 |
+| Greater than 100,000 | $3,000.00 |
+
+**Dockage (table II)** – Fórmula: (LOA + 30m) × 1.45 × hours alongside + nota sobre cobrança em dobro fora do horário operacional com anuência da Autoridade Portuária.
+
+**Linesman** – Lumpsum.
+
+**Launch boat** – Um lançamento (inbound) no Berth 104; dois (in/out) nos Berths 106/108.
+
+**Immigration tax (Funapol)** – Varia conforme portos anterior e seguinte (estrangeiro/nacional).
+
+**Free pratique tax** – Autoridade sanitária.
+
+**Shipping association tax** – Contribuição obrigatória por navio atendido por agências associadas.
+
+**Clearance** – Custos de trâmites junto à Alfândega e Capitania.
+
+**Paperless Port System** – Uso da plataforma eletrônica obrigatória.
+
+**Agency fee** – Lumpsum para serviços padrão; tarifa oficial vigente: USD 9,804.
+
+**Waterway channel (table I)** – taxa por navegação no canal cobrada pela Autoridade Portuária; variável por faixa de DWT (DWT × fator); responsabilidade usual de embarcadores/recebedores (charter party pode definir).
+
+| DWT | COST (BRL) |
+|-----|------------|
+| From 0 to 20,000 of DWT | 1,69 |
+| From 20,001 to 40,000 of DWT | 1,88 |
+| From 40,001 to 60,000 of DWT | 2,00 |
+| From 60,001 to 80,000 of DWT | 2,13 |
+| Over 80,000 of DWT | 2,25 |`;
+
+// Utility functions
+const normalizeNumber = (value: string): number => {
+  if (!value) return 0;
+  const normalized = value.replace(/,/g, '.').replace(/[^\d.-]/g, '');
+  const parsed = parseFloat(normalized);
+  return isNaN(parsed) ? 0 : Math.round(parsed * 100) / 100;
 };
 
-const calculateTowage = (loa: number) => {
-  return Math.round(loa * 45);
+const formatUSD = (value: number): string => {
+  return value.toLocaleString('en-US', { 
+    style: 'currency', 
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2 
+  });
 };
 
-const calculateDockage = (loa: number, hours: number = 24) => {
-  return Math.round(loa * 2.5 * hours);
+const formatBRL = (value: number): string => {
+  return value.toLocaleString('pt-BR', { 
+    style: 'currency', 
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2 
+  });
 };
 
-const calculateWaterway = (dwt: number) => {
-  return Math.round(dwt * 0.12);
+const formatTimestamp = (timestamp?: string): string => {
+  if (!timestamp) return '';
+  try {
+    const date = new Date(timestamp);
+    return date.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'America/Sao_Paulo'
+    }) + ' (BRT)';
+  } catch {
+    return '';
+  }
 };
 
 export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEntryFormProps) {
-  const [costs, setCosts] = useState({
-    pilotageIn: 0,
-    pilotageOut: 0,
-    towageIn: 0,
-    towageOut: 0,
-    dockage: 0,
-    waterway: 0,
-    portDues: initialData.portDues || 0,
-    security: initialData.security || 0,
-    customs: initialData.customs || 0,
+  const [costs, setCosts] = useState<CostData>({
+    pilotageIn: initialData.pilotageIn || 0,
+    towageIn: initialData.towageIn || 0,
+    lightDues: initialData.lightDues || 0,
+    dockage: initialData.dockage || 0,
+    linesman: initialData.linesman || 0,
+    launchBoat: initialData.launchBoat || 0,
     immigration: initialData.immigration || 0,
-    quarantine: initialData.quarantine || 0,
-    agencyFee: initialData.agencyFee || 2500,
-    clearance: initialData.clearance || 800,
+    freePratique: initialData.freePratique || 0,
+    shippingAssociation: initialData.shippingAssociation || 0,
+    clearance: initialData.clearance || 0,
+    paperlessPort: initialData.paperlessPort || 0,
+    agencyFee: initialData.agencyFee || 9804,
+    waterway: initialData.waterway || 0,
   });
 
-  useEffect(() => {
-    if (shipData.dwt && shipData.loa) {
-      const dwt = parseFloat(shipData.dwt);
-      const loa = parseFloat(shipData.loa);
-      
-      setCosts(prev => ({
-        ...prev,
-        pilotageIn: calculatePilotage(dwt, loa),
-        pilotageOut: calculatePilotage(dwt, loa),
-        towageIn: calculateTowage(loa),
-        towageOut: calculateTowage(loa),
-        dockage: calculateDockage(loa),
-        waterway: calculateWaterway(dwt),
-      }));
-    }
-  }, [shipData]);
+  const [comments, setComments] = useState<Record<keyof CostData, string>>(() => {
+    const defaultComments: Record<keyof CostData, string> = {
+      pilotageIn: "DWT range tariff +10% for draft ≥11m",
+      towageIn: "DWT range tariff. For reference only",
+      lightDues: "DWT range tariff. Please see details below",
+      dockage: "LOA + 30m x 1.45 x [22] hours alongside",
+      linesman: "Lumpsum charge",
+      launchBoat: "Lumpsum charge: Inbound launch hire",
+      immigration: "Inbound immigration processing",
+      freePratique: "Sanitary clearance for international arrival",
+      shippingAssociation: "Agency syndicate fee levied per vessel",
+      clearance: "Customs & Harbor Master expenses",
+      paperlessPort: "Mandatory digital port system fee",
+      agencyFee: "Lumpsum value",
+      waterway: "DWT Range x factor tariff. Please see details below"
+    };
+    return defaultComments;
+  });
 
-  const handleCostChange = (field: string, value: string) => {
-    setCosts(prev => ({ ...prev, [field]: parseFloat(value) || 0 }));
+  const [remarks, setRemarks] = useState<string>(DEFAULT_REMARKS);
+
+  const exchangeRate = parseFloat(shipData.exchangeRate || "5.25");
+
+  // Debounced calculation function
+  const debouncedCalculation = useCallback(
+    debounce((newCosts: CostData) => {
+      setCosts(newCosts);
+    }, 200),
+    []
+  );
+
+  const handleCostChange = (field: keyof CostData, value: string) => {
+    const numericValue = normalizeNumber(value);
+    const newCosts = { ...costs, [field]: numericValue };
+    debouncedCalculation(newCosts);
+  };
+
+  const handleCommentChange = (field: keyof CostData, value: string) => {
+    setComments(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -79,113 +195,152 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
   };
 
   const totalUSD = Object.values(costs).reduce((sum, cost) => sum + cost, 0);
-  const totalBRL = totalUSD * parseFloat(shipData.exchangeRate || "5.25");
+  const totalBRL = totalUSD * exchangeRate;
 
-  const costItems = [
-    { id: "pilotageIn", label: "1. Pilotage - Inbound", value: costs.pilotageIn, auto: true },
-    { id: "pilotageOut", label: "2. Pilotage - Outbound", value: costs.pilotageOut, auto: true },
-    { id: "towageIn", label: "3. Towage - Inbound", value: costs.towageIn, auto: true },
-    { id: "towageOut", label: "4. Towage - Outbound", value: costs.towageOut, auto: true },
-    { id: "dockage", label: "5. Dockage/Berth", value: costs.dockage, auto: true },
-    { id: "portDues", label: "6. Port Dues", value: costs.portDues, auto: false },
-    { id: "security", label: "7. Port Security", value: costs.security, auto: false },
-    { id: "customs", label: "8. Customs", value: costs.customs, auto: false },
-    { id: "immigration", label: "9. Immigration", value: costs.immigration, auto: false },
-    { id: "quarantine", label: "10. Quarantine", value: costs.quarantine, auto: false },
-    { id: "waterway", label: "11. Waterway Channel", value: costs.waterway, auto: true },
-    { id: "agencyFee", label: "12. Agency Fee", value: costs.agencyFee, auto: false },
-    { id: "clearance", label: "13. Clearance", value: costs.clearance, auto: false },
-  ];
+  const getBRLValue = (usdValue: number): number => {
+    return usdValue * exchangeRate;
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Exchange Rate Info Banner */}
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription className="flex items-center gap-4 flex-wrap">
+          <span>
+            <strong>Exchange Rate:</strong> {formatUSD(1)} = {formatBRL(exchangeRate).replace('R$', 'R$')}
+          </span>
+          <div className="flex items-center gap-2">
+            <ExchangeRateBadge
+              source={(shipData.exchangeRateSource as "BCB_PTAX_D1" | "MANUAL" | "PROVIDER_X") || 'MANUAL'}
+              timestamp={shipData.exchangeRateTimestamp}
+            />
+            {shipData.exchangeRateTimestamp && (
+              <span className="text-sm text-muted-foreground">
+                Atualizado: {formatTimestamp(shipData.exchangeRateTimestamp)}
+              </span>
+            )}
+          </div>
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm" 
+            onClick={onBack}
+            className="ml-auto"
+          >
+            <Edit3 className="h-3 w-3 mr-1" />
+            Alterar
+          </Button>
+        </AlertDescription>
+      </Alert>
+
+      {/* Main Cost Table */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calculator className="h-5 w-5 text-primary" />
-            Cost Breakdown - {shipData.vesselName}
+            Port Expenses - {shipData.vesselName}
           </CardTitle>
-          <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
-            <span>DWT: {shipData.dwt}t</span>
-            <span>LOA: {shipData.loa}m</span>
-            <span>Rate: {shipData.exchangeRate} BRL/USD</span>
-          </div>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="min-w-[150px]">Description</TableHead>
-                <TableHead className="min-w-[120px]">Amount (USD)</TableHead>
-                <TableHead className="hidden sm:table-cell">Type</TableHead>
-                <TableHead className="hidden md:table-cell">Notes</TableHead>
+                <TableHead className="w-12">Nº</TableHead>
+                <TableHead className="min-w-[200px]">Port Expenses</TableHead>
+                <TableHead className="min-w-[120px]">Est. Costs - USD</TableHead>
+                <TableHead className="min-w-[120px]">Est. Costs - BRL</TableHead>
+                <TableHead className="min-w-[300px]">Comments</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {costItems.map((item) => (
+              {COST_ITEMS.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell className="font-medium text-xs sm:text-sm">
-                    <div className="flex flex-col">
-                      <span>{item.label}</span>
-                      <div className="sm:hidden flex gap-2 mt-1">
-                        <Badge variant={item.auto ? "secondary" : "outline"} className="text-xs">
-                          {item.auto ? "Auto" : "Manual"}
-                        </Badge>
-                      </div>
-                    </div>
+                  <TableCell className="font-medium text-center">
+                    {item.order}
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    {item.label}
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-1 sm:gap-2">
-                      <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                    <div className="flex items-center gap-1">
+                      <DollarSign className="h-3 w-3 text-muted-foreground" />
                       <Input
-                        type="number"
-                        step="0.01"
-                        value={item.value}
+                        type="text"
+                        value={costs[item.id].toString()}
                         onChange={(e) => handleCostChange(item.id, e.target.value)}
-                        className="w-20 sm:w-32 text-xs sm:text-sm"
-                        disabled={item.auto}
+                        className="w-32"
+                        placeholder="0.00"
                       />
                     </div>
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    <Badge variant={item.auto ? "secondary" : "outline"}>
-                      {item.auto ? "Auto" : "Manual"}
-                    </Badge>
+                  <TableCell className="font-mono text-sm">
+                    {formatBRL(getBRLValue(costs[item.id]))}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {item.auto && (
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Info className="h-3 w-3" />
-                        Calculated
-                      </div>
-                    )}
+                  <TableCell>
+                    <Input
+                      type="text"
+                      value={comments[item.id]}
+                      onChange={(e) => handleCommentChange(item.id, e.target.value)}
+                      className="min-w-[250px]"
+                      placeholder="Comment..."
+                    />
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
 
-      <Card className="bg-gradient-secondary">
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            <div className="space-y-2">
-              <Label className="text-base font-semibold">Total (USD)</Label>
-              <div className="text-2xl sm:text-3xl font-bold text-primary">
-                ${totalUSD.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-base font-semibold">Total (BRL)</Label>
-              <div className="text-2xl sm:text-3xl font-bold text-accent">
-                R$ {totalBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          {/* Totals */}
+          <div className="mt-4 pt-4 border-t">
+            <div className="flex justify-end">
+              <div className="grid grid-cols-2 gap-4 w-64">
+                <div className="text-right">
+                  <Label className="text-sm font-semibold">Total USD:</Label>
+                  <div className="text-lg font-bold text-primary">
+                    {formatUSD(totalUSD)}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <Label className="text-sm font-semibold">Total BRL:</Label>
+                  <div className="text-lg font-bold text-accent">
+                    {formatBRL(totalBRL)}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Disclaimer */}
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          <strong>This communication is confidential and intended for the designated recipient(s) only. Unauthorized use or disclosure is strictly prohibited.</strong>
+        </AlertDescription>
+      </Alert>
+
+      {/* Remarks Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Remarks</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            value={remarks}
+            onChange={(e) => setRemarks(e.target.value)}
+            rows={20}
+            className="font-mono text-sm"
+            placeholder="Enter remarks here..."
+          />
+          <p className="text-xs text-muted-foreground mt-2">
+            You can edit the remarks above. Markdown formatting is supported for tables and formatting.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Navigation */}
       <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0">
         <Button type="button" variant="outline" onClick={onBack} className="w-full sm:w-auto">
           Back: Ship Data
@@ -196,4 +351,16 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
       </div>
     </form>
   );
+}
+
+// Debounce utility function
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout | null = null;
+  return (...args: Parameters<T>) => {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
 }

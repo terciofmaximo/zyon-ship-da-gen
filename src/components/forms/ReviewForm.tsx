@@ -31,19 +31,19 @@ export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
   };
 
   const costItems = [
-    { label: "1. Pilotage - Inbound", value: costData.pilotageIn },
-    { label: "2. Pilotage - Outbound", value: costData.pilotageOut },
-    { label: "3. Towage - Inbound", value: costData.towageIn },
-    { label: "4. Towage - Outbound", value: costData.towageOut },
-    { label: "5. Dockage/Berth", value: costData.dockage },
-    { label: "6. Port Dues", value: costData.portDues },
-    { label: "7. Port Security", value: costData.security },
-    { label: "8. Customs", value: costData.customs },
-    { label: "9. Immigration", value: costData.immigration },
-    { label: "10. Quarantine", value: costData.quarantine },
-    { label: "11. Waterway Channel", value: costData.waterway },
-    { label: "12. Agency Fee", value: costData.agencyFee },
-    { label: "13. Clearance", value: costData.clearance },
+    { label: "1. Pilot IN/OUT", value: costData.pilotageIn },
+    { label: "2. Towage IN/OUT", value: costData.towageIn },
+    { label: "3. Light dues", value: costData.lightDues },
+    { label: "4. Dockage (Wharfage)", value: costData.dockage },
+    { label: "5. Linesman (mooring/unmooring)", value: costData.linesman },
+    { label: "6. Launch boat (mooring/unmooring)", value: costData.launchBoat },
+    { label: "7. Immigration tax (Funapol)", value: costData.immigration },
+    { label: "8. Free pratique tax", value: costData.freePratique },
+    { label: "9. Shipping association", value: costData.shippingAssociation },
+    { label: "10. Clearance", value: costData.clearance },
+    { label: "11. Paperless Port System", value: costData.paperlessPort },
+    { label: "12. Agency fee", value: costData.agencyFee },
+    { label: "13. Waterway channel (Table I)", value: costData.waterway },
   ];
 
   return (

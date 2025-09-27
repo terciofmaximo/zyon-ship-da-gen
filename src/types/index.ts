@@ -10,22 +10,24 @@ export interface ShipData {
   departureDate?: string;
   agent?: string;
   exchangeRate: string;
+  exchangeRateSource?: string;
+  exchangeRateTimestamp?: string;
 }
 
 export interface CostData {
   pilotageIn: number;
-  pilotageOut: number;
   towageIn: number;
-  towageOut: number;
+  lightDues: number;
   dockage: number;
-  waterway: number;
-  portDues: number;
-  security: number;
-  customs: number;
+  linesman: number;
+  launchBoat: number;
   immigration: number;
-  quarantine: number;
-  agencyFee: number;
+  freePratique: number;
+  shippingAssociation: number;
   clearance: number;
+  paperlessPort: number;
+  agencyFee: number;
+  waterway: number;
 }
 
 export interface PDAData {
