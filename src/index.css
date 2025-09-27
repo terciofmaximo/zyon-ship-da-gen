@@ -139,3 +139,41 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Remarks Preview Styles */
+.remarks-preview table { 
+  width: 100%; 
+  border-collapse: collapse; 
+  margin: 8px 0; 
+}
+.remarks-preview th, 
+.remarks-preview td { 
+  border: 1px solid hsl(var(--border)); 
+  padding: 6px 8px; 
+  vertical-align: top; 
+}
+.remarks-preview th { 
+  font-weight: 600; 
+}
+.remarks-preview p { 
+  margin: 6px 0; 
+}
+
+/* Table Compact Styles */
+.table-compact tr > td,
+.table-compact tr > th { 
+  padding-top: 6px; 
+  padding-bottom: 6px; 
+  line-height: 1.2; 
+}
+.table-compact input[type="text"],
+.table-compact input[type="number"] { 
+  height: 34px; 
+  padding: 4px 8px; 
+}
+.table-compact .comment-input { 
+  padding: 4px 8px; 
+}
+.table-compact .currency-cell { 
+  white-space: nowrap; 
+}

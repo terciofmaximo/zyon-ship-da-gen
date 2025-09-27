@@ -8,8 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { Calculator, Info, AlertCircle, Edit3, DollarSign } from "lucide-react";
+import { Calculator, Info, AlertCircle, Edit3, DollarSign, Edit, Check } from "lucide-react";
 import { ExchangeRateBadge } from "@/components/ui/exchange-rate-badge";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { CostData } from "@/types";
 import type { PDAStep1Data } from "@/schemas/pdaSchema";
 
@@ -169,6 +171,7 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
   });
 
   const [remarks, setRemarks] = useState<string>(DEFAULT_REMARKS);
+  const [isEditingRemarks, setIsEditingRemarks] = useState<boolean>(false);
 
   const exchangeRate = parseFloat(shipData.exchangeRate || "5.25");
 
@@ -244,7 +247,7 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
           </CardTitle>
         </CardHeader>
         <CardContent className="overflow-x-auto">
-          <Table>
+          <Table className="table-compact">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12">Nº</TableHead>
@@ -275,7 +278,7 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                       />
                     </div>
                   </TableCell>
-                  <TableCell className="font-mono text-sm">
+                  <TableCell className="font-mono text-sm currency-cell">
                     {formatBRL(getBRLValue(costs[item.id]))}
                   </TableCell>
                   <TableCell>
@@ -283,7 +286,7 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                       type="text"
                       value={comments[item.id]}
                       onChange={(e) => handleCommentChange(item.id, e.target.value)}
-                      className="min-w-[250px]"
+                      className="min-w-[250px] comment-input"
                       placeholder="Comment..."
                     />
                   </TableCell>
@@ -324,20 +327,48 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
 
       {/* Remarks Section */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle>Remarks</CardTitle>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsEditingRemarks(!isEditingRemarks)}
+          >
+            {isEditingRemarks ? (
+              <>
+                <Check className="h-4 w-4 mr-1" />
+                Done
+              </>
+            ) : (
+              <>
+                <Edit className="h-4 w-4 mr-1" />
+                Edit
+              </>
+            )}
+          </Button>
         </CardHeader>
         <CardContent>
-          <Textarea
-            value={remarks}
-            onChange={(e) => setRemarks(e.target.value)}
-            rows={20}
-            className="font-mono text-sm"
-            placeholder="Enter remarks here..."
-          />
-          <p className="text-xs text-muted-foreground mt-2">
-            You can edit the remarks above. Markdown formatting is supported for tables and formatting.
-          </p>
+          {isEditingRemarks ? (
+            <>
+              <Textarea
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                rows={20}
+                className="font-mono text-sm"
+                placeholder="Enter remarks here..."
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                You can edit the remarks above. Markdown formatting is supported for tables and formatting.
+              </p>
+            </>
+          ) : (
+            <div className="remarks-preview prose prose-sm max-w-none">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {remarks}
+              </ReactMarkdown>
+            </div>
+          )}
         </CardContent>
       </Card>
 
