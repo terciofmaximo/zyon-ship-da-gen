@@ -59,6 +59,7 @@ export default function PdaCreationStep1() {
       date: format(new Date(), "yyyy-MM-dd"),
       exchangeRate: "5.25",
       exchangeRateSource: "MANUAL",
+      exchangeRateSourceUrl: "",
       exchangeRateTimestamp: "",
     },
   });
@@ -67,6 +68,7 @@ export default function PdaCreationStep1() {
   const vesselName = watch("vesselName");
   const exchangeRate = watch("exchangeRate");
   const exchangeRateSource = watch("exchangeRateSource");
+  const exchangeRateSourceUrl = watch("exchangeRateSourceUrl");
   const exchangeRateTimestamp = watch("exchangeRateTimestamp");
 
   useEffect(() => {
@@ -97,7 +99,15 @@ export default function PdaCreationStep1() {
   const handleExchangeRateChange = (value: string) => {
     setValue("exchangeRate", value);
     setValue("exchangeRateSource", "MANUAL");
+    setValue("exchangeRateSourceUrl", "");
     setValue("exchangeRateTimestamp", "");
+  };
+
+  const handleSourceUrlChange = (value: string) => {
+    setValue("exchangeRateSourceUrl", value);
+    if (value.trim()) {
+      setValue("exchangeRateSource", "PROVIDER_X");
+    }
   };
 
   const handleToChange = (value: string) => {
@@ -139,7 +149,7 @@ export default function PdaCreationStep1() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <FormField
                   control={form.control}
                   name="from"
@@ -161,14 +171,10 @@ export default function PdaCreationStep1() {
                     <FormItem>
                       <FormLabel>To *</FormLabel>
                       <FormControl>
-                        <Combobox
-                          options={clients}
-                          value={field.value}
-                          onValueChange={handleToChange}
-                          placeholder="Select or type recipient"
-                          searchPlaceholder="Search clients..."
-                          emptyMessage="No clients found. You can type a custom name."
-                          allowCustom={true}
+                        <Input
+                          {...field}
+                          placeholder="Type recipient name..."
+                          onChange={(e) => handleToChange(e.target.value)}
                         />
                       </FormControl>
                       <FormMessage />
@@ -221,6 +227,24 @@ export default function PdaCreationStep1() {
                           timestamp={exchangeRateTimestamp}
                         />
                       </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="exchangeRateSourceUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Exchange Rate Source (optional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Paste link or source info here..."
+                          onChange={(e) => handleSourceUrlChange(e.target.value)}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
