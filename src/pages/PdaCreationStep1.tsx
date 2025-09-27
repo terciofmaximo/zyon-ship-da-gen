@@ -2,31 +2,41 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { Ship, MapPin, Calendar, Check, ChevronsUpDown, DollarSign } from "lucide-react";
+import { Ship, MapPin, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Combobox } from "@/components/ui/combobox";
+import { ExchangeRateBadge } from "@/components/ui/exchange-rate-badge";
 import { cn, formatRange } from "@/lib/utils";
 import { VESSEL_TYPES } from "@/lib/vesselData";
 import { pdaStep1Schema, type PDAStep1Data } from "@/schemas/pdaSchema";
 
 const clients = [
-  "Vale S.A.",
-  "Petrobras",
-  "Cargill",
-  "ADM",
-  "Bunge",
-  "Santos Brasil",
-  "Terminal de Contêineres de Paranaguá",
+  { value: "vale-sa", label: "Vale S.A." },
+  { value: "petrobras", label: "Petrobras" },
+  { value: "cargill", label: "Cargill" },
+  { value: "adm", label: "ADM" },
+  { value: "bunge", label: "Bunge" },
+  { value: "santos-brasil", label: "Santos Brasil" },
+  { value: "tcp", label: "Terminal de Contêineres de Paranaguá" },
+];
+
+const vesselSuggestions = [
+  { value: "MV Handysize TBN", label: "MV Handysize TBN" },
+  { value: "MV Handymax TBN", label: "MV Handymax TBN" },
+  { value: "MV Panamax TBN", label: "MV Panamax TBN" },
+  { value: "MV Capesize TBN", label: "MV Capesize TBN" },
+  { value: "MV Valemax TBN", label: "MV Valemax TBN" },
+  { value: "MT Coastal Tanker", label: "MT Coastal Tanker" },
+  { value: "MT Aframax", label: "MT Aframax" },
+  { value: "MT Suezmax", label: "MT Suezmax" },
+  { value: "MT VLCC", label: "MT VLCC" },
+  { value: "MT ULCC", label: "MT ULCC" },
 ];
 
 export default function PdaCreationStep1() {
-  const [open, setOpen] = useState(false);
   const [selectedVessel, setSelectedVessel] = useState<string>("");
 
   const form = useForm<PDAStep1Data>({
@@ -45,13 +55,19 @@ export default function PdaCreationStep1() {
       quantity: "",
       from: "Zyon Shipping",
       to: "",
+      toClientId: "",
       date: format(new Date(), "yyyy-MM-dd"),
       exchangeRate: "5.25",
+      exchangeRateSource: "MANUAL",
+      exchangeRateTimestamp: "",
     },
   });
 
   const { setValue, watch } = form;
   const vesselName = watch("vesselName");
+  const exchangeRate = watch("exchangeRate");
+  const exchangeRateSource = watch("exchangeRateSource");
+  const exchangeRateTimestamp = watch("exchangeRateTimestamp");
 
   useEffect(() => {
     if (vesselName && vesselName !== selectedVessel) {
@@ -66,6 +82,35 @@ export default function PdaCreationStep1() {
       }
     }
   }, [vesselName, selectedVessel, setValue]);
+
+  // Simulate fetching exchange rate from BCB PTAX
+  const fetchExchangeRate = async () => {
+    // Simulate API call
+    const mockRate = "5.42";
+    const timestamp = new Date().toISOString();
+    
+    setValue("exchangeRate", mockRate);
+    setValue("exchangeRateSource", "BCB_PTAX_D1");
+    setValue("exchangeRateTimestamp", timestamp);
+  };
+
+  const handleExchangeRateChange = (value: string) => {
+    setValue("exchangeRate", value);
+    setValue("exchangeRateSource", "MANUAL");
+    setValue("exchangeRateTimestamp", "");
+  };
+
+  const handleToChange = (value: string) => {
+    setValue("to", value);
+    
+    // Check if value matches a client
+    const client = clients.find(c => c.label === value);
+    if (client) {
+      setValue("toClientId", client.value);
+    } else {
+      setValue("toClientId", "");
+    }
+  };
 
   const onSubmit = (data: PDAStep1Data) => {
     console.log("PDA Step 1 Data:", data);
@@ -115,20 +160,17 @@ export default function PdaCreationStep1() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>To *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select client" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {clients.map((client) => (
-                            <SelectItem key={client} value={client}>
-                              {client}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <Combobox
+                          options={clients}
+                          value={field.value}
+                          onValueChange={handleToChange}
+                          placeholder="Select or type recipient"
+                          searchPlaceholder="Search clients..."
+                          emptyMessage="No clients found. You can type a custom name."
+                          allowCustom={true}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -153,10 +195,32 @@ export default function PdaCreationStep1() {
                   name="exchangeRate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Exchange Rate (USD/BRL) *</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.01" {...field} />
-                      </FormControl>
+                      <FormLabel className="flex items-center gap-2">
+                        Exchange Rate (USD/BRL) *
+                        <Button
+                          type="button"
+                          variant="link"
+                          size="sm"
+                          className="h-auto p-0 text-xs"
+                          onClick={fetchExchangeRate}
+                        >
+                          Fetch Latest
+                        </Button>
+                      </FormLabel>
+                      <div className="space-y-2">
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={field.value}
+                            onChange={(e) => handleExchangeRateChange(e.target.value)}
+                          />
+                        </FormControl>
+                        <ExchangeRateBadge
+                          source={exchangeRateSource}
+                          timestamp={exchangeRateTimestamp}
+                        />
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -179,57 +243,19 @@ export default function PdaCreationStep1() {
                     control={form.control}
                     name="vesselName"
                     render={({ field }) => (
-                      <FormItem className="flex flex-col">
+                      <FormItem>
                         <FormLabel>Ship's Name *</FormLabel>
-                        <Popover open={open} onOpenChange={setOpen}>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                role="combobox"
-                                aria-expanded={open}
-                                className={cn(
-                                  "w-full justify-between",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value
-                                  ? VESSEL_TYPES.find((vessel) => vessel.classification === field.value)?.classification
-                                  : "e.g. MV Panamax TBN"}
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-full p-0 bg-popover border border-border shadow-medium" align="start">
-                            <Command className="bg-popover">
-                              <CommandInput placeholder="Search ship type..." className="h-9" />
-                              <CommandList>
-                                <CommandEmpty>No ship type found.</CommandEmpty>
-                                <CommandGroup>
-                                  {VESSEL_TYPES.map((vessel) => (
-                                    <CommandItem
-                                      key={vessel.classification}
-                                      value={vessel.classification}
-                                      onSelect={(currentValue) => {
-                                        field.onChange(currentValue === field.value ? "" : currentValue);
-                                        setOpen(false);
-                                      }}
-                                      className="hover:bg-accent hover:text-accent-foreground"
-                                    >
-                                      {vessel.classification}
-                                      <Check
-                                        className={cn(
-                                          "ml-auto h-4 w-4",
-                                          field.value === vessel.classification ? "opacity-100" : "opacity-0"
-                                        )}
-                                      />
-                                    </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
+                        <FormControl>
+                          <Combobox
+                            options={vesselSuggestions}
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            placeholder="e.g. MV Panamax TBN"
+                            searchPlaceholder="Type vessel name..."
+                            emptyMessage="No suggestions found. You can type any vessel name."
+                            allowCustom={true}
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}

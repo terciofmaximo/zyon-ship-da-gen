@@ -43,14 +43,16 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarContent className="bg-sidebar">
-        {/* Logo Section */}
-        <div className="flex items-center justify-center px-4 py-4 sm:py-6">
-          <img 
-            src={zyonLogoFinal} 
-            alt="Zyon Shipping" 
-            className="h-8 sm:h-10 w-auto max-w-full"
-          />
-        </div>
+        {/* Logo Section - only show when expanded */}
+        {!collapsed && (
+          <div className="flex items-center justify-center px-4 py-4 sm:py-6">
+            <img 
+              src={zyonLogoFinal} 
+              alt="Zyon Shipping" 
+              className="h-8 sm:h-10 w-auto max-w-full"
+            />
+          </div>
+        )}
 
         {/* Navigation Menu */}
         <SidebarGroup>
