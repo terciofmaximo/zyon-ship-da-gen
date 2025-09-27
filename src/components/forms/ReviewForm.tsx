@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FileText, Download, Send, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import type { CostData } from "@/types";
 import type { PDAStep1Data } from "@/schemas/pdaSchema";
 
@@ -14,15 +15,16 @@ interface ReviewFormProps {
 }
 
 export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
+  const { toast } = useToast();
   const totalUSD = Object.values(costData).reduce((sum: number, cost: number) => sum + (cost || 0), 0);
   const totalBRL = totalUSD * parseFloat(shipData.exchangeRate || "5.25");
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [showDownloadMessage, setShowDownloadMessage] = useState(false);
 
   const generateAndDownloadPdaPdf = async (pdaId: string) => {
+    console.info('[PDF] click', { pdaId });
+    
     try {
-      console.info('[PDA] Generate PDF click', { pdaId });
-      
       const response = await fetch(`https://hxdrffemnrxklrrfnllo.supabase.co/functions/v1/generate-pda-pdf`, {
         method: 'POST',
         headers: {
@@ -30,6 +32,7 @@ export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
           'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4ZHJmZmVtbnJ4a2xycmZubGxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MjI3MjgsImV4cCI6MjA3NDQ5ODcyOH0.LIwvXuk48EK5NQyse0XtJpOPRUQtBqegX9loVtbvq4g`,
           'Accept': 'application/pdf'
         },
+        credentials: 'include',
         body: JSON.stringify({
           shipData,
           costData,
@@ -42,15 +45,46 @@ export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
         }),
       });
 
-      const disp = response.headers.get('Content-Disposition') || '';
-      
-      // Case 1: PDF stream response
-      if (response.ok && response.headers.get('Content-Type')?.includes('application/pdf')) {
+      const ct = response.headers.get('Content-Type') || '';
+      const cd = response.headers.get('Content-Disposition') || '';
+      console.info('[PDF] response', { 
+        status: response.status, 
+        ct, 
+        cd, 
+        redirected: response.redirected,
+        ok: response.ok 
+      });
+
+      // Diagnostic reporting
+      let diagnosis = '';
+      let evidence = '';
+      let correctionPlan = '';
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          diagnosis = 'API_NOT_FOUND';
+          evidence = `Status 404 - Endpoint not found`;
+          correctionPlan = '1. Verify edge function deployment\n2. Check function URL path\n3. Ensure function is accessible';
+        } else if (response.status >= 500) {
+          diagnosis = 'API_ERROR';
+          evidence = `Status ${response.status} - Server error`;
+          correctionPlan = '1. Check edge function logs\n2. Verify external API dependencies\n3. Fix server-side errors';
+        } else {
+          diagnosis = 'API_ERROR';
+          evidence = `Status ${response.status} - HTTP error`;
+          correctionPlan = '1. Check API authentication\n2. Verify request headers\n3. Review API permissions';
+        }
+      } else if (response.redirected) {
+        diagnosis = 'REDIRECTED_HTML';
+        evidence = 'Response was redirected, losing headers';
+        correctionPlan = '1. Fix redirect to respond 200 directly\n2. Ensure proper Content-Type headers\n3. Avoid server-side redirects';
+      } else if (ct.includes('application/pdf')) {
+        // PDF stream case
         const blob = await response.blob();
         setPdfBlob(blob);
         
         const url = URL.createObjectURL(blob);
-        const filename = /filename="([^"]+)"/.exec(disp)?.[1] || generateFilename();
+        const filename = /filename="([^"]+)"/.exec(cd)?.[1] || generateFilename();
         const a = document.createElement('a');
         a.href = url;
         a.download = filename;
@@ -60,25 +94,76 @@ export function ReviewForm({ onBack, shipData, costData }: ReviewFormProps) {
         URL.revokeObjectURL(url);
         
         setShowDownloadMessage(true);
+        toast({ title: "PDF gerado e baixado com sucesso" });
+        console.info('[PDF] Success - Stream download completed');
         return;
+      } else if (ct.includes('application/json')) {
+        // JSON with fileUrl case
+        const data = await response.json();
+        if (data?.fileUrl) {
+          const a = document.createElement('a');
+          a.href = data.fileUrl;
+          a.download = data.filename || generateFilename();
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          toast({ title: "PDF baixado pelo link" });
+          console.info('[PDF] Success - URL download completed');
+          return;
+        } else {
+          diagnosis = 'NO_FILE_URL';
+          evidence = 'JSON response without fileUrl property';
+          correctionPlan = '1. Include fileUrl in JSON response\n2. Generate signed URL for file access\n3. Enable CORS for file domain';
+        }
+      } else {
+        diagnosis = 'WRONG_CONTENT_TYPE';
+        evidence = `Content-Type: ${ct} (expected application/pdf or application/json)`;
+        correctionPlan = '1. Set Content-Type: application/pdf for stream\n2. Or return JSON with fileUrl\n3. Add Content-Disposition headers';
       }
 
-      // Case 2: JSON response with fileUrl
-      const data = await response.json();
-      if (data?.fileUrl) {
-        const a = document.createElement('a');
-        a.href = data.fileUrl;
-        a.download = data.filename || generateFilename();
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        return;
+      // Log structured diagnostic report
+      const diagnosticReport = {
+        diagnosis,
+        evidence,
+        correctionPlan: correctionPlan.split('\n'),
+        responseDetails: { status: response.status, contentType: ct, redirected: response.redirected }
+      };
+
+      console.error('[PDF] Diagnostic Report:', diagnosticReport);
+      toast({ 
+        title: `PDF: ${diagnosis}`, 
+        description: "Ver console para detalhes do diagnóstico",
+        variant: "destructive"
+      });
+
+    } catch (error: any) {
+      let diagnosis = '';
+      let evidence = '';
+      let correctionPlan = '';
+
+      if (error.message?.includes('Failed to fetch') || error.message?.includes('CORS')) {
+        diagnosis = 'CORS_BLOCKED';
+        evidence = 'Network error or CORS policy blocking request';
+        correctionPlan = '1. Add CORS headers to edge function\n2. Verify domain whitelist\n3. Check network connectivity';
+      } else {
+        diagnosis = 'NETWORK_ERROR';
+        evidence = error.message || 'Unknown network error';
+        correctionPlan = '1. Check internet connection\n2. Verify API endpoint\n3. Review request configuration';
       }
 
-      throw new Error(`Unexpected response: ${response.status}`);
-    } catch (error) {
-      console.error('[PDA] Generate PDF error', error);
-      // Add toast notification for error
+      const diagnosticReport = {
+        diagnosis,
+        evidence,
+        correctionPlan: correctionPlan.split('\n'),
+        error: error.message
+      };
+
+      console.error('[PDF] Diagnostic Report:', diagnosticReport);
+      toast({ 
+        title: `PDF: ${diagnosis}`, 
+        description: "Ver console para detalhes do diagnóstico",
+        variant: "destructive"
+      });
     }
   };
 
