@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate, Link, useBlocker } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FDALedgerTable } from "@/components/fda/FDALedgerTable";
 import { Button } from "@/components/ui/button";
@@ -44,11 +44,18 @@ export default function FDADetail() {
     client_share_pct: 0,
   });
 
-  // Block navigation when there are unsaved changes
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) =>
-      isDirty && currentLocation.pathname !== nextLocation.pathname
-  );
+  // Warn on browser close/refresh when there are unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
 
   useEffect(() => {
     if (id) {
@@ -628,49 +635,6 @@ export default function FDADetail() {
             </Button>
             <Button onClick={handlePost} disabled={loading}>
               {loading ? "Posting..." : "Post FDA"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Unsaved Changes Dialog */}
-      <Dialog open={blocker.state === "blocked"} onOpenChange={() => {}}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Unsaved Changes</DialogTitle>
-            <DialogDescription>
-              You have unsaved changes. Would you like to save before leaving?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setIsDirty(false);
-                blocker.proceed?.();
-              }}
-            >
-              Leave without saving
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => blocker.reset?.()}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={async () => {
-                await handleSaveDraft();
-                blocker.proceed?.();
-              }}
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="mr-2 h-4 w-4" />
-              )}
-              Save & leave
             </Button>
           </DialogFooter>
         </DialogContent>
