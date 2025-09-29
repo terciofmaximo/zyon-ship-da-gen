@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrg } from "@/context/OrgProvider";
+import { useTenant } from "@/context/TenantProvider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { Copy, UserPlus } from "lucide-react";
 
 export function InviteMemberDialog() {
   const { activeOrg } = useOrg();
+  const { primaryDomain, tenantSlug } = useTenant();
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("viewer");
@@ -19,6 +21,22 @@ export function InviteMemberDialog() {
 
   const generateToken = () => {
     return Math.random().toString(36).substring(2) + Date.now().toString(36);
+  };
+
+  const generateInviteLink = (token: string): string => {
+    const hostname = window.location.hostname;
+    const isDev = hostname === 'localhost' || hostname.includes('127.0.0.1') || hostname.includes('lovableproject.com');
+    
+    if (isDev) {
+      // Development: use /t/{slug} pattern
+      return `${window.location.origin}/t/${tenantSlug}/auth/accept-invite?token=${token}`;
+    } else if (primaryDomain) {
+      // Production: use tenant's primary domain
+      return `https://${primaryDomain}/auth/accept-invite?token=${token}`;
+    } else {
+      // Fallback
+      return `${window.location.origin}/auth/accept-invite?token=${token}`;
+    }
   };
 
   const handleInvite = async () => {
@@ -42,7 +60,7 @@ export function InviteMemberDialog() {
 
       if (error) throw error;
 
-      const link = `${window.location.origin}/invite?token=${token}`;
+      const link = generateInviteLink(token);
       setInviteLink(link);
       
       toast({

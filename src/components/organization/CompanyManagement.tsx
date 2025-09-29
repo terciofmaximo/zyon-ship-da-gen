@@ -55,6 +55,7 @@ type Company = {
   id: string;
   name: string;
   slug: string;
+  primary_domain?: string;
   created_at: string;
 };
 
@@ -90,7 +91,7 @@ export function CompanyManagement() {
     try {
       const { data, error } = await supabase
         .from("organizations")
-        .select("id, name, slug, created_at")
+        .select("id, name, slug, primary_domain, created_at")
         .order("name");
 
       if (error) throw error;
@@ -678,6 +679,7 @@ export function CompanyManagement() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Slug</TableHead>
+                  <TableHead>Primary Domain</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -690,6 +692,21 @@ export function CompanyManagement() {
                       <code className="text-xs bg-muted px-2 py-1 rounded">
                         {company.slug}
                       </code>
+                    </TableCell>
+                    <TableCell>
+                      {company.primary_domain ? (
+                        <a 
+                          href={`https://${company.primary_domain}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                        >
+                          <Globe className="h-3 w-3" />
+                          {company.primary_domain}
+                        </a>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Not configured</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {new Date(company.created_at).toLocaleDateString()}

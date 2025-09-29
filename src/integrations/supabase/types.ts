@@ -416,6 +416,7 @@ export type Database = {
           id: string
           name: string
           owner_user_id: string | null
+          primary_domain: string | null
           slug: string
         }
         Insert: {
@@ -423,6 +424,7 @@ export type Database = {
           id?: string
           name: string
           owner_user_id?: string | null
+          primary_domain?: string | null
           slug: string
         }
         Update: {
@@ -430,6 +432,7 @@ export type Database = {
           id?: string
           name?: string
           owner_user_id?: string | null
+          primary_domain?: string | null
           slug?: string
         }
         Relationships: []
@@ -581,6 +584,33 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_settings: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           created_at: string | null
@@ -648,6 +678,20 @@ export type Database = {
       generate_pda_number: {
         Args: { p_tenant_id: string }
         Returns: string
+      }
+      generate_primary_domain: {
+        Args: { org_slug: string }
+        Returns: string
+      }
+      get_tenant_by_hostname: {
+        Args: { hostname: string }
+        Returns: {
+          id: string
+          name: string
+          owner_user_id: string
+          primary_domain: string
+          slug: string
+        }[]
       }
       get_tenant_by_slug: {
         Args: { tenant_slug: string }
