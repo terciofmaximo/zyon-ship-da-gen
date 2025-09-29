@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { getGlobalPortOptions, getGlobalTerminalOptions, getGlobalBerthOptions, hasGlobalTerminals, hasGlobalBerths } from "@/services/globalPortDirectory";
 
 interface PortDirectoryState {
@@ -45,7 +45,7 @@ export function usePortDirectory() {
     loadPorts();
   }, []);
 
-  const updatePortSelection = async (port: string, onPortChange?: (port: string) => void, onTerminalChange?: (terminal: string) => void, onBerthChange?: (berth: string) => void) => {
+  const updatePortSelection = useCallback(async (port: string, onPortChange?: (port: string) => void, onTerminalChange?: (terminal: string) => void, onBerthChange?: (berth: string) => void) => {
     try {
       const newTerminalOptions = port ? await getGlobalTerminalOptions(port) : [];
       const showTerminal = port ? await hasGlobalTerminals(port) : false;
@@ -74,9 +74,9 @@ export function usePortDirectory() {
     } catch (error) {
       console.error("Error updating port selection:", error);
     }
-  };
+  }, []);
 
-  const updateTerminalSelection = async (terminal: string, onTerminalChange?: (terminal: string) => void, onBerthChange?: (berth: string) => void) => {
+  const updateTerminalSelection = useCallback(async (terminal: string, onTerminalChange?: (terminal: string) => void, onBerthChange?: (berth: string) => void) => {
     try {
       const newBerthOptions = state.selectedPort && terminal ? await getGlobalBerthOptions(state.selectedPort, terminal) : [];
       const showBerth = state.selectedPort && terminal ? await hasGlobalBerths(state.selectedPort, terminal) : false;
@@ -99,18 +99,18 @@ export function usePortDirectory() {
     } catch (error) {
       console.error("Error updating terminal selection:", error);
     }
-  };
+  }, [state.selectedPort]);
 
-  const updateBerthSelection = (berth: string, onBerthChange?: (berth: string) => void) => {
+  const updateBerthSelection = useCallback((berth: string, onBerthChange?: (berth: string) => void) => {
     setState(prev => ({
       ...prev,
       selectedBerth: berth
     }));
 
     onBerthChange?.(berth);
-  };
+  }, []);
 
-  const initialize = async (port: string = "", terminal: string = "", berth: string = "") => {
+  const initialize = useCallback(async (port: string = "", terminal: string = "", berth: string = "") => {
     if (port) {
       try {
         const terminalOptions = await getGlobalTerminalOptions(port);
@@ -146,13 +146,13 @@ export function usePortDirectory() {
         console.error("Error initializing port directory:", error);
       }
     }
-  };
+  }, []);
 
-  return {
+  return useMemo(() => ({
     ...state,
     updatePortSelection,
     updateTerminalSelection,
     updateBerthSelection,
     initialize
-  };
+  }), [state, updatePortSelection, updateTerminalSelection, updateBerthSelection, initialize]);
 }

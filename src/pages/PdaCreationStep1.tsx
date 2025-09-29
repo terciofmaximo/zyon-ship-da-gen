@@ -172,7 +172,8 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
     if (currentPort || currentTerminal || currentBerth) {
       portState.initialize(currentPort, currentTerminal, currentBerth);
     }
-  }, [portState]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Simulate fetching exchange rate from BCB PTAX
   const fetchExchangeRate = async () => {
