@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { FDALedger } from '@/types/fda';
 import Decimal from 'decimal.js';
+import * as Portal from '@radix-ui/react-portal';
 
 interface FDALedgerTableProps {
   fdaId: string;
@@ -56,6 +57,7 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
   const [insertModalOpen, setInsertModalOpen] = useState(false);
   const [sortField, setSortField] = useState<string>('line_no');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [openDatePickers, setOpenDatePickers] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -165,6 +167,29 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
     }
   }, [fullLedger, fdaId, exchangeRate, onLedgerUpdate, toast]);
 
+  // Debounced save for date picker
+  const [saveTimeouts, setSaveTimeouts] = useState<Record<string, NodeJS.Timeout>>({});
+  
+  const debouncedSave = useCallback((lineId: string, field: string, value: any) => {
+    // Clear existing timeout for this field
+    const key = `${lineId}-${field}`;
+    if (saveTimeouts[key]) {
+      clearTimeout(saveTimeouts[key]);
+    }
+    
+    // Set new timeout
+    const timeout = setTimeout(() => {
+      saveLineChange(lineId, field, value);
+      setSaveTimeouts(prev => {
+        const newTimeouts = { ...prev };
+        delete newTimeouts[key];
+        return newTimeouts;
+      });
+    }, 250);
+    
+    setSaveTimeouts(prev => ({ ...prev, [key]: timeout }));
+  }, [saveLineChange, saveTimeouts]);
+
   // Debounced save
   useEffect(() => {
     if (editingCell) {
@@ -217,11 +242,12 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
         // Only "Agency fee" gets green, all others red
         const isAgencyFee = line.category?.toLowerCase() === 'agency fee';
         const rowBgColor = isAgencyFee ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100';
+        const datePickerKey = `date-${line.id}`;
         
         return (
           <div
             key={line.id}
-            className={`grid grid-cols-7 gap-2 p-2 border rounded-md text-sm ${rowBgColor}`}
+            className={`grid grid-cols-8 gap-2 p-2 border rounded-md text-sm ${rowBgColor}`}
           >
             {/* Line # */}
             <div className="text-center font-mono text-gray-600">
@@ -258,24 +284,62 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
               placeholder="Invoice #"
             />
 
-            {/* Due Date */}
-            <Popover>
+            {/* Due Date - Controlled Popover */}
+            <Popover 
+              open={openDatePickers[datePickerKey] || false}
+              onOpenChange={(open) => {
+                setOpenDatePickers(prev => ({ ...prev, [datePickerKey]: open }));
+              }}
+              modal
+            >
               <PopoverTrigger asChild>
-                <Button variant="outline" className="h-8 px-2 text-left font-normal">
+                <Button 
+                  variant="outline" 
+                  className="h-8 px-2 text-left font-normal w-full"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={() => setOpenDatePickers(prev => ({ ...prev, [datePickerKey]: true }))}
+                >
                   {line.due_date ? format(new Date(line.due_date), 'MM/dd/yyyy') : 'Select date'}
-                  <Calendar className="ml-1 h-3 w-3" />
+                  <Calendar className="ml-auto h-3 w-3" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <CalendarComponent
-                  mode="single"
-                  selected={line.due_date ? new Date(line.due_date) : undefined}
-                  onSelect={(date) => 
-                    handleCellEdit(line.id, 'due_date', date?.toISOString().split('T')[0] || null)
-                  }
-                  initialFocus
-                />
-              </PopoverContent>
+              <Portal.Root>
+                <PopoverContent 
+                  className="w-auto p-0 z-50"
+                  align="start"
+                  side="bottom"
+                  sideOffset={4}
+                  collisionPadding={8}
+                  onPointerDownOutside={(e) => {
+                    // Allow closing when clicking outside
+                    setOpenDatePickers(prev => ({ ...prev, [datePickerKey]: false }));
+                  }}
+                  onEscapeKeyDown={() => {
+                    setOpenDatePickers(prev => ({ ...prev, [datePickerKey]: false }));
+                  }}
+                >
+                  <CalendarComponent
+                    mode="single"
+                    selected={line.due_date ? new Date(line.due_date) : undefined}
+                    onSelect={(date) => {
+                      if (date) {
+                        const isoDate = date.toISOString().split('T')[0];
+                        // Update local state immediately
+                        const updatedLedger = fullLedger.map(l => 
+                          l.id === line.id ? { ...l, due_date: isoDate } : l
+                        );
+                        setFullLedger(updatedLedger);
+                        // Close popover
+                        setOpenDatePickers(prev => ({ ...prev, [datePickerKey]: false }));
+                        // Debounced save to DB
+                        debouncedSave(line.id, 'due_date', isoDate);
+                      }
+                    }}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Portal.Root>
             </Popover>
 
             {/* Paid/Received Checkbox */}
@@ -286,12 +350,12 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
               />
             </div>
 
-            {/* Details Button */}
+            {/* Details Link */}
             <div className="flex items-center justify-center">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="h-8 px-3"
+                className="h-8 px-2 text-xs"
                 onClick={() => navigate(`/fda/${fdaId}/line/${line.id}`)}
               >
                 <ExternalLink className="h-3 w-3 mr-1" />
@@ -325,7 +389,7 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
       </CardHeader>
       <CardContent>
         {/* Column Headers */}
-        <div className="grid grid-cols-7 gap-2 p-2 mb-2 text-sm font-medium text-gray-700 bg-gray-50 rounded">
+        <div className="grid grid-cols-8 gap-2 p-2 mb-2 text-sm font-medium text-gray-700 bg-gray-50 rounded">
           <Button
             variant="ghost"
             size="sm"
