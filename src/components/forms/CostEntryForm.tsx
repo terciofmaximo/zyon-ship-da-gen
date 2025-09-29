@@ -188,16 +188,19 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
     exchangeRate: shipData.exchangeRate || '',
     onCostsUpdate: (autoCosts, meta) => {
       // Only update costs that haven't been manually edited
-      const updatedCosts = { ...costs };
-      
-      Object.entries(autoCosts).forEach(([key, value]) => {
-        const costKey = key as keyof CostData;
-        if (!manuallyEdited[costKey] && meta[costKey as keyof typeof meta]?.isAuto) {
-          updatedCosts[costKey] = value as number;
-        }
+      setCosts(prevCosts => {
+        const updatedCosts = { ...prevCosts };
+        
+        Object.entries(autoCosts).forEach(([key, value]) => {
+          const costKey = key as keyof CostData;
+          // Only auto-update if not manually edited
+          if (!manuallyEdited[costKey] && meta[costKey as keyof typeof meta]?.isAuto) {
+            updatedCosts[costKey] = value as number;
+          }
+        });
+        
+        return updatedCosts;
       });
-      
-      setCosts(updatedCosts);
     }
   });
 
@@ -321,12 +324,13 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                         <DollarSign className="h-3 w-3 text-muted-foreground" />
                         <Input
                           type="text"
-                          value={costs[item.id].toString()}
+                          value={costs[item.id] === 0 ? '' : costs[item.id].toString()}
                           onChange={(e) => handleCostChange(item.id, e.target.value)}
                           className="w-32"
                           placeholder="0.00"
+                          disabled={false}
                         />
-                        {autoPricingState.meta[item.id as keyof typeof autoPricingState.meta]?.isAuto && (
+                        {autoPricingState.meta[item.id as keyof typeof autoPricingState.meta]?.isAuto && !manuallyEdited[item.id] && (
                           <Badge variant="secondary" className="text-xs">auto</Badge>
                         )}
                       </div>
