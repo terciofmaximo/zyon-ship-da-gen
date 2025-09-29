@@ -1,4 +1,9 @@
 {
+  "Alumar": {
+    "terminals": {
+      "Alumar": { "berths": ["I", "II"] }
+    }
+  },
   "Santos": {
     "terminals": {
       "ADM": { "berths": ["39"] },
@@ -30,7 +35,7 @@
       "Anchorage Area": { "berths": ["Anchorage Area"] },
       "Jurong": { "berths": ["South Quay Extension"] },
       "PEIU": { "berths": ["206"] },
-      "Samarco  Ponta Ubu": { "berths": ["East Side","Terminal de Cargas Diversas","West Side"] },
+      "Samarco  Ponta Ubu": { "berths": ["East Side","Terminal de Cargas Diversas ","Terminal de Cargas Diversas","West Side"] },
       "Terminal da Ilha do Principe (FLEXIBRAS)": { "berths": ["906"] },
       "Terminal de Barra do Riacho  PETROBRAS": { "berths": ["BR501","BR502"] },
       "Terminal de Barra do Riacho  PORTOCEL": { "berths": ["1","2","3"] },
@@ -110,6 +115,58 @@
     "terminals": {
       "Itacoatiara  Hermasa": { "berths": ["Anchorage", "Hermasa", "Hermasa 2"] },
       "Novo Remanso": { "berths": ["TGSA"] }
+    }
+  },
+  "Itaqui": {
+    "terminals": {
+      "Itaqui": { "berths": ["099", "100", "101", "102", "103", "104", "105", "106", "108", "Anchorage"] }
+    }
+  },
+  "Ponta da Madeira": {
+    "terminals": {
+      "Ponta da Madeira": { "berths": ["PDM I", "PDM III N", "PDM III S", "PDM IV N", "PDM IV S"] }
+    }
+  },
+  "São Sebastião": {
+    "terminals": {
+      "São Sebastião": { "berths": ["CN1", "CN2", "CN3", "CN4", "Commercial Quay", "CS1", "CS2"] },
+      "Tebar": { "berths": ["Pier 1", "Pier 1, 2, 3 and 4", "Pier 2", "Pier 3", "Pier 4"] }
+    }
+  },
+  "Suape": {
+    "terminals": {
+      "Externa": { "berths": ["PGL1A", "PGL1B", "PGL2A", "PGL2B", "PGL3A", "PGL3B"] },
+      "Interna": { "berths": ["EAS Dique", "EAS1S", "Pier 01", "Pier 02", "Pier 03", "Pier 04", "Pier 05", "Vard Dique"] },
+      "Suape":   { "berths": ["Fundeadouro"] }
+    }
+  },
+  "Tramandaí": {
+    "terminals": {
+      "Transpetro": { "berths": ["Monobóia 601", "Monobóia 602"] }
+    }
+  },
+  "Trombetas": {
+    "terminals": {
+      "Trombetas": { "berths": ["Trombetas"] }
+    }
+  },
+  "Vila do Conde": {
+    "terminals": {
+      "Commercial Quay": {
+        "berths": [
+          "Anchorage",
+          "Berth 101  TGS Externo",
+          "Berth 102  TGS Interno",
+          "Berth 201  TGS Externo",
+          "Berth 202  TGS Interno",
+          "Berth 301  TGS Externo",
+          "Berth 401  TGS Externo",
+          "Berth 402  TGS Interno",
+          "Berth 501 TGL Externo",
+          "Commercial Quay > Berth 503  TGL Externo",
+          "Mega Logística  Bóias "
+        ]
+      }
     }
   }
 }

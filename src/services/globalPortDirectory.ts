@@ -16,6 +16,13 @@ interface GlobalPortDirectory {
 
 let globalPortDirectoryCache: GlobalPortDirectory | null = null;
 
+/**
+ * Invalidates the cache to force reload of port directory data
+ */
+export const invalidatePortDirectoryCache = (): void => {
+  globalPortDirectoryCache = null;
+};
+
 export const loadGlobalPortDirectory = async (): Promise<GlobalPortDirectory> => {
   if (globalPortDirectoryCache) {
     return globalPortDirectoryCache;

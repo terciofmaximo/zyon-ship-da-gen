@@ -32,10 +32,15 @@ export function usePortDirectory() {
     berthHint: "Selecione um Terminal primeiro."
   });
 
-  // Load initial port options
+// Load initial port options
   useEffect(() => {
     const loadPorts = async () => {
       try {
+        // Invalidate cache to ensure fresh data after merge
+        const { invalidatePortDirectoryCache } = await import("@/services/globalPortDirectory");
+        invalidatePortDirectoryCache();
+        
+        const { getGlobalPortOptions } = await import("@/services/globalPortDirectory");
         const ports = await getGlobalPortOptions();
         setState(prev => ({ ...prev, portOptions: ports }));
       } catch (error) {
