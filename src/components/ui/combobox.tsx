@@ -19,6 +19,7 @@ interface ComboboxProps {
   emptyMessage?: string;
   allowCustom?: boolean;
   className?: string;
+  disabled?: boolean;
 }
 
 export function Combobox({
@@ -29,7 +30,8 @@ export function Combobox({
   searchPlaceholder = "Search...",
   emptyMessage = "No option found.",
   allowCustom = false,
-  className
+  className,
+  disabled = false
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [inputValue, setInputValue] = React.useState(value || "");
@@ -59,12 +61,13 @@ export function Combobox({
   const displayValue = allowCustom ? inputValue : (selectedOption?.label || "");
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open && !disabled} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           role="combobox"
           aria-expanded={open}
+          disabled={disabled}
           className={cn("w-full justify-between", !value && "text-muted-foreground", className)}
         >
           {displayValue || placeholder}

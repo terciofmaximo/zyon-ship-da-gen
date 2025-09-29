@@ -31,6 +31,7 @@ export function usePDA() {
         beam: data.shipData.beam,
         draft: data.shipData.draft,
         port_name: data.shipData.portName,
+        terminal: data.shipData.terminal,
         berth: data.shipData.berth,
         days_alongside: data.shipData.daysAlongside,
         cargo: data.shipData.cargo,

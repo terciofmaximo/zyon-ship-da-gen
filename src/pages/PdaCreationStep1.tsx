@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn, formatRange } from "@/lib/utils";
 import { VESSEL_TYPES } from "@/lib/vesselData";
 import { SHIP_TYPE_RANGES, getShipTypeFromName, calculateMeanValue, isValueInRange, formatRange as formatShipRange } from "@/lib/shipTypeRanges";
+import { usePortDirectory } from "@/hooks/usePortDirectory";
 import { pdaStep1Schema, type PDAStep1Data } from "@/schemas/pdaSchema";
 
 const clients = [
@@ -64,6 +65,7 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
       beam: initialData?.beam || "",
       draft: initialData?.draft || "",
       portName: initialData?.portName || "",
+      terminal: initialData?.terminal || "",
       berth: initialData?.berth || "",
       daysAlongside: initialData?.daysAlongside || "",
       cargo: initialData?.cargo || "",
@@ -85,6 +87,8 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
   const exchangeRateSource = watch("exchangeRateSource");
   const exchangeRateSourceUrl = watch("exchangeRateSourceUrl");
   const exchangeRateTimestamp = watch("exchangeRateTimestamp");
+
+  const portState = usePortDirectory();
 
   const fillShipParticulars = (shipType: string, skipDialog = false) => {
     const ranges = SHIP_TYPE_RANGES[shipType];
@@ -158,6 +162,17 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
       }
     }
   }, [vesselName, selectedVessel, setValue, autoFilledValues, currentShipType]);
+
+  // Initialize port directory with existing values
+  useEffect(() => {
+    const currentPort = form.getValues("portName");
+    const currentTerminal = form.getValues("terminal");
+    const currentBerth = form.getValues("berth");
+    
+    if (currentPort || currentTerminal || currentBerth) {
+      portState.initialize(currentPort, currentTerminal, currentBerth);
+    }
+  }, [portState]);
 
   // Simulate fetching exchange rate from BCB PTAX
   const fetchExchangeRate = async () => {
@@ -572,26 +587,95 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                       <FormItem>
                         <FormLabel>Port's Name *</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g. Port of Santos" {...field} />
+                          <Combobox
+                            options={portState.portOptions}
+                            value={field.value}
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              portState.updatePortSelection(
+                                value,
+                                (port) => form.setValue("portName", port),
+                                (terminal) => form.setValue("terminal", terminal),
+                                (berth) => form.setValue("berth", berth)
+                              );
+                            }}
+                            placeholder="e.g. Santos"
+                            searchPlaceholder="Search ports..."
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="berth"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Berth(s)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g. Berth 37" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {portState.showTerminalField && (
+                    <FormField
+                      control={form.control}
+                      name="terminal"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Terminal</FormLabel>
+                          <FormControl>
+                            <Combobox
+                              options={portState.terminalOptions}
+                              value={field.value}
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                portState.updateTerminalSelection(
+                                  value,
+                                  (terminal) => form.setValue("terminal", terminal),
+                                  (berth) => form.setValue("berth", berth)
+                                );
+                              }}
+                              placeholder="Select terminal..."
+                              searchPlaceholder="Search terminals..."
+                              disabled={portState.terminalDisabled}
+                            />
+                          </FormControl>
+                          {portState.terminalHint && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {portState.terminalHint}
+                            </p>
+                          )}
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  {portState.showBerthField && (
+                    <FormField
+                      control={form.control}
+                      name="berth"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Berth(s)</FormLabel>
+                          <FormControl>
+                            <Combobox
+                              options={portState.berthOptions}
+                              value={field.value}
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                portState.updateBerthSelection(
+                                  value,
+                                  (berth) => form.setValue("berth", berth)
+                                );
+                              }}
+                              placeholder="Select berth..."
+                              searchPlaceholder="Search berths..."
+                              disabled={portState.berthDisabled}
+                            />
+                          </FormControl>
+                          {portState.berthHint && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {portState.berthHint}
+                            </p>
+                          )}
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
 
                   <FormField
                     control={form.control}

@@ -8,6 +8,7 @@ export const pdaStep1Schema = z.object({
   beam: z.string().optional(),
   draft: z.string().optional(),
   portName: z.string().optional(),
+  terminal: z.string().optional(),
   berth: z.string().optional(),
   daysAlongside: z.string().optional(),
   cargo: z.string().optional(),
