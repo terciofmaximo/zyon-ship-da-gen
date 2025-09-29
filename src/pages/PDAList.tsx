@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Search, Plus, MoreHorizontal, Eye, Check, Download } from "lucide-react";
+import { Search, Plus, MoreHorizontal, Eye, Check, Download, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -50,23 +50,41 @@ interface PDA {
   id: string;
   pda_number: string;
   to_display_name: string | null;
+  date_field: string | null; // PDA's own date from Step 1
   sent_at: string | null;
   sent_by_user_id: string | null;
-  status: "IN_PROGRESS" | "SENT" | "APPROVED";
+  created_by: string | null;
+  status: "IN_PROGRESS" | "SENT" | "APPROVED" | "CREATED" | "REJECTED" | "UNDER_REVIEW";
   created_at: string;
   updated_at: string;
 }
 
+// New English status constants
+export const PDA_STATUS = {
+  CREATED: "PDA Created",
+  SENT: "PDA Sent", 
+  APPROVED: "PDA Approved by Client",
+  REJECTED: "PDA Rejected by Client",
+  UNDER_REVIEW: "PDA Under Client Review",
+} as const;
+
+// Map database enum values to display labels
 const statusLabels = {
-  IN_PROGRESS: "Em andamento",
-  SENT: "Enviada",
-  APPROVED: "Aprovada",
+  IN_PROGRESS: PDA_STATUS.CREATED, // Legacy mapping
+  CREATED: PDA_STATUS.CREATED,
+  SENT: PDA_STATUS.SENT,
+  APPROVED: PDA_STATUS.APPROVED,
+  REJECTED: PDA_STATUS.REJECTED,
+  UNDER_REVIEW: PDA_STATUS.UNDER_REVIEW,
 };
 
 const statusVariants = {
   IN_PROGRESS: "secondary",
+  CREATED: "secondary", 
   SENT: "default",
   APPROVED: "default",
+  REJECTED: "destructive",
+  UNDER_REVIEW: "outline",
 } as const;
 
 export default function PDAList() {
@@ -82,6 +100,7 @@ export default function PDAList() {
   const [pageSize, setPageSize] = useState(25);
   const [confirmApprovalId, setConfirmApprovalId] = useState<string | null>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [convertingId, setConvertingId] = useState<string | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
 
   useEffect(() => {
@@ -121,13 +140,19 @@ export default function PDAList() {
       
       let query = supabase
         .from("pdas")
-        .select("*")
+        .select("id, pda_number, to_display_name, date_field, sent_at, sent_by_user_id, created_by, status, created_at, updated_at")
         .eq("tenant_id", mockTenantId);
 
       // Apply sorting
       switch (sortBy) {
         case "updated_desc":
           query = query.order("updated_at", { ascending: false });
+          break;
+        case "date_desc":
+          query = query.order("date_field", { ascending: false, nullsFirst: false });
+          break;
+        case "date_asc":
+          query = query.order("date_field", { ascending: true, nullsFirst: true });
           break;
         case "sent_desc":
           query = query.order("sent_at", { ascending: false, nullsFirst: false });
@@ -254,7 +279,63 @@ export default function PDAList() {
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "—";
-    return new Date(dateString).toLocaleDateString("pt-BR");
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short', 
+      day: 'numeric'
+    });
+  };
+
+  const handleConvertToFDA = async (pda: PDA) => {
+    setConvertingId(pda.id);
+    try {
+      toast({
+        title: "Success",
+        description: `FDA draft created from PDA ${pda.pda_number}.`,
+      });
+      
+      // Navigate to FDA creation with PDA reference
+      navigate(`/fda/new?fromPdaId=${pda.id}`);
+    } catch (error) {
+      console.error("Error converting to FDA:", error);
+      toast({
+        title: "Error", 
+        description: "Failed to convert to FDA. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setConvertingId(null);
+    }
+  };
+
+  const handleUpdateStatus = async (id: string, status: PDA['status']) => {
+    try {
+      const { error } = await supabase
+        .from("pdas")
+        .update({ status: status as any }) // Cast to avoid TypeScript enum mismatch
+        .eq("id", id);
+
+      if (error) throw error;
+
+      // Update local state
+      setPdas(pdas.map(pda => 
+        pda.id === id 
+          ? { ...pda, status }
+          : pda
+      ));
+      
+      toast({
+        title: "Success",
+        description: "Status updated.",
+      });
+    } catch (error) {
+      console.error("Error updating PDA:", error);
+      toast({
+        title: "Error",
+        description: "Error updating PDA status",
+        variant: "destructive",
+      });
+    }
   };
 
   const totalPages = Math.ceil(filteredPDAs.length / pageSize);
@@ -327,11 +408,13 @@ export default function PDAList() {
           </div>
 
           <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-            <TabsList>
-              <TabsTrigger value="all">Todos</TabsTrigger>
-              <TabsTrigger value="IN_PROGRESS">Em andamento</TabsTrigger>
-              <TabsTrigger value="SENT">Enviadas</TabsTrigger>
-              <TabsTrigger value="APPROVED">Aprovadas</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="created">Created</TabsTrigger>
+              <TabsTrigger value="sent">Sent</TabsTrigger>
+              <TabsTrigger value="approved">Approved</TabsTrigger>
+              <TabsTrigger value="rejected">Rejected</TabsTrigger>
+              <TabsTrigger value="under_review">Under Review</TabsTrigger>
             </TabsList>
           </Tabs>
         </CardHeader>
@@ -340,7 +423,7 @@ export default function PDAList() {
           {filteredPDAs.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-muted-foreground mb-4">
-                {pdas.length === 0 ? "Nenhuma PDA encontrada" : "Nenhuma PDA corresponde aos filtros"}
+                {pdas.length === 0 ? "No PDAs found" : "No PDAs match the current filters"}
               </div>
               {pdas.length === 0 && (
                 <Button onClick={() => navigate("/pda/new")}>
@@ -359,6 +442,7 @@ export default function PDAList() {
                     <TableHead>Sent on</TableHead>
                     <TableHead>Sent by</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="w-[120px]">Actions</TableHead>
                     <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -383,21 +467,46 @@ export default function PDAList() {
                         </Button>
                       </TableCell>
                       <TableCell>{pda.to_display_name || "—"}</TableCell>
-                      <TableCell>{formatDate(pda.sent_at)}</TableCell>
+                      <TableCell>{formatDate(pda.date_field)}</TableCell>
                       <TableCell>—</TableCell>
                       <TableCell>
                         <Badge 
                           variant={statusVariants[pda.status]}
                           className={
-                            pda.status === "IN_PROGRESS" 
+                            pda.status === "IN_PROGRESS" || pda.status === "CREATED"
                               ? "bg-muted text-muted-foreground" 
                               : pda.status === "SENT"
                               ? "bg-primary text-primary-foreground"
-                              : "bg-success text-success-foreground"
+                              : pda.status === "APPROVED"
+                              ? "bg-success text-success-foreground"
+                              : pda.status === "REJECTED"
+                              ? "bg-destructive text-destructive-foreground"
+                              : "bg-muted text-muted-foreground"
                           }
                         >
                           {statusLabels[pda.status]}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleConvertToFDA(pda)}
+                          disabled={convertingId === pda.id}
+                          className="text-xs"
+                        >
+                          {convertingId === pda.id ? (
+                            <>
+                              <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                              Converting...
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCw className="h-3 w-3 mr-1" />
+                              Convert to FDA
+                            </>
+                          )}
+                        </Button>
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>

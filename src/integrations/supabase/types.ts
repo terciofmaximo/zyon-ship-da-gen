@@ -23,6 +23,7 @@ export type Database = {
           clearance: number | null
           comments: Json | null
           created_at: string
+          created_by: string | null
           date_field: string | null
           days_alongside: string | null
           dockage: number | null
@@ -69,6 +70,7 @@ export type Database = {
           clearance?: number | null
           comments?: Json | null
           created_at?: string
+          created_by?: string | null
           date_field?: string | null
           days_alongside?: string | null
           dockage?: number | null
@@ -115,6 +117,7 @@ export type Database = {
           clearance?: number | null
           comments?: Json | null
           created_at?: string
+          created_by?: string | null
           date_field?: string | null
           days_alongside?: string | null
           dockage?: number | null

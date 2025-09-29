@@ -81,13 +81,16 @@ export function usePDA() {
         const { data: pdaNumber } = await supabase
           .rpc("generate_pda_number", { p_tenant_id: mockTenantId });
         
+        const insertData = {
+          ...pdaData,
+          pda_number: pdaNumber,
+          status: "CREATED" as any, // Cast to avoid TypeScript enum mismatch
+          created_by: mockTenantId // Set creator
+        };
+        
         result = await supabase
           .from("pdas")
-          .insert({
-            ...pdaData,
-            pda_number: pdaNumber,
-            status: "IN_PROGRESS"
-          })
+          .insert([insertData])
           .select()
           .single();
       }
@@ -95,16 +98,16 @@ export function usePDA() {
       if (result.error) throw result.error;
 
       toast({
-        title: "Sucesso",
-        description: pdaId ? "PDA atualizada com sucesso" : "PDA criada com sucesso",
+        title: "Success",
+        description: pdaId ? "PDA updated successfully" : "PDA created successfully",
       });
 
       return result.data;
     } catch (error) {
       console.error("Error saving PDA:", error);
       toast({
-        title: "Erro",
-        description: "Erro ao salvar PDA",
+        title: "Error",
+        description: "Error saving PDA",
         variant: "destructive",
       });
       throw error;
@@ -126,8 +129,8 @@ export function usePDA() {
     } catch (error) {
       console.error("Error fetching PDA:", error);
       toast({
-        title: "Erro",
-        description: "Erro ao carregar PDA",
+        title: "Error",
+        description: "Error loading PDA",
         variant: "destructive",
       });
       throw error;
