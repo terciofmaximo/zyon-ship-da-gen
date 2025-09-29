@@ -37,11 +37,13 @@ export const OrgProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const fetchUserOrganizations = async () => {
     try {
+      // Query organization_members directly instead of using the view
       const { data, error } = await supabase
         .from("organization_members")
         .select(`
           role,
-          organizations:org_id (
+          org_id,
+          organizations!inner (
             id,
             name,
             slug

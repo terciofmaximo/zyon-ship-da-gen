@@ -513,37 +513,18 @@ export type Database = {
       }
     }
     Views: {
-      user_org_memberships: {
-        Row: {
-          org_id: string | null
-          role: string | null
-          user_id: string | null
-        }
-        Insert: {
-          org_id?: string | null
-          role?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          org_id?: string | null
-          role?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "organization_members_org_id_fkey"
-            columns: ["org_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       generate_pda_number: {
         Args: { p_tenant_id: string }
         Returns: string
+      }
+      get_user_org_ids: {
+        Args: { _user_id: string }
+        Returns: {
+          org_id: string
+        }[]
       }
       has_role: {
         Args: {
