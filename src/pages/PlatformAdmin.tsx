@@ -24,9 +24,8 @@ export default function PlatformAdmin() {
   const { toast } = useToast();
   const { seedAdmin, loading: seedLoading } = useSeedPlatformAdmin();
   
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [email, setEmail] = useState("");
-  const [selectedOrgId, setSelectedOrgId] = useState("");
+  const [organizationName, setOrganizationName] = useState("");
   const [role, setRole] = useState("ops");
   const [loading, setLoading] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
@@ -51,34 +50,10 @@ export default function PlatformAdmin() {
     }
   };
 
-  useEffect(() => {
-    if (isPlatformAdmin) {
-      fetchOrganizations();
-    }
-  }, [isPlatformAdmin]);
-
-  const fetchOrganizations = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("organizations")
-        .select("id, name, slug")
-        .order("name");
-
-      if (error) throw error;
-      setOrganizations(data || []);
-    } catch (error) {
-      console.error("Error fetching organizations:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load organizations",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !selectedOrgId) {
+    if (!email || !organizationName.trim()) {
       toast({
         title: "Missing fields",
         description: "Please fill in all required fields",
@@ -91,6 +66,26 @@ export default function PlatformAdmin() {
     setInviteLink(null);
 
     try {
+      // Find organization by name (case insensitive)
+      const { data: orgData, error: orgError } = await supabase
+        .from("organizations")
+        .select("id, name")
+        .ilike("name", organizationName.trim())
+        .maybeSingle();
+
+      if (orgError) throw orgError;
+
+      if (!orgData) {
+        toast({
+          title: "Organization not found",
+          description: `No organization found with name "${organizationName}"`,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      const selectedOrgId = orgData.id;
       // Check if user exists by email
       const { data, error: usersError } = await supabase.auth.admin.listUsers();
       
@@ -123,11 +118,12 @@ export default function PlatformAdmin() {
 
         toast({
           title: "Member added",
-          description: `${email} has been added to the organization as ${role}`,
+          description: `${email} has been added to ${orgData.name} as ${role}`,
         });
 
         // Reset form
         setEmail("");
+        setOrganizationName("");
         setRole("ops");
       } else {
         // User doesn't exist - create invite
@@ -277,19 +273,18 @@ export default function PlatformAdmin() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="organization">Organization</Label>
-                <Select value={selectedOrgId} onValueChange={setSelectedOrgId} required>
-                  <SelectTrigger id="organization">
-                    <SelectValue placeholder="Select organization" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {organizations.map((org) => (
-                      <SelectItem key={org.id} value={org.id}>
-                        {org.name} ({org.slug})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="organization">Organization Name</Label>
+                <Input
+                  id="organization"
+                  type="text"
+                  placeholder="Enter organization name"
+                  value={organizationName}
+                  onChange={(e) => setOrganizationName(e.target.value)}
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter the exact name of the organization (case insensitive)
+                </p>
               </div>
 
               <div className="space-y-2">
