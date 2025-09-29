@@ -12,6 +12,7 @@ import { Calculator, Info, AlertCircle, Edit3, DollarSign, Edit, Check } from "l
 import { ExchangeRateBadge } from "@/components/ui/exchange-rate-badge";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useItaquiAutoPricing } from "@/hooks/useItaquiAutoPricing";
 import type { CostData } from "@/types";
 import type { PDAStep1Data } from "@/schemas/pdaSchema";
 
@@ -151,6 +152,9 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
     waterway: initialData.waterway || 0,
   });
 
+  // Track which fields are manually edited (to disable auto-pricing for those fields)
+  const [manuallyEdited, setManuallyEdited] = useState<Record<string, boolean>>({});
+
   const [comments, setComments] = useState<Record<keyof CostData, string>>(() => {
     const defaultComments: Record<keyof CostData, string> = {
       pilotageIn: "DWT range tariff +10% for draft ≥11m",
@@ -175,6 +179,28 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
 
   const exchangeRate = parseFloat(shipData.exchangeRate || "5.25");
 
+  // Auto-pricing for Itaqui
+  const { autoPricingState, disableAutoPricing, getHintText } = useItaquiAutoPricing({
+    port: shipData.portName || '',
+    terminal: shipData.terminal || '',
+    berths: shipData.berth ? [shipData.berth] : [],
+    dwt: shipData.dwt || '',
+    exchangeRate: shipData.exchangeRate || '',
+    onCostsUpdate: (autoCosts, meta) => {
+      // Only update costs that haven't been manually edited
+      const updatedCosts = { ...costs };
+      
+      Object.entries(autoCosts).forEach(([key, value]) => {
+        const costKey = key as keyof CostData;
+        if (!manuallyEdited[costKey] && meta[costKey as keyof typeof meta]?.isAuto) {
+          updatedCosts[costKey] = value as number;
+        }
+      });
+      
+      setCosts(updatedCosts);
+    }
+  });
+
   // Debounced calculation function
   const debouncedCalculation = useCallback(
     debounce((newCosts: CostData) => {
@@ -186,6 +212,15 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
   const handleCostChange = (field: keyof CostData, value: string) => {
     const numericValue = normalizeNumber(value);
     const newCosts = { ...costs, [field]: numericValue };
+    
+    // Mark this field as manually edited
+    setManuallyEdited(prev => ({ ...prev, [field]: true }));
+    
+    // Disable auto-pricing for this specific field
+    if (['pilotageIn', 'towageIn', 'lightDues'].includes(field)) {
+      disableAutoPricing(field as 'pilotageIn' | 'towageIn' | 'lightDues');
+    }
+    
     debouncedCalculation(newCosts);
   };
 
@@ -207,6 +242,20 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Auto-pricing warnings */}
+      {autoPricingState.warnings.length > 0 && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            {autoPricingState.warnings.map((warning, index) => (
+              <div key={index} className="text-sm">
+                {warning}
+              </div>
+            ))}
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Exchange Rate Info Banner */}
       <Alert>
         <Info className="h-4 w-4" />
@@ -267,15 +316,25 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                     {item.label}
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-1">
-                      <DollarSign className="h-3 w-3 text-muted-foreground" />
-                      <Input
-                        type="text"
-                        value={costs[item.id].toString()}
-                        onChange={(e) => handleCostChange(item.id, e.target.value)}
-                        className="w-32"
-                        placeholder="0.00"
-                      />
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-1">
+                        <DollarSign className="h-3 w-3 text-muted-foreground" />
+                        <Input
+                          type="text"
+                          value={costs[item.id].toString()}
+                          onChange={(e) => handleCostChange(item.id, e.target.value)}
+                          className="w-32"
+                          placeholder="0.00"
+                        />
+                        {autoPricingState.meta[item.id as keyof typeof autoPricingState.meta]?.isAuto && (
+                          <Badge variant="secondary" className="text-xs">auto</Badge>
+                        )}
+                      </div>
+                      {['pilotageIn', 'towageIn', 'lightDues'].includes(item.id) && getHintText(item.id as 'pilotageIn' | 'towageIn' | 'lightDues') && (
+                        <p className="text-xs text-muted-foreground">
+                          {getHintText(item.id as 'pilotageIn' | 'towageIn' | 'lightDues')}
+                        </p>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell className="font-mono text-sm currency-cell">
