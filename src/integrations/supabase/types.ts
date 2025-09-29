@@ -14,6 +14,125 @@ export type Database = {
   }
   public: {
     Tables: {
+      fda: {
+        Row: {
+          client_id: string | null
+          client_name: string | null
+          created_at: string
+          created_by: string | null
+          currency_base: string
+          currency_local: string
+          exchange_rate: number | null
+          id: string
+          imo: string | null
+          meta: Json | null
+          pda_id: string
+          port: string | null
+          status: Database["public"]["Enums"]["fda_status"]
+          terminal: string | null
+          updated_at: string
+          vessel_name: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          client_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency_base?: string
+          currency_local?: string
+          exchange_rate?: number | null
+          id?: string
+          imo?: string | null
+          meta?: Json | null
+          pda_id: string
+          port?: string | null
+          status?: Database["public"]["Enums"]["fda_status"]
+          terminal?: string | null
+          updated_at?: string
+          vessel_name?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          client_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency_base?: string
+          currency_local?: string
+          exchange_rate?: number | null
+          id?: string
+          imo?: string | null
+          meta?: Json | null
+          pda_id?: string
+          port?: string | null
+          status?: Database["public"]["Enums"]["fda_status"]
+          terminal?: string | null
+          updated_at?: string
+          vessel_name?: string | null
+        }
+        Relationships: []
+      }
+      fda_ledger: {
+        Row: {
+          amount_local: number | null
+          amount_usd: number | null
+          category: string | null
+          counterparty: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          fda_id: string
+          id: string
+          invoice_no: string | null
+          line_no: number
+          side: Database["public"]["Enums"]["fda_ledger_side"]
+          source: Json | null
+          status: Database["public"]["Enums"]["fda_ledger_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount_local?: number | null
+          amount_usd?: number | null
+          category?: string | null
+          counterparty?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          fda_id: string
+          id?: string
+          invoice_no?: string | null
+          line_no: number
+          side: Database["public"]["Enums"]["fda_ledger_side"]
+          source?: Json | null
+          status?: Database["public"]["Enums"]["fda_ledger_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount_local?: number | null
+          amount_usd?: number | null
+          category?: string | null
+          counterparty?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          fda_id?: string
+          id?: string
+          invoice_no?: string | null
+          line_no?: number
+          side?: Database["public"]["Enums"]["fda_ledger_side"]
+          source?: Json | null
+          status?: Database["public"]["Enums"]["fda_ledger_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fda_ledger_fda_id_fkey"
+            columns: ["fda_id"]
+            isOneToOne: false
+            referencedRelation: "fda"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pdas: {
         Row: {
           agency_fee: number | null
@@ -209,6 +328,9 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user" | "platformAdmin"
+      fda_ledger_side: "AP" | "AR"
+      fda_ledger_status: "Open" | "Settled" | "Partially Settled"
+      fda_status: "Draft" | "Posted" | "Closed"
       pda_status: "IN_PROGRESS" | "SENT" | "APPROVED" | "CREATED"
     }
     CompositeTypes: {
@@ -338,6 +460,9 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "platformAdmin"],
+      fda_ledger_side: ["AP", "AR"],
+      fda_ledger_status: ["Open", "Settled", "Partially Settled"],
+      fda_status: ["Draft", "Posted", "Closed"],
       pda_status: ["IN_PROGRESS", "SENT", "APPROVED", "CREATED"],
     },
   },

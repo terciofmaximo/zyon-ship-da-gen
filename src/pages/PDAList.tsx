@@ -37,6 +37,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useFDA } from "@/hooks/useFDA";
 import {
   Pagination,
   PaginationContent,
@@ -93,6 +94,7 @@ export default function PDAList() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
+  const { convertPdaToFda, loading: fdaLoading } = useFDA();
   const [pdas, setPdas] = useState<PDA[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -267,13 +269,10 @@ export default function PDAList() {
   const handleConvertToFDA = async (pda: PDA) => {
     setConvertingId(pda.id);
     try {
-      toast({
-        title: "Success",
-        description: `FDA draft created from PDA ${pda.pda_number}.`,
-      });
-      
-      // Navigate to FDA creation with PDA reference
-      navigate(`/fda/new?fromPdaId=${pda.id}`);
+      const fdaId = await convertPdaToFda(pda.id);
+      if (fdaId) {
+        navigate(`/fda/${fdaId}`);
+      }
     } catch (error) {
       console.error("Error converting to FDA:", error);
       toast({
@@ -492,25 +491,27 @@ export default function PDAList() {
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleConvertToFDA(pda)}
-                          disabled={convertingId === pda.id}
-                          className="text-xs"
-                        >
-                          {convertingId === pda.id ? (
-                            <>
-                              <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-                              Converting...
-                            </>
-                          ) : (
-                            <>
-                              <RefreshCw className="h-3 w-3 mr-1" />
-                              Convert to FDA
-                            </>
-                          )}
-                        </Button>
+                        {pda.status === "APPROVED" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleConvertToFDA(pda)}
+                            disabled={convertingId === pda.id || fdaLoading}
+                            className="text-xs"
+                          >
+                            {convertingId === pda.id ? (
+                              <>
+                                <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                                Converting...
+                              </>
+                            ) : (
+                              <>
+                                <RefreshCw className="h-3 w-3 mr-1" />
+                                Convert to FDA
+                              </>
+                            )}
+                          </Button>
+                        )}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>

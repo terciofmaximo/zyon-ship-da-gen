@@ -1,0 +1,18 @@
+{
+  "both": [
+    "Pilot IN/OUT",
+    "Towage IN/OUT", 
+    "Light dues",
+    "Dockage (Wharfage)",
+    "Linesman (mooring/unmooring)",
+    "Launch boat (mooring/unmooring)",
+    "Immigration tax (Funapol)",
+    "Free pratique tax",
+    "Shipping association",
+    "Clearance",
+    "Paperless Port System",
+    "Waterway channel (Table I)"
+  ],
+  "ar_only": ["Agency fee"],
+  "ap_only": []
+}

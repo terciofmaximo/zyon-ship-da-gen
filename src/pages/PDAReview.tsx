@@ -7,6 +7,7 @@ import { ArrowLeft, Download, Send, Check } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { usePDA } from "@/hooks/usePDA";
+import { useFDA } from "@/hooks/useFDA";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { generatePDAHTML } from "@/components/pdf/PDADocument";
@@ -68,6 +69,7 @@ export default function PDAReview() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { convertPdaToFda, loading: fdaLoading } = useFDA();
   const [pda, setPda] = useState<PDADetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [confirmApproval, setConfirmApproval] = useState(false);
@@ -231,6 +233,24 @@ export default function PDAReview() {
       toast({
         title: "Falha na Visualização",
         description: error instanceof Error ? error.message : "Erro desconhecido ocorreu",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleConvertToFda = async () => {
+    if (!id) return;
+    
+    try {
+      const fdaId = await convertPdaToFda(id);
+      if (fdaId) {
+        navigate(`/fda/${fdaId}`);
+      }
+    } catch (error) {
+      console.error("Error converting to FDA:", error);
+      toast({
+        title: "Error",
+        description: "Failed to convert PDA to FDA. Please try again.",
         variant: "destructive",
       });
     }
@@ -432,6 +452,15 @@ export default function PDAReview() {
               >
                 <Check className="mr-2 h-4 w-4" />
                 Mark as Approved
+              </Button>
+            )}
+            {pda.status === "APPROVED" && (
+              <Button 
+                onClick={handleConvertToFda}
+                disabled={fdaLoading}
+                className="bg-accent hover:bg-accent/90 text-accent-foreground"
+              >
+                {fdaLoading ? "Converting..." : "Convert to FDA"}
               </Button>
             )}
           </div>

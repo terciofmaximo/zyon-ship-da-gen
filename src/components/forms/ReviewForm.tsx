@@ -317,15 +317,20 @@ export function ReviewForm({ onBack, shipData, costData, pdaId }: ReviewFormProp
             
             <Button 
               onClick={handleConvertToFDA} 
-              disabled={isConverting || isSaving || loading}
+              disabled={isConverting || isSaving}
               className="h-10 sm:h-12 text-xs sm:text-sm bg-secondary text-secondary-foreground hover:bg-secondary/80"
             >
               {isConverting ? (
-                <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin mr-1 sm:mr-2" />
+                <>
+                  <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 animate-spin" />
+                  Converting...
+                </>
               ) : (
-                <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <>
+                  <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Convert to </span>FDA
+                </>
               )}
-              <span className="hidden sm:inline">Convert to </span>FDA
             </Button>
             
             <div className="flex flex-col">
