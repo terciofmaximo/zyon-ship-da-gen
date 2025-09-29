@@ -31,6 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { FDA } from "@/types/fda";
 import { useFDA } from "@/hooks/useFDA";
+import { useOrg } from "@/context/OrgProvider";
 
 const statusVariants = {
   Draft: "secondary",
@@ -49,6 +50,7 @@ export default function FDAList() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { calculateFDATotals } = useFDA();
+  const { activeOrg } = useOrg();
   const [fdas, setFdas] = useState<FDAWithTotals[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -56,31 +58,23 @@ export default function FDAList() {
   const [sortBy, setSortBy] = useState("updated_desc");
 
   useEffect(() => {
-    fetchFDAs();
-  }, [sortBy]);
+    if (activeOrg) {
+      fetchFDAs();
+    }
+  }, [sortBy, activeOrg]);
 
   const fetchFDAs = async () => {
+    if (!activeOrg) return;
+    
     setLoading(true);
     try {
-      // Get the authenticated user's ID
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Authentication required",
-          description: "Please log in to view your FDAs",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-
       let query = supabase
         .from("fda")
         .select(`
           *,
           fda_ledger(amount_usd, side)
         `)
-        .eq("created_by", user.id);
+        .eq("tenant_id", activeOrg.id);
 
       // Apply sorting
       switch (sortBy) {

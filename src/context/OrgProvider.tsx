@@ -94,3 +94,9 @@ export const useOrg = () => {
   if (!ctx) throw new Error("useOrg must be used within OrgProvider");
   return ctx;
 };
+
+// Convenience hook for just getting the active org ID
+export const useActiveOrgId = () => {
+  const { activeOrg } = useOrg();
+  return activeOrg?.id || null;
+};

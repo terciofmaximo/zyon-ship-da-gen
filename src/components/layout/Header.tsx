@@ -7,8 +7,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { OrgSwitcher } from "./OrgSwitcher";
+import { useOrg } from "@/context/OrgProvider";
+
 
 export function Header() {
+  const { organizations } = useOrg();
+  const showOrgSwitcher = organizations.length > 1;
+
   return (
     <header className="border-b bg-background shadow-soft">
       <div className="flex h-16 items-center justify-between px-6">
@@ -17,6 +23,8 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-4">
+          {showOrgSwitcher && <OrgSwitcher />}
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="text-foreground hover:bg-accent hover:text-accent-foreground">

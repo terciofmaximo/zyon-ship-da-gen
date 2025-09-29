@@ -46,6 +46,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { useOrg } from "@/context/OrgProvider";
 
 interface PDA {
   id: string;
@@ -95,6 +96,7 @@ export default function PDAList() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const { convertPdaToFda, loading: fdaLoading } = useFDA();
+  const { activeOrg } = useOrg();
   const [pdas, setPdas] = useState<PDA[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -107,8 +109,10 @@ export default function PDAList() {
   const tableRef = useRef<HTMLTableElement>(null);
 
   useEffect(() => {
-    fetchPDAs();
-  }, [sortBy, currentPage, pageSize]);
+    if (activeOrg) {
+      fetchPDAs();
+    }
+  }, [sortBy, currentPage, pageSize, activeOrg]);
 
   useEffect(() => {
     // Handle highlighting from URL params
@@ -136,25 +140,14 @@ export default function PDAList() {
   }, [pdas, searchParams, setSearchParams]);
 
   const fetchPDAs = async () => {
+    if (!activeOrg) return;
+    
     setLoading(true);
     try {
-      // Get the authenticated user's ID
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Authentication required",
-          description: "Please log in to view your PDAs",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-      const tenantId = user.id;
-      
       let query = supabase
         .from("pdas")
         .select("id, pda_number, vessel_name, port_name, to_display_name, date_field, sent_at, sent_by_user_id, created_by, status, created_at, updated_at")
-        .eq("tenant_id", tenantId);
+        .eq("tenant_id", activeOrg.id);
 
       // Apply sorting
       switch (sortBy) {
