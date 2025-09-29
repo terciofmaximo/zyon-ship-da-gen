@@ -2,3 +2,6 @@ project_id = "hxdrffemnrxklrrfnllo"
 
 [functions.setup-demo-admin]
 verify_jwt = false
+
+[functions.seed-platform-admin]
+verify_jwt = false

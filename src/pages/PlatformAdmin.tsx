@@ -9,7 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Navigate } from "react-router-dom";
-import { Shield, UserPlus, Copy, CheckCircle2 } from "lucide-react";
+import { Shield, UserPlus, Copy, CheckCircle2, Key } from "lucide-react";
+import { useSeedPlatformAdmin } from "@/hooks/useSeedPlatformAdmin";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Organization {
@@ -21,6 +22,7 @@ interface Organization {
 export default function PlatformAdmin() {
   const { isPlatformAdmin, loading: roleLoading } = useUserRole();
   const { toast } = useToast();
+  const { seedAdmin, loading: seedLoading } = useSeedPlatformAdmin();
   
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [email, setEmail] = useState("");
@@ -28,6 +30,14 @@ export default function PlatformAdmin() {
   const [role, setRole] = useState("ops");
   const [loading, setLoading] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
+
+  const handleSeedAdmin = async () => {
+    try {
+      await seedAdmin();
+    } catch (error) {
+      console.error("Error seeding admin:", error);
+    }
+  };
 
   useEffect(() => {
     if (isPlatformAdmin) {
@@ -194,6 +204,41 @@ export default function PlatformAdmin() {
             </p>
           </div>
         </div>
+
+        <Card className="border-primary/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Key className="w-5 h-5" />
+              System Management
+            </CardTitle>
+            <CardDescription>
+              Initialize platform admin account for development
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="p-3 bg-muted rounded-lg space-y-2">
+                <p className="text-sm font-medium">Platform Admin Credentials:</p>
+                <div className="text-sm space-y-1">
+                  <p><strong>Email:</strong> contact@vesselopsportal.com</p>
+                  <p><strong>Password:</strong> Admin123!</p>
+                </div>
+              </div>
+              <Button 
+                onClick={handleSeedAdmin} 
+                disabled={seedLoading}
+                variant="outline"
+                className="w-full"
+              >
+                {seedLoading ? "Seeding..." : "Seed Platform Admin User"}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                This creates/updates the platform admin account with email confirmation bypassed.
+                Use for development only.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
