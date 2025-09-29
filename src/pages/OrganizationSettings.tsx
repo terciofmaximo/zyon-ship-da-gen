@@ -6,11 +6,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOrg } from "@/context/OrgProvider";
 import { useUserRole } from "@/hooks/useUserRole";
 import { DomainManagement } from "@/components/organization/DomainManagement";
+import { CompanyManagement } from "@/components/organization/CompanyManagement";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Building2, Users, Globe, Shield, UserPlus, Trash2 } from "lucide-react";
+import { Building2, Users, Globe, Shield, UserPlus, Trash2, Building } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { InviteMemberDialog } from "@/components/organization/InviteMemberDialog";
@@ -188,6 +189,12 @@ export default function OrganizationSettings() {
               <Globe className="h-4 w-4 mr-2" />
               Domains
             </TabsTrigger>
+            {isPlatformAdmin && (
+              <TabsTrigger value="companies">
+                <Building className="h-4 w-4 mr-2" />
+                Companies
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="organization" className="space-y-4">
@@ -374,6 +381,12 @@ export default function OrganizationSettings() {
               </Card>
             )}
           </TabsContent>
+
+          {isPlatformAdmin && (
+            <TabsContent value="companies" className="space-y-4">
+              <CompanyManagement />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </DashboardLayout>
