@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { FDALedger } from '@/types/fda';
 import Decimal from 'decimal.js';
 import * as Portal from '@radix-ui/react-portal';
+import { useOrg } from '@/context/OrgProvider';
 
 interface FDALedgerTableProps {
   fdaId: string;
@@ -39,6 +40,7 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
   const [openDatePickers, setOpenDatePickers] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { activeOrg } = useOrg();
 
   // Use ledger as-is, no standard categories bootstrap
   useEffect(() => {
@@ -67,6 +69,8 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
 
       // If this is a new standard line, insert into database
       if (lineId.startsWith('standard-')) {
+        if (!activeOrg) throw new Error("No active organization");
+        
         const { data, error } = await supabase
           .from('fda_ledger')
           .insert({
@@ -81,6 +85,7 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
             invoice_no: updatedLine.invoice_no,
             due_date: updatedLine.due_date,
             status: updatedLine.status,
+            tenant_id: activeOrg.id,
           })
           .select()
           .single();

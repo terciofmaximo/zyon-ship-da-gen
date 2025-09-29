@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { useOrg } from '@/context/OrgProvider';
 
 const fmtUSD = (n: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n ?? 0);
 const fmtBRL = (n: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n ?? 0);
@@ -74,6 +75,7 @@ export default function FDALineDetail() {
   const { fdaId, lineId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { activeOrg } = useOrg();
   
   const [line, setLine] = useState<LedgerLine | null>(null);
   const [fdaExchangeRate, setFdaExchangeRate] = useState<number>(1);
@@ -200,6 +202,15 @@ export default function FDALineDetail() {
       return;
     }
     
+    if (!activeOrg) {
+      toast({
+        title: "Error",
+        description: "No active organization",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       const usd = parseFloat(newPayment.amount_usd);
       const fx = parseFloat(newPayment.fx_at_payment);
@@ -214,6 +225,7 @@ export default function FDALineDetail() {
           fx_at_payment: fx,
           method: newPayment.method,
           reference: newPayment.reference || null,
+          tenant_id: activeOrg.id,
         })
         .select()
         .single();

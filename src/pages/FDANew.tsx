@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useFDA } from "@/hooks/useFDA";
 import Decimal from "decimal.js";
+import { useOrg } from "@/context/OrgProvider";
 
 interface LedgerLine {
   id: string;
@@ -29,6 +30,7 @@ export default function FDANew() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { calculateFDATotals } = useFDA();
+  const { activeOrg } = useOrg();
   const [loading, setLoading] = useState(false);
 
   // Form state
@@ -96,6 +98,15 @@ export default function FDANew() {
       return;
     }
 
+    if (!activeOrg) {
+      toast({
+        title: "Error",
+        description: "No active organization",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -114,6 +125,7 @@ export default function FDANew() {
         currency_local: formData.currency_local,
         exchange_rate: parseFloat(formData.exchange_rate),
         created_by: user.id,
+        tenant_id: activeOrg.id,
       };
 
       const { data: newFda, error: fdaError } = await supabase
@@ -138,6 +150,7 @@ export default function FDANew() {
           invoice_no: line.invoice_no || null,
           due_date: line.due_date || null,
           status: line.status,
+          tenant_id: activeOrg.id,
         }));
 
         const { error: ledgerError } = await supabase
