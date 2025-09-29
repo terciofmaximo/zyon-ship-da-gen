@@ -333,9 +333,11 @@ export type Database = {
           email: string
           expires_at: string
           id: string
+          invited_by: string | null
           org_id: string
           role: string
           token: string
+          used_at: string | null
         }
         Insert: {
           accepted_at?: string | null
@@ -344,9 +346,11 @@ export type Database = {
           email: string
           expires_at: string
           id?: string
+          invited_by?: string | null
           org_id: string
           role?: string
           token: string
+          used_at?: string | null
         }
         Update: {
           accepted_at?: string | null
@@ -355,9 +359,11 @@ export type Database = {
           email?: string
           expires_at?: string
           id?: string
+          invited_by?: string | null
           org_id?: string
           role?: string
           token?: string
+          used_at?: string | null
         }
         Relationships: [
           {
@@ -403,18 +409,21 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          owner_user_id: string | null
           slug: string
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
+          owner_user_id?: string | null
           slug: string
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
+          owner_user_id?: string | null
           slug?: string
         }
         Relationships: []
@@ -566,6 +575,44 @@ export type Database = {
         }
         Relationships: []
       }
+      user_profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          invited_at: string | null
+          must_reset_password: boolean | null
+          tenant_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          invited_at?: string | null
+          must_reset_password?: boolean | null
+          tenant_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          invited_at?: string | null
+          must_reset_password?: boolean | null
+          tenant_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -608,6 +655,15 @@ export type Database = {
           org_id: string
           role: string
           token: string
+        }[]
+      }
+      get_tenant_by_slug: {
+        Args: { tenant_slug: string }
+        Returns: {
+          id: string
+          name: string
+          owner_user_id: string
+          slug: string
         }[]
       }
       get_user_org_ids: {
