@@ -2,15 +2,18 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { Ship, MapPin, DollarSign } from "lucide-react";
+import { Ship, MapPin, DollarSign, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Combobox } from "@/components/ui/combobox";
 import { ExchangeRateBadge } from "@/components/ui/exchange-rate-badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { cn, formatRange } from "@/lib/utils";
 import { VESSEL_TYPES } from "@/lib/vesselData";
+import { SHIP_TYPE_RANGES, getShipTypeFromName, calculateMeanValue, isValueInRange, formatRange as formatShipRange } from "@/lib/shipTypeRanges";
 import { pdaStep1Schema, type PDAStep1Data } from "@/schemas/pdaSchema";
 
 const clients = [
@@ -26,14 +29,15 @@ const clients = [
 const vesselSuggestions = [
   { value: "MV Handysize TBN", label: "MV Handysize TBN" },
   { value: "MV Handymax TBN", label: "MV Handymax TBN" },
+  { value: "MV Supramax TBN", label: "MV Supramax TBN" },
   { value: "MV Panamax TBN", label: "MV Panamax TBN" },
   { value: "MV Capesize TBN", label: "MV Capesize TBN" },
   { value: "MV Valemax TBN", label: "MV Valemax TBN" },
-  { value: "MT Coastal Tanker", label: "MT Coastal Tanker" },
-  { value: "MT Aframax", label: "MT Aframax" },
-  { value: "MT Suezmax", label: "MT Suezmax" },
-  { value: "MT VLCC", label: "MT VLCC" },
-  { value: "MT ULCC", label: "MT ULCC" },
+  { value: "MT Coastal Tanker TBN", label: "MT Coastal Tanker TBN" },
+  { value: "MT Aframax TBN", label: "MT Aframax TBN" },
+  { value: "MT Suezmax TBN", label: "MT Suezmax TBN" },
+  { value: "MT VLCC TBN", label: "MT VLCC TBN" },
+  { value: "MT ULCC TBN", label: "MT ULCC TBN" },
 ];
 
 interface PdaCreationStep1Props {
@@ -44,6 +48,11 @@ interface PdaCreationStep1Props {
 export default function PdaCreationStep1({ onNext, initialData }: PdaCreationStep1Props = {}) {
 
   const [selectedVessel, setSelectedVessel] = useState<string>("");
+  const [currentShipType, setCurrentShipType] = useState<string | null>(null);
+  const [autoFilledValues, setAutoFilledValues] = useState<Record<string, boolean>>({});
+  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+  const [pendingShipType, setPendingShipType] = useState<string | null>(null);
+  const [validationWarnings, setValidationWarnings] = useState<Record<string, string>>({});
 
   const form = useForm<PDAStep1Data>({
     resolver: zodResolver(pdaStep1Schema),
@@ -77,19 +86,78 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
   const exchangeRateSourceUrl = watch("exchangeRateSourceUrl");
   const exchangeRateTimestamp = watch("exchangeRateTimestamp");
 
+  const fillShipParticulars = (shipType: string, skipDialog = false) => {
+    const ranges = SHIP_TYPE_RANGES[shipType];
+    if (!ranges) return;
+
+    setValue("dwt", calculateMeanValue(ranges.dwt).toString());
+    setValue("loa", calculateMeanValue(ranges.loa).toString());
+    setValue("beam", calculateMeanValue(ranges.beam).toString());
+    setValue("draft", calculateMeanValue(ranges.draft).toString());
+
+    setAutoFilledValues({
+      dwt: true,
+      loa: true,
+      beam: true,
+      draft: true
+    });
+    
+    setCurrentShipType(shipType);
+    setSelectedVessel(vesselName);
+  };
+
+  const validateFieldValue = (fieldName: string, value: string) => {
+    if (!currentShipType || !value) {
+      setValidationWarnings(prev => ({ ...prev, [fieldName]: "" }));
+      return;
+    }
+
+    const ranges = SHIP_TYPE_RANGES[currentShipType];
+    if (!ranges) return;
+
+    const numValue = parseFloat(value);
+    if (isNaN(numValue)) return;
+
+    const fieldRange = ranges[fieldName as keyof typeof ranges];
+    if (!isValueInRange(numValue, fieldRange)) {
+      setValidationWarnings(prev => ({ 
+        ...prev, 
+        [fieldName]: `Valor fora do range típico para ${currentShipType} (${fieldRange[0]}–${fieldRange[1]}).`
+      }));
+    } else {
+      setValidationWarnings(prev => ({ ...prev, [fieldName]: "" }));
+    }
+  };
+
   useEffect(() => {
     if (vesselName && vesselName !== selectedVessel) {
+      const shipType = getShipTypeFromName(vesselName);
+      
+      // Check legacy vessel data first
       const vessel = VESSEL_TYPES.find(v => v.classification === vesselName);
-      if (vessel) {
-        // Display formatted range in UI, store min value in form
+      
+      if (shipType && SHIP_TYPE_RANGES[shipType]) {
+        // Check if user has manual edits
+        const hasManualEdits = Object.values(autoFilledValues).some(val => !val) && currentShipType;
+        
+        if (hasManualEdits && currentShipType !== shipType) {
+          setPendingShipType(shipType);
+          setShowUpdateDialog(true);
+        } else {
+          fillShipParticulars(shipType, true);
+        }
+      } else if (vessel) {
+        // Fallback to legacy system
         setValue("dwt", formatRange(vessel.minDwt, vessel.maxDwt, "tons"));
         setValue("loa", vessel.loa.toString());
         setValue("beam", vessel.beam.toString());
         setValue("draft", vessel.draft.toString());
         setSelectedVessel(vesselName);
+        setCurrentShipType(null);
+        setAutoFilledValues({});
       }
     }
-  }, [vesselName, selectedVessel, setValue]);
+  }, [vesselName, selectedVessel, setValue, autoFilledValues, currentShipType]);
 
   // Simulate fetching exchange rate from BCB PTAX
   const fetchExchangeRate = async () => {
@@ -126,6 +194,25 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
     } else {
       setValue("toClientId", "");
     }
+  };
+
+  const handleUpdateToNewType = () => {
+    if (pendingShipType) {
+      fillShipParticulars(pendingShipType, true);
+      setPendingShipType(null);
+    }
+    setShowUpdateDialog(false);
+  };
+
+  const handleKeepCurrentValues = () => {
+    setSelectedVessel(vesselName);
+    setPendingShipType(null);
+    setShowUpdateDialog(false);
+  };
+
+  const handleFieldChange = (fieldName: string, value: string) => {
+    setAutoFilledValues(prev => ({ ...prev, [fieldName]: false }));
+    validateFieldValue(fieldName, value);
   };
 
   const onSubmit = (data: PDAStep1Data) => {
@@ -314,14 +401,34 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                     name="dwt"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>DWT (tons) *</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          DWT (MT) *
+                          {autoFilledValues.dwt && (
+                            <Badge variant="secondary" className="text-xs">auto</Badge>
+                          )}
+                        </FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g. 65,000 - 80,000 tons" {...field} />
+                          <Input 
+                            type="number"
+                            step="1"
+                            placeholder="e.g. 75000"
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              handleFieldChange("dwt", e.target.value);
+                            }}
+                          />
                         </FormControl>
-                        {vesselName && VESSEL_TYPES.find(v => v.classification === vesselName) && (
+                        {currentShipType && SHIP_TYPE_RANGES[currentShipType] && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            Autopreenchido a partir do cadastro do navio
+                            {formatShipRange(SHIP_TYPE_RANGES[currentShipType].dwt, "MT")}
                           </p>
+                        )}
+                        {validationWarnings.dwt && (
+                          <div className="flex items-center gap-1 text-xs text-amber-600 mt-1">
+                            <AlertTriangle className="h-3 w-3" />
+                            {validationWarnings.dwt}
+                          </div>
                         )}
                         <FormMessage />
                       </FormItem>
@@ -333,14 +440,34 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                     name="loa"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>LOA (meters) *</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          LOA (m) *
+                          {autoFilledValues.loa && (
+                            <Badge variant="secondary" className="text-xs">auto</Badge>
+                          )}
+                        </FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder="180.50" {...field} />
+                          <Input 
+                            type="number" 
+                            step="0.01" 
+                            placeholder="225.0"
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              handleFieldChange("loa", e.target.value);
+                            }}
+                          />
                         </FormControl>
-                        {vesselName && VESSEL_TYPES.find(v => v.classification === vesselName) && (
+                        {currentShipType && SHIP_TYPE_RANGES[currentShipType] && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            Autopreenchido a partir do cadastro do navio
+                            {formatShipRange(SHIP_TYPE_RANGES[currentShipType].loa, "m")}
                           </p>
+                        )}
+                        {validationWarnings.loa && (
+                          <div className="flex items-center gap-1 text-xs text-amber-600 mt-1">
+                            <AlertTriangle className="h-3 w-3" />
+                            {validationWarnings.loa}
+                          </div>
                         )}
                         <FormMessage />
                       </FormItem>
@@ -352,14 +479,34 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                     name="beam"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Beam (meters) *</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Beam (m) *
+                          {autoFilledValues.beam && (
+                            <Badge variant="secondary" className="text-xs">auto</Badge>
+                          )}
+                        </FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder="32.3" {...field} />
+                          <Input 
+                            type="number" 
+                            step="0.01" 
+                            placeholder="32.2"
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              handleFieldChange("beam", e.target.value);
+                            }}
+                          />
                         </FormControl>
-                        {vesselName && VESSEL_TYPES.find(v => v.classification === vesselName) && (
+                        {currentShipType && SHIP_TYPE_RANGES[currentShipType] && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            Autopreenchido a partir do cadastro do navio
+                            {formatShipRange(SHIP_TYPE_RANGES[currentShipType].beam, "m")}
                           </p>
+                        )}
+                        {validationWarnings.beam && (
+                          <div className="flex items-center gap-1 text-xs text-amber-600 mt-1">
+                            <AlertTriangle className="h-3 w-3" />
+                            {validationWarnings.beam}
+                          </div>
                         )}
                         <FormMessage />
                       </FormItem>
@@ -371,14 +518,34 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                     name="draft"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Draft (meters) *</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Draft (m) *
+                          {autoFilledValues.draft && (
+                            <Badge variant="secondary" className="text-xs">auto</Badge>
+                          )}
+                        </FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder="12.0" {...field} />
+                          <Input 
+                            type="number" 
+                            step="0.01" 
+                            placeholder="12.5"
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              handleFieldChange("draft", e.target.value);
+                            }}
+                          />
                         </FormControl>
-                        {vesselName && VESSEL_TYPES.find(v => v.classification === vesselName) && (
+                        {currentShipType && SHIP_TYPE_RANGES[currentShipType] && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            Autopreenchido a partir do cadastro do navio
+                            {formatShipRange(SHIP_TYPE_RANGES[currentShipType].draft, "m")}
                           </p>
+                        )}
+                        {validationWarnings.draft && (
+                          <div className="flex items-center gap-1 text-xs text-amber-600 mt-1">
+                            <AlertTriangle className="h-3 w-3" />
+                            {validationWarnings.draft}
+                          </div>
                         )}
                         <FormMessage />
                       </FormItem>
@@ -478,6 +645,25 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
           </div>
         </form>
       </Form>
+
+      <AlertDialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Atualizar valores do navio</AlertDialogTitle>
+            <AlertDialogDescription>
+              Atualizar os valores para o range de {pendingShipType}? Isso irá sobrescrever os valores atuais com as médias do novo tipo de navio.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleKeepCurrentValues}>
+              Manter meus valores
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleUpdateToNewType}>
+              Atualizar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
