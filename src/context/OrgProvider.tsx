@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthProvider";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface Organization {
   id: string;
@@ -20,6 +21,7 @@ const OrgContext = createContext<OrgContextValue | undefined>(undefined);
 
 export const OrgProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
+  const { isPlatformAdmin, loading: roleLoading } = useUserRole();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [activeOrg, setActiveOrgState] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,12 +34,25 @@ export const OrgProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
 
-    fetchUserOrganizations();
-  }, [user]);
+    // Wait for role to load before fetching orgs
+    if (roleLoading) {
+      return;
+    }
 
-  // Redirect to no-organization page if user has no orgs
+    // Platform admins don't need org membership
+    if (isPlatformAdmin) {
+      setOrganizations([]);
+      setActiveOrgState(null);
+      setLoading(false);
+      return;
+    }
+
+    fetchUserOrganizations();
+  }, [user, isPlatformAdmin, roleLoading]);
+
+  // Redirect to no-organization page if user has no orgs (but not platformAdmin)
   useEffect(() => {
-    if (!loading && user && organizations.length === 0) {
+    if (!loading && !roleLoading && user && organizations.length === 0 && !isPlatformAdmin) {
       // Check if we're not already on the no-organization page
       if (!window.location.pathname.includes('/no-organization') && 
           !window.location.pathname.includes('/invite') &&
@@ -45,7 +60,7 @@ export const OrgProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         window.location.href = '/no-organization';
       }
     }
-  }, [loading, user, organizations]);
+  }, [loading, roleLoading, user, organizations, isPlatformAdmin]);
 
   const fetchUserOrganizations = async () => {
     try {

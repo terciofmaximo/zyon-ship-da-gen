@@ -16,11 +16,29 @@ import {
 } from "@/components/ui/popover";
 import { useOrg } from "@/context/OrgProvider";
 import { useNavigate } from "react-router-dom";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export function OrgSwitcher() {
   const { organizations, activeOrg, setActiveOrg } = useOrg();
+  const { isPlatformAdmin } = useUserRole();
   const [open, setOpen] = React.useState(false);
   const navigate = useNavigate();
+
+  // Show "All Tenants" for platformAdmin without org
+  if (isPlatformAdmin && !activeOrg) {
+    return (
+      <Button
+        variant="outline"
+        className="w-[200px] justify-start cursor-default"
+        disabled
+      >
+        <div className="flex items-center gap-2">
+          <Building2 className="h-4 w-4" />
+          <span className="truncate">All Tenants</span>
+        </div>
+      </Button>
+    );
+  }
 
   if (!activeOrg || organizations.length === 0) {
     return null;

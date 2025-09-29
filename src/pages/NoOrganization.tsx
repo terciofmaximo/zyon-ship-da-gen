@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,12 +7,21 @@ import { Label } from "@/components/ui/label";
 import { Building2, Link as LinkIcon, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export default function NoOrganization() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isPlatformAdmin, loading: roleLoading } = useUserRole();
   const [inviteToken, setInviteToken] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Redirect platformAdmin to dashboard
+  useEffect(() => {
+    if (!roleLoading && isPlatformAdmin) {
+      navigate("/", { replace: true });
+    }
+  }, [isPlatformAdmin, roleLoading, navigate]);
 
   const handleInviteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
