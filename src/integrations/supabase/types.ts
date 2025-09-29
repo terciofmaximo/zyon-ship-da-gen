@@ -19,6 +19,7 @@ export type Database = {
           agency_fee: number | null
           beam: string | null
           berth: string | null
+          berths: Json | null
           cargo: string | null
           clearance: number | null
           comments: Json | null
@@ -66,6 +67,7 @@ export type Database = {
           agency_fee?: number | null
           beam?: string | null
           berth?: string | null
+          berths?: Json | null
           cargo?: string | null
           clearance?: number | null
           comments?: Json | null
@@ -113,6 +115,7 @@ export type Database = {
           agency_fee?: number | null
           beam?: string | null
           berth?: string | null
+          berths?: Json | null
           cargo?: string | null
           clearance?: number | null
           comments?: Json | null

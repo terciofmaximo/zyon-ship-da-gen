@@ -18,7 +18,7 @@ interface PDADetail {
   to_display_name: string | null;
   sent_at: string | null;
   sent_by_user_id: string | null;
-  status: "IN_PROGRESS" | "SENT" | "APPROVED";
+  status: "CREATED" | "IN_PROGRESS" | "SENT" | "APPROVED";
   vessel_name: string | null;
   imo_number: string | null;
   dwt: string | null;
@@ -58,6 +58,7 @@ interface PDADetail {
 }
 
 const statusLabels = {
+  CREATED: "Criada",
   IN_PROGRESS: "Em andamento",
   SENT: "Enviada",
   APPROVED: "Aprovada",
