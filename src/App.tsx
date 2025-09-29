@@ -19,6 +19,7 @@ import InviteAccept from "@/pages/InviteAccept";
 import NoOrganization from "@/pages/NoOrganization";
 import OrganizationSettings from "@/pages/OrganizationSettings";
 import PlatformAdmin from "@/pages/PlatformAdmin";
+import SeedAdmin from "@/pages/SeedAdmin";
 import { AuthProvider } from "@/context/AuthProvider";
 import { OrgProvider } from "@/context/OrgProvider";
 import { RequireAuth } from "@/components/auth/RequireAuth";
@@ -36,6 +37,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<DashboardLayout><Index /></DashboardLayout>} />
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/seed-admin" element={<SeedAdmin />} />
               <Route path="/invite" element={<InviteAccept />} />
               <Route path="/no-organization" element={<RequireAuth><NoOrganization /></RequireAuth>} />
               <Route path="/settings" element={<RequireAuth><DashboardLayout><OrganizationSettings /></DashboardLayout></RequireAuth>} />

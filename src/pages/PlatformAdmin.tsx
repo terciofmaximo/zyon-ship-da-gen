@@ -33,9 +33,21 @@ export default function PlatformAdmin() {
 
   const handleSeedAdmin = async () => {
     try {
-      await seedAdmin();
+      console.log('Calling seed-platform-admin edge function...');
+      const result = await seedAdmin();
+      console.log('Seed result:', result);
+      
+      toast({
+        title: "Success",
+        description: "Platform admin seeded. You can now log in with contact@vesselopsportal.com",
+      });
     } catch (error) {
       console.error("Error seeding admin:", error);
+      toast({
+        title: "Error",
+        description: "Failed to seed platform admin. Check console for details.",
+        variant: "destructive",
+      });
     }
   };
 

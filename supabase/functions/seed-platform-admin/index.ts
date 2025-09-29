@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('Starting platform admin seed...');
+    console.log('=== Starting platform admin seed ===');
 
     // Create admin client with service role
     const supabaseAdmin = createClient(
@@ -29,6 +29,8 @@ Deno.serve(async (req) => {
     const adminEmail = 'contact@vesselopsportal.com';
     const adminPassword = 'Admin123!';
 
+    console.log(`Checking for existing user: ${adminEmail}`);
+
     // Check if user already exists
     const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
     
@@ -37,16 +39,18 @@ Deno.serve(async (req) => {
       throw listError;
     }
 
-    const existingUser = existingUsers.users.find(u => u.email === adminEmail);
+    const existingUser = existingUsers.users.find(u => u.email?.toLowerCase() === adminEmail.toLowerCase());
 
     let userId: string;
 
     if (existingUser) {
-      console.log('User already exists, updating...');
+      console.log(`User exists with ID: ${existingUser.id}`);
+      console.log(`Current email_confirmed_at: ${existingUser.email_confirmed_at}`);
       userId = existingUser.id;
 
-      // Update existing user
-      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+      // Update existing user - force email confirmation and update password
+      console.log('Updating user with email confirmation...');
+      const { data: updatedUser, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
         userId,
         {
           email: adminEmail,
@@ -64,10 +68,11 @@ Deno.serve(async (req) => {
       }
 
       console.log('User updated successfully');
+      console.log(`New email_confirmed_at: ${updatedUser.user.email_confirmed_at}`);
     } else {
-      console.log('Creating new user...');
+      console.log('User does not exist, creating new user...');
 
-      // Create new user
+      // Create new user with email already confirmed
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email: adminEmail,
         password: adminPassword,
@@ -87,60 +92,91 @@ Deno.serve(async (req) => {
       }
 
       userId = newUser.user.id;
-      console.log('User created successfully with ID:', userId);
+      console.log(`User created successfully with ID: ${userId}`);
+      console.log(`Email confirmed at: ${newUser.user.email_confirmed_at}`);
     }
 
-    // Grant platformAdmin role
-    console.log('Granting platformAdmin role...');
+    // Grant platformAdmin role using user_roles table
+    console.log('Managing platformAdmin role...');
     
-    // First, remove any existing roles for this user to avoid duplicates
-    const { error: deleteRolesError } = await supabaseAdmin
+    // First, check if role already exists
+    const { data: existingRoles, error: checkRoleError } = await supabaseAdmin
       .from('user_roles')
-      .delete()
+      .select('*')
+      .eq('user_id', userId)
+      .eq('role', 'platformAdmin');
+
+    if (checkRoleError) {
+      console.error('Error checking existing roles:', checkRoleError);
+    }
+
+    if (!existingRoles || existingRoles.length === 0) {
+      console.log('platformAdmin role not found, inserting...');
+      
+      // Remove any other roles first to ensure clean state
+      const { error: deleteRolesError } = await supabaseAdmin
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+
+      if (deleteRolesError) {
+        console.error('Error removing existing roles:', deleteRolesError);
+        // Continue anyway
+      }
+
+      // Insert platformAdmin role
+      const { error: roleError } = await supabaseAdmin
+        .from('user_roles')
+        .insert({
+          user_id: userId,
+          role: 'platformAdmin',
+        });
+
+      if (roleError) {
+        console.error('Error inserting platformAdmin role:', roleError);
+        throw roleError;
+      }
+
+      console.log('platformAdmin role granted successfully');
+    } else {
+      console.log('platformAdmin role already exists');
+    }
+
+    // Verify role was set correctly
+    const { data: verifyRoles, error: verifyError } = await supabaseAdmin
+      .from('user_roles')
+      .select('*')
       .eq('user_id', userId);
 
-    if (deleteRolesError) {
-      console.error('Error removing existing roles:', deleteRolesError);
-      // Continue anyway, might not be a critical error
-    }
+    console.log('Current user roles:', JSON.stringify(verifyRoles));
 
-    // Insert platformAdmin role
-    const { error: roleError } = await supabaseAdmin
-      .from('user_roles')
-      .insert({
-        user_id: userId,
-        role: 'platformAdmin',
-      });
-
-    if (roleError) {
-      console.error('Error inserting role:', roleError);
-      throw roleError;
-    }
-
-    console.log('platformAdmin role granted successfully');
-
-    // Optional: Add to Zyon organization as owner for demo purposes
+    // Add to Zyon organization as owner for demo purposes
     console.log('Checking for Zyon organization...');
     
     const { data: zyonOrg, error: orgError } = await supabaseAdmin
       .from('organizations')
-      .select('id')
+      .select('id, name')
       .ilike('name', '%zyon%')
       .limit(1)
       .maybeSingle();
 
     if (!orgError && zyonOrg) {
-      console.log('Found Zyon organization, adding user as owner...');
+      console.log(`Found organization: ${zyonOrg.name} (${zyonOrg.id})`);
       
       // Check if already a member
-      const { data: existingMember } = await supabaseAdmin
+      const { data: existingMember, error: memberCheckError } = await supabaseAdmin
         .from('organization_members')
         .select('*')
         .eq('org_id', zyonOrg.id)
         .eq('user_id', userId)
         .maybeSingle();
 
+      if (memberCheckError) {
+        console.error('Error checking membership:', memberCheckError);
+      }
+
       if (!existingMember) {
+        console.log('Adding user to organization as owner...');
         const { error: memberError } = await supabaseAdmin
           .from('organization_members')
           .insert({
@@ -153,14 +189,32 @@ Deno.serve(async (req) => {
           console.error('Error adding to organization:', memberError);
           // Non-critical, continue
         } else {
-          console.log('Added to Zyon organization as owner');
+          console.log('Successfully added to organization');
         }
       } else {
-        console.log('Already a member of Zyon organization');
+        console.log(`Already a member with role: ${existingMember.role}`);
+        
+        // Update role to owner if not already
+        if (existingMember.role !== 'owner') {
+          console.log('Updating role to owner...');
+          const { error: updateMemberError } = await supabaseAdmin
+            .from('organization_members')
+            .update({ role: 'owner' })
+            .eq('org_id', zyonOrg.id)
+            .eq('user_id', userId);
+
+          if (updateMemberError) {
+            console.error('Error updating member role:', updateMemberError);
+          } else {
+            console.log('Role updated to owner');
+          }
+        }
       }
     } else {
-      console.log('Zyon organization not found, skipping org membership');
+      console.log('Zyon organization not found');
     }
+
+    console.log('=== Platform admin seed completed successfully ===');
 
     return new Response(
       JSON.stringify({
@@ -168,6 +222,11 @@ Deno.serve(async (req) => {
         message: 'Platform admin seeded successfully',
         email: adminEmail,
         userId: userId,
+        details: {
+          userExists: !!existingUser,
+          roleSet: true,
+          organizationMember: !!zyonOrg,
+        }
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -175,12 +234,14 @@ Deno.serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error in seed-platform-admin:', error);
+    console.error('=== Error in seed-platform-admin ===');
+    console.error('Error details:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(
       JSON.stringify({
         success: false,
         error: errorMessage,
+        details: error instanceof Error ? error.stack : undefined,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

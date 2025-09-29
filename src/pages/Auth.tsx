@@ -51,12 +51,28 @@ const AuthPage: React.FC = () => {
     setPending(true);
     try {
       if (mode === "login") {
+        console.log('Attempting login for:', form.email);
+        
         const { data, error } = await supabase.auth.signInWithPassword({
           email: form.email,
           password: form.password,
         });
         
-        if (error) throw error;
+        if (error) {
+          console.error('Login error:', {
+            message: error.message,
+            status: error.status,
+            code: error.code,
+            name: error.name,
+          });
+          throw error;
+        }
+
+        console.log('Login successful:', {
+          userId: data.user?.id,
+          email: data.user?.email,
+          emailConfirmed: data.user?.email_confirmed_at,
+        });
         
         toast({ title: "Bem-vindo", description: "Login efetuado com sucesso" });
         navigate(redirectTo, { replace: true });
@@ -71,8 +87,28 @@ const AuthPage: React.FC = () => {
         toast({ title: "Verifique seu e-mail", description: "Confirme seu cadastro para prosseguir" });
       }
     } catch (err: any) {
-      const msg = err?.message || "Login failed. Please try again.";
-      toast({ title: "Erro", description: msg, variant: "destructive" });
+      console.error('Authentication error:', err);
+      
+      let errorMessage = "Login failed. Please try again.";
+      
+      // Provide more specific error messages
+      if (err?.message) {
+        if (err.message.includes('Invalid login credentials')) {
+          errorMessage = "Invalid email or password. Please check your credentials.";
+        } else if (err.message.includes('Email not confirmed')) {
+          errorMessage = "Please confirm your email address before logging in.";
+        } else if (err.message.includes('User not found')) {
+          errorMessage = "No account found with this email.";
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      toast({ 
+        title: "Erro", 
+        description: errorMessage, 
+        variant: "destructive" 
+      });
     } finally {
       setPending(false);
     }
@@ -112,11 +148,23 @@ const AuthPage: React.FC = () => {
             <Button type="submit" disabled={pending} className="w-full">{pending ? "Aguarde..." : (mode === "login" ? "Entrar" : "Cadastrar")}</Button>
           </form>
           <Separator className="my-6" />
-          <div className="text-sm text-muted-foreground">
-            {mode === "login" ? (
-              <button className="underline" onClick={() => setMode("signup")}>Não tem conta? Cadastre-se</button>
-            ) : (
-              <button className="underline" onClick={() => setMode("login")}>Já tem conta? Entrar</button>
+          <div className="space-y-3">
+            <div className="text-sm text-muted-foreground">
+              {mode === "login" ? (
+                <button className="underline" onClick={() => setMode("signup")}>Não tem conta? Cadastre-se</button>
+              ) : (
+                <button className="underline" onClick={() => setMode("login")}>Já tem conta? Entrar</button>
+              )}
+            </div>
+            {mode === "login" && (
+              <div className="text-center pt-2 border-t">
+                <button 
+                  className="text-xs text-muted-foreground hover:text-foreground underline"
+                  onClick={() => navigate('/seed-admin')}
+                >
+                  🔧 Seed Platform Admin (Dev Tool)
+                </button>
+              </div>
             )}
           </div>
         </CardContent>
