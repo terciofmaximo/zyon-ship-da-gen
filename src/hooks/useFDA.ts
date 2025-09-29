@@ -95,7 +95,6 @@ export const useFDA = () => {
       // Process each cost item from PDA - create single line per item
       Object.entries(COST_ITEM_MAPPING).forEach(([pdaField, category]) => {
         const amount = parseFloat(pda[pdaField] || "0");
-        if (amount <= 0) return;
 
         const exchangeRate = new Decimal(fdaData.exchange_rate);
         const amountUSD = new Decimal(amount);
@@ -225,7 +224,6 @@ export const useFDA = () => {
 
       Object.entries(COST_ITEM_MAPPING).forEach(([pdaField, category]) => {
         const amount = parseFloat(pda[pdaField] || "0");
-        if (amount <= 0) return;
 
         const exchangeRate = new Decimal(fda.exchange_rate || 5.25);
         const amountUSD = new Decimal(amount);

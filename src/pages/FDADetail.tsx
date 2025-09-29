@@ -324,7 +324,7 @@ export default function FDADetail() {
                 <X className="h-4 w-4 mr-2" />
                 Cancel
               </Button>
-              <Button size="sm" onClick={handleSaveDraft} disabled={isSaving || !isDirty}>
+              <Button size="sm" onClick={handleSaveDraft} disabled={isSaving}>
                 {isSaving ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
