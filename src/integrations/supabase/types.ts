@@ -33,6 +33,7 @@ export type Database = {
           port: string | null
           remarks: string | null
           status: Database["public"]["Enums"]["fda_status"]
+          tenant_id: string
           terminal: string | null
           updated_at: string
           vessel_name: string | null
@@ -55,6 +56,7 @@ export type Database = {
           port?: string | null
           remarks?: string | null
           status?: Database["public"]["Enums"]["fda_status"]
+          tenant_id: string
           terminal?: string | null
           updated_at?: string
           vessel_name?: string | null
@@ -77,6 +79,7 @@ export type Database = {
           port?: string | null
           remarks?: string | null
           status?: Database["public"]["Enums"]["fda_status"]
+          tenant_id?: string
           terminal?: string | null
           updated_at?: string
           vessel_name?: string | null
@@ -113,6 +116,7 @@ export type Database = {
           side: Database["public"]["Enums"]["fda_ledger_side"]
           source: Json | null
           status: Database["public"]["Enums"]["fda_ledger_status"]
+          tenant_id: string
           updated_at: string
           use_custom_fx: boolean | null
           voyage_fixture: string | null
@@ -146,6 +150,7 @@ export type Database = {
           side: Database["public"]["Enums"]["fda_ledger_side"]
           source?: Json | null
           status?: Database["public"]["Enums"]["fda_ledger_status"]
+          tenant_id: string
           updated_at?: string
           use_custom_fx?: boolean | null
           voyage_fixture?: string | null
@@ -179,6 +184,7 @@ export type Database = {
           side?: Database["public"]["Enums"]["fda_ledger_side"]
           source?: Json | null
           status?: Database["public"]["Enums"]["fda_ledger_status"]
+          tenant_id?: string
           updated_at?: string
           use_custom_fx?: boolean | null
           voyage_fixture?: string | null
@@ -197,6 +203,7 @@ export type Database = {
         Row: {
           id: string
           ledger_id: string
+          tenant_id: string
           type: string
           uploaded_at: string
           uploaded_by: string | null
@@ -206,6 +213,7 @@ export type Database = {
         Insert: {
           id?: string
           ledger_id: string
+          tenant_id: string
           type: string
           uploaded_at?: string
           uploaded_by?: string | null
@@ -215,6 +223,7 @@ export type Database = {
         Update: {
           id?: string
           ledger_id?: string
+          tenant_id?: string
           type?: string
           uploaded_at?: string
           uploaded_by?: string | null
@@ -244,6 +253,7 @@ export type Database = {
           paid_at: string
           receipt_url: string | null
           reference: string | null
+          tenant_id: string
         }
         Insert: {
           amount_local: number
@@ -257,6 +267,7 @@ export type Database = {
           paid_at: string
           receipt_url?: string | null
           reference?: string | null
+          tenant_id: string
         }
         Update: {
           amount_local?: number
@@ -270,6 +281,7 @@ export type Database = {
           paid_at?: string
           receipt_url?: string | null
           reference?: string | null
+          tenant_id?: string
         }
         Relationships: [
           {
@@ -280,6 +292,56 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      organization_members: {
+        Row: {
+          created_at: string
+          org_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          org_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          org_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
       }
       pdas: {
         Row: {
@@ -451,7 +513,32 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_org_memberships: {
+        Row: {
+          org_id: string | null
+          role: string | null
+          user_id: string | null
+        }
+        Insert: {
+          org_id?: string | null
+          role?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          org_id?: string | null
+          role?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       generate_pda_number: {
