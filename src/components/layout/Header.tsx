@@ -1,19 +1,24 @@
-import { Settings, User } from "lucide-react";
+import { Settings, User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { OrgSwitcher } from "./OrgSwitcher";
 import { useOrg } from "@/context/OrgProvider";
+import { InviteMemberDialog } from "@/components/organization/InviteMemberDialog";
+import { useUserRole } from "@/hooks/useUserRole";
 
 
 export function Header() {
-  const { organizations } = useOrg();
+  const { organizations, activeOrg } = useOrg();
+  const { isAdmin, isPlatformAdmin } = useUserRole();
   const showOrgSwitcher = organizations.length > 1;
+  const canInvite = isAdmin || isPlatformAdmin;
 
   return (
     <header className="border-b bg-background shadow-soft">
@@ -24,6 +29,22 @@ export function Header() {
 
         <div className="flex items-center gap-4">
           {showOrgSwitcher && <OrgSwitcher />}
+          
+          {activeOrg && canInvite && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-foreground hover:bg-accent hover:text-accent-foreground">
+                  <Users className="h-4 w-4 mr-2" />
+                  People
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <InviteMemberDialog />
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>View Members</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

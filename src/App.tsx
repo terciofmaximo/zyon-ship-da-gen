@@ -15,6 +15,7 @@ import FDAList from "@/pages/FDAList";
 import FDADetail from "@/pages/FDADetail";
 import FDANew from "@/pages/FDANew";
 import FDALineDetail from "@/pages/FDALineDetail";
+import InviteAccept from "@/pages/InviteAccept";
 import { AuthProvider } from "@/context/AuthProvider";
 import { OrgProvider } from "@/context/OrgProvider";
 import { RequireAuth } from "@/components/auth/RequireAuth";
@@ -32,6 +33,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<DashboardLayout><Index /></DashboardLayout>} />
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/invite" element={<InviteAccept />} />
               <Route path="/pda" element={<RequireAuth><DashboardLayout><PDAList /></DashboardLayout></RequireAuth>} />
               <Route path="/pda/new" element={<RequireAuth><DashboardLayout><NewPDAWizard /></DashboardLayout></RequireAuth>} />
               <Route path="/pda/:id/review" element={<RequireAuth><DashboardLayout><PDAReview /></DashboardLayout></RequireAuth>} />
