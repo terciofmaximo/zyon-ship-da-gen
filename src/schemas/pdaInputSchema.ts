@@ -43,7 +43,7 @@ export const PDAInputSchema = z.object({
   
   // Location and routing
   from: z.string().trim().min(1, "Origin location is required"),
-  to: z.string().trim().min(1, "Destination location is required"),
+  to: z.string().trim().optional().nullable(),
   toClientId: z.string().optional().nullable(),
   
   // Date and exchange rate

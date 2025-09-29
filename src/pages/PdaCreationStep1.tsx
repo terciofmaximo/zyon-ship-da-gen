@@ -280,7 +280,7 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                   name="to"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>To *</FormLabel>
+                      <FormLabel>To</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
