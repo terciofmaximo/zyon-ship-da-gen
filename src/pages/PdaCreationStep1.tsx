@@ -57,6 +57,7 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
 
   const [selectedVessel, setSelectedVessel] = useState<string>("");
   const [currentShipType, setCurrentShipType] = useState<string | null>(null);
+  const [currentShipTypeRanges, setCurrentShipTypeRanges] = useState<ShipTypeRange | null>(null);
   const [autoFilledValues, setAutoFilledValues] = useState<Record<string, boolean>>({});
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const [pendingShipType, setPendingShipType] = useState<string | null>(null);
@@ -114,27 +115,28 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
     });
     
     setCurrentShipType(shipType);
+    setCurrentShipTypeRanges(ranges);
     setSelectedVessel(vesselName);
   };
-  };
 
-  const validateFieldValue = (fieldName: string, value: string) => {
+  const validateFieldValue = async (fieldName: string, value: string) => {
     if (!currentShipType || !value) {
       setValidationWarnings(prev => ({ ...prev, [fieldName]: "" }));
       return;
     }
 
-    const ranges = SHIP_TYPE_RANGES[currentShipType];
+    const ranges = await getShipTypeRange(currentShipType);
     if (!ranges) return;
 
     const numValue = parseFloat(value);
     if (isNaN(numValue)) return;
 
-    const fieldRange = ranges[fieldName as keyof typeof ranges];
-    if (!isValueInRange(numValue, fieldRange)) {
+    const fieldRange = ranges[fieldName as keyof ShipTypeRange] as [number, number];
+    if (fieldRange && !isValueInRange(numValue, fieldRange)) {
+      const unit = fieldName === 'dwt' ? 'MT' : 'm';
       setValidationWarnings(prev => ({ 
         ...prev, 
-        [fieldName]: `Valor fora do range típico para ${currentShipType} (${fieldRange[0]}–${fieldRange[1]}).`
+        [fieldName]: `Valor fora do range típico para ${currentShipType} (${formatShipRange(fieldRange, unit)})`
       }));
     } else {
       setValidationWarnings(prev => ({ ...prev, [fieldName]: "" }));
@@ -454,9 +456,9 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                             }}
                           />
                         </FormControl>
-                        {currentShipType && SHIP_TYPE_RANGES[currentShipType] && (
+                        {currentShipType && currentShipTypeRanges && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            {formatShipRange(SHIP_TYPE_RANGES[currentShipType].dwt, "MT")}
+                            {formatShipRange(currentShipTypeRanges.dwt, "MT")}
                           </p>
                         )}
                         {validationWarnings.dwt && (
@@ -493,9 +495,9 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                             }}
                           />
                         </FormControl>
-                        {currentShipType && SHIP_TYPE_RANGES[currentShipType] && (
+                        {currentShipType && currentShipTypeRanges && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            {formatShipRange(SHIP_TYPE_RANGES[currentShipType].loa, "m")}
+                            {formatShipRange(currentShipTypeRanges.loa, "m")}
                           </p>
                         )}
                         {validationWarnings.loa && (
@@ -532,9 +534,9 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                             }}
                           />
                         </FormControl>
-                        {currentShipType && SHIP_TYPE_RANGES[currentShipType] && (
+                        {currentShipType && currentShipTypeRanges && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            {formatShipRange(SHIP_TYPE_RANGES[currentShipType].beam, "m")}
+                            {formatShipRange(currentShipTypeRanges.beam, "m")}
                           </p>
                         )}
                         {validationWarnings.beam && (
@@ -571,9 +573,9 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                             }}
                           />
                         </FormControl>
-                        {currentShipType && SHIP_TYPE_RANGES[currentShipType] && (
+                        {currentShipType && currentShipTypeRanges && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            {formatShipRange(SHIP_TYPE_RANGES[currentShipType].draft, "m")}
+                            {formatShipRange(currentShipTypeRanges.draft, "m")}
                           </p>
                         )}
                         {validationWarnings.draft && (
