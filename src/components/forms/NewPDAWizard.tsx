@@ -146,6 +146,7 @@ export function NewPDAWizard() {
             onBack={handleBack}
             shipData={shipData}
             costData={costData}
+            pdaId={savedPdaId}
           />
         )}
       </CardContent>

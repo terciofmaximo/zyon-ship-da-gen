@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Search, Plus, MoreHorizontal, Eye, Check, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,6 +71,7 @@ const statusVariants = {
 
 export default function PDAList() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const [pdas, setPdas] = useState<PDA[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,10 +81,37 @@ export default function PDAList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [confirmApprovalId, setConfirmApprovalId] = useState<string | null>(null);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
 
   useEffect(() => {
     fetchPDAs();
   }, [sortBy, currentPage, pageSize]);
+
+  useEffect(() => {
+    // Handle highlighting from URL params
+    const highlighted = searchParams.get('highlighted');
+    if (highlighted && pdas.length > 0) {
+      setHighlightedId(highlighted);
+      
+      // Scroll to highlighted row after a short delay to ensure it's rendered
+      setTimeout(() => {
+        const highlightedRow = document.querySelector(`[data-pda-id="${highlighted}"]`);
+        if (highlightedRow) {
+          highlightedRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+      
+      // Remove highlighting after 3 seconds
+      setTimeout(() => {
+        setHighlightedId(null);
+        // Remove the parameter from URL without triggering navigation
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete('highlighted');
+        setSearchParams(newSearchParams, { replace: true });
+      }, 3000);
+    }
+  }, [pdas, searchParams, setSearchParams]);
 
   const fetchPDAs = async () => {
     setLoading(true);
@@ -336,7 +364,15 @@ export default function PDAList() {
                 </TableHeader>
                 <TableBody>
                   {filteredPDAs.map((pda) => (
-                    <TableRow key={pda.id}>
+                    <TableRow 
+                      key={pda.id} 
+                      data-pda-id={pda.id}
+                      className={`transition-colors duration-300 ${
+                        highlightedId === pda.id 
+                          ? "bg-primary/5 border-l-4 border-l-primary shadow-sm" 
+                          : ""
+                      }`}
+                    >
                       <TableCell>
                         <Button
                           variant="link"

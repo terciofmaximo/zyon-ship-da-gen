@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, Download, Send, RefreshCw } from "lucide-react";
+import { FileText, Download, Save, RefreshCw, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { usePDA } from "@/hooks/usePDA";
 import type { CostData } from "@/types";
 import type { PDAStep1Data } from "@/schemas/pdaSchema";
 import { generatePDAHTML } from "@/components/pdf/PDADocument";
@@ -21,6 +23,10 @@ interface ReviewFormProps {
 
 export function ReviewForm({ onBack, shipData, costData, pdaId }: ReviewFormProps) {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { savePDA, loading } = usePDA();
+  const [isSaving, setIsSaving] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
   const totalUSD = Object.values(costData).reduce((sum: number, cost: number) => sum + (cost || 0), 0);
   const totalBRL = totalUSD * parseFloat(shipData.exchangeRate || "5.25");
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
@@ -103,14 +109,78 @@ export function ReviewForm({ onBack, shipData, costData, pdaId }: ReviewFormProp
     openPDAPreview();
   };
 
-  const handleConvertToFDA = () => {
-    // Mock FDA conversion
-    console.log("Converting to FDA...");
+  const handleSaveAndReturnToList = async () => {
+    setIsSaving(true);
+    try {
+      const pdaData = {
+        shipData: {
+          ...shipData,
+          remarks: shipData.remarks,
+          comments: shipData.comments
+        },
+        costData
+      };
+
+      const result = await savePDA(pdaData, pdaId);
+      
+      toast({
+        title: "Sucesso",
+        description: "PDA salva com sucesso.",
+      });
+
+      // Navigate to PDA list with highlighting
+      navigate(`/pda?highlighted=${result.id}`);
+    } catch (error) {
+      console.error("Error saving PDA:", error);
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar PDA. Tente novamente.",
+        variant: "destructive",
+        action: (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSaveAndReturnToList}
+          >
+            Tentar novamente
+          </Button>
+        ),
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleSendToBilling = () => {
-    // Mock billing integration
-    console.log("Sending to billing system...");
+  const handleConvertToFDA = async () => {
+    setIsConverting(true);
+    try {
+      // If PDA doesn't exist yet, save it first
+      let currentPdaId = pdaId;
+      if (!currentPdaId) {
+        const pdaData = {
+          shipData: {
+            ...shipData,
+            remarks: shipData.remarks,
+            comments: shipData.comments
+          },
+          costData
+        };
+        const result = await savePDA(pdaData);
+        currentPdaId = result.id;
+      }
+
+      // Navigate to FDA creation with PDA reference
+      navigate(`/fda/new?fromPdaId=${currentPdaId}`);
+    } catch (error) {
+      console.error("Error converting to FDA:", error);
+      toast({
+        title: "Erro",
+        description: "Erro ao converter para FDA.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsConverting(false);
+    }
   };
 
   const costItems = [
@@ -227,8 +297,42 @@ export function ReviewForm({ onBack, shipData, costData, pdaId }: ReviewFormProp
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            <Button 
+              onClick={handleSaveAndReturnToList} 
+              disabled={isSaving || loading}
+              className="h-10 sm:h-12 text-xs sm:text-sm bg-primary text-primary-foreground hover:bg-primary/90 font-medium rounded-lg flex items-center justify-center gap-2 transition-colors"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-3 w-3 sm:h-4 sm:w-4" />
+                  Save & Return to List
+                </>
+              )}
+            </Button>
+            
+            <Button 
+              onClick={handleConvertToFDA} 
+              disabled={isConverting || isSaving || loading}
+              className="h-10 sm:h-12 text-xs sm:text-sm bg-secondary text-secondary-foreground hover:bg-secondary/80"
+            >
+              {isConverting ? (
+                <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin mr-1 sm:mr-2" />
+              ) : (
+                <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              )}
+              <span className="hidden sm:inline">Convert to </span>FDA
+            </Button>
+            
             <div className="flex flex-col">
-              <Button onClick={handleGeneratePDF} className="h-10 sm:h-12 text-xs sm:text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg flex items-center justify-center gap-2 transition-colors">
+              <Button 
+                onClick={handleGeneratePDF} 
+                className="h-10 sm:h-12 text-xs sm:text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg flex items-center justify-center gap-2 transition-colors"
+              >
                 <Download className="h-3 w-3 sm:h-4 sm:w-4" />
                 Save as PDF
               </Button>
@@ -258,25 +362,36 @@ export function ReviewForm({ onBack, shipData, costData, pdaId }: ReviewFormProp
                 </p>
               )}
             </div>
-            <Button onClick={handleConvertToFDA} className="h-10 sm:h-12 text-xs sm:text-sm bg-primary text-primary-foreground hover:bg-primary-hover">
-              <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Convert to </span>FDA
-            </Button>
-            <Button onClick={handleSendToBilling} className="h-10 sm:h-12 text-xs sm:text-sm bg-primary text-primary-foreground hover:bg-primary-hover sm:col-span-2 lg:col-span-1">
-              <Send className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              Send to Billing
-            </Button>
           </div>
         </CardContent>
       </Card>
 
       <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0">
-        <Button type="button" variant="outline" onClick={onBack} className="w-full sm:w-auto">
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onBack} 
+          disabled={isSaving || loading}
+          className="w-full sm:w-auto"
+        >
           Back: Cost Entry
         </Button>
-        <Button onClick={handleGeneratePDF} className="px-4 sm:px-8 w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg flex items-center justify-center gap-2 transition-colors">
-          <Download className="h-4 w-4" />
-          Save as PDF
+        <Button 
+          onClick={handleSaveAndReturnToList} 
+          disabled={isSaving || loading}
+          className="px-4 sm:px-8 w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-lg flex items-center justify-center gap-2 transition-colors"
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save className="h-4 w-4" />
+              Save & Return to List
+            </>
+          )}
         </Button>
       </div>
     </div>
