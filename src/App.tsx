@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -38,7 +38,8 @@ const App = () => (
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/invite" element={<InviteAccept />} />
               <Route path="/no-organization" element={<RequireAuth><NoOrganization /></RequireAuth>} />
-              <Route path="/organization/settings" element={<RequireAuth><DashboardLayout><OrganizationSettings /></DashboardLayout></RequireAuth>} />
+              <Route path="/settings" element={<RequireAuth><DashboardLayout><OrganizationSettings /></DashboardLayout></RequireAuth>} />
+              <Route path="/organization/settings" element={<Navigate to="/settings" replace />} />
               <Route path="/platform-admin" element={<RequireAuth><PlatformAdmin /></RequireAuth>} />
               <Route path="/pda" element={<RequireAuth><DashboardLayout><PDAList /></DashboardLayout></RequireAuth>} />
               <Route path="/pda/new" element={<RequireAuth><DashboardLayout><NewPDAWizard /></DashboardLayout></RequireAuth>} />

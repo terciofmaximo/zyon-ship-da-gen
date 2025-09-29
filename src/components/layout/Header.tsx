@@ -1,4 +1,4 @@
-import { Settings, User, Users } from "lucide-react";
+import { Settings, User, Users, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { OrgSwitcher } from "./OrgSwitcher";
 import { useOrg } from "@/context/OrgProvider";
-import { InviteMemberDialog } from "@/components/organization/InviteMemberDialog";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNavigate } from "react-router-dom";
 
@@ -43,9 +42,13 @@ export function Header() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <InviteMemberDialog />
+                <DropdownMenuItem onClick={() => navigate('/settings?tab=people')}>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Invite Member
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/organization/settings')}>
+                <DropdownMenuItem onClick={() => navigate('/settings')}>
+                  <Settings className="h-4 w-4 mr-2" />
                   Organization Settings
                 </DropdownMenuItem>
               </DropdownMenuContent>
