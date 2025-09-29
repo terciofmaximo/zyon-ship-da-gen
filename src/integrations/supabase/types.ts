@@ -84,56 +84,101 @@ export type Database = {
         Row: {
           amount_local: number | null
           amount_usd: number | null
+          assigned_to: string | null
+          billing_class: string | null
           category: string | null
+          client_po: string | null
+          cost_center: string | null
           counterparty: string | null
           created_at: string
+          custom_fx_rate: number | null
           description: string | null
+          details: Json | null
           due_date: string | null
           fda_id: string
+          fx_source_url: string | null
+          gl_account: string | null
           id: string
+          invoice_date: string | null
           invoice_no: string | null
+          is_billable: boolean | null
           line_no: number
+          markup_pct: number | null
+          notes: string | null
+          payment_terms: string | null
           settled_at: string | null
           side: Database["public"]["Enums"]["fda_ledger_side"]
           source: Json | null
           status: Database["public"]["Enums"]["fda_ledger_status"]
           updated_at: string
+          use_custom_fx: boolean | null
+          voyage_fixture: string | null
         }
         Insert: {
           amount_local?: number | null
           amount_usd?: number | null
+          assigned_to?: string | null
+          billing_class?: string | null
           category?: string | null
+          client_po?: string | null
+          cost_center?: string | null
           counterparty?: string | null
           created_at?: string
+          custom_fx_rate?: number | null
           description?: string | null
+          details?: Json | null
           due_date?: string | null
           fda_id: string
+          fx_source_url?: string | null
+          gl_account?: string | null
           id?: string
+          invoice_date?: string | null
           invoice_no?: string | null
+          is_billable?: boolean | null
           line_no: number
+          markup_pct?: number | null
+          notes?: string | null
+          payment_terms?: string | null
           settled_at?: string | null
           side: Database["public"]["Enums"]["fda_ledger_side"]
           source?: Json | null
           status?: Database["public"]["Enums"]["fda_ledger_status"]
           updated_at?: string
+          use_custom_fx?: boolean | null
+          voyage_fixture?: string | null
         }
         Update: {
           amount_local?: number | null
           amount_usd?: number | null
+          assigned_to?: string | null
+          billing_class?: string | null
           category?: string | null
+          client_po?: string | null
+          cost_center?: string | null
           counterparty?: string | null
           created_at?: string
+          custom_fx_rate?: number | null
           description?: string | null
+          details?: Json | null
           due_date?: string | null
           fda_id?: string
+          fx_source_url?: string | null
+          gl_account?: string | null
           id?: string
+          invoice_date?: string | null
           invoice_no?: string | null
+          is_billable?: boolean | null
           line_no?: number
+          markup_pct?: number | null
+          notes?: string | null
+          payment_terms?: string | null
           settled_at?: string | null
           side?: Database["public"]["Enums"]["fda_ledger_side"]
           source?: Json | null
           status?: Database["public"]["Enums"]["fda_ledger_status"]
           updated_at?: string
+          use_custom_fx?: boolean | null
+          voyage_fixture?: string | null
         }
         Relationships: [
           {
@@ -141,6 +186,94 @@ export type Database = {
             columns: ["fda_id"]
             isOneToOne: false
             referencedRelation: "fda"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fda_ledger_attachments: {
+        Row: {
+          id: string
+          ledger_id: string
+          type: string
+          uploaded_at: string
+          uploaded_by: string | null
+          url: string
+          version: number
+        }
+        Insert: {
+          id?: string
+          ledger_id: string
+          type: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+          url: string
+          version?: number
+        }
+        Update: {
+          id?: string
+          ledger_id?: string
+          type?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+          url?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fda_ledger_attachments_ledger_id_fkey"
+            columns: ["ledger_id"]
+            isOneToOne: false
+            referencedRelation: "fda_ledger"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fda_ledger_payments: {
+        Row: {
+          amount_local: number
+          amount_usd: number
+          created_at: string
+          created_by: string | null
+          fx_at_payment: number
+          id: string
+          ledger_id: string
+          method: string
+          paid_at: string
+          receipt_url: string | null
+          reference: string | null
+        }
+        Insert: {
+          amount_local: number
+          amount_usd: number
+          created_at?: string
+          created_by?: string | null
+          fx_at_payment: number
+          id?: string
+          ledger_id: string
+          method: string
+          paid_at: string
+          receipt_url?: string | null
+          reference?: string | null
+        }
+        Update: {
+          amount_local?: number
+          amount_usd?: number
+          created_at?: string
+          created_by?: string | null
+          fx_at_payment?: number
+          id?: string
+          ledger_id?: string
+          method?: string
+          paid_at?: string
+          receipt_url?: string | null
+          reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fda_ledger_payments_ledger_id_fkey"
+            columns: ["ledger_id"]
+            isOneToOne: false
+            referencedRelation: "fda_ledger"
             referencedColumns: ["id"]
           },
         ]

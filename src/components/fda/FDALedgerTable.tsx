@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
-import { Calendar, Plus, ArrowUpDown } from 'lucide-react';
+import { Calendar, Plus, ArrowUpDown, ExternalLink } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format } from 'date-fns';
@@ -46,15 +44,6 @@ const STANDARD_CATEGORIES = [
 const fmtUSD = (n: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n ?? 0);
 const fmtBRL = (n: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n ?? 0);
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'Open': return 'bg-yellow-100 text-yellow-800';
-    case 'Partially Settled': return 'bg-blue-100 text-blue-800';
-    case 'Settled': return 'bg-green-100 text-green-800';
-    default: return 'bg-gray-100 text-gray-800';
-  }
-};
-
 export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
   fdaId,
   ledger,
@@ -68,6 +57,7 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
   const [sortField, setSortField] = useState<string>('line_no');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Initialize full ledger with standard categories
   useEffect(() => {
@@ -223,82 +213,94 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
 
   const LedgerRows = ({ data }: { data: FDALedger[] }) => (
     <div className="space-y-1">
-      {data.map((line) => (
-        <div
-          key={line.id}
-          className={`grid grid-cols-7 gap-2 p-2 border rounded-md text-sm ${
-            line.side === 'AP' 
-              ? 'bg-red-50 border-red-100' 
-              : 'bg-green-50 border-green-100'
-          }`}
-        >
-          {/* Line # */}
-          <div className="text-center font-mono text-gray-600">
-            {line.line_no}
-          </div>
+      {data.map((line) => {
+        // Only "Agency fee" gets green, all others red
+        const isAgencyFee = line.category?.toLowerCase() === 'agency fee';
+        const rowBgColor = isAgencyFee ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100';
+        
+        return (
+          <div
+            key={line.id}
+            className={`grid grid-cols-7 gap-2 p-2 border rounded-md text-sm ${rowBgColor}`}
+          >
+            {/* Line # */}
+            <div className="text-center font-mono text-gray-600">
+              {line.line_no}
+            </div>
 
-          {/* Description */}
-          <Input
-            value={line.description || ''}
-            onChange={(e) => handleCellEdit(line.id, 'description', e.target.value)}
-            className="h-8"
-            placeholder="Description"
-          />
-
-          {/* Amount USD */}
-          <Input
-            type="number"
-            value={line.amount_usd || ''}
-            onChange={(e) => handleCellEdit(line.id, 'amount_usd', e.target.value)}
-            className="h-8"
-            placeholder="0.00"
-          />
-
-          {/* Amount BRL (read-only) */}
-          <div className="h-8 px-2 bg-gray-50 border rounded text-right leading-8 text-gray-600">
-            {fmtBRL(line.amount_local || 0)}
-          </div>
-
-          {/* Invoice # */}
-          <Input
-            value={line.invoice_no || ''}
-            onChange={(e) => handleCellEdit(line.id, 'invoice_no', e.target.value)}
-            className="h-8"
-            placeholder="Invoice #"
-          />
-
-          {/* Due Date */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="h-8 px-2 text-left font-normal">
-                {line.due_date ? format(new Date(line.due_date), 'MM/dd/yyyy') : 'Select date'}
-                <Calendar className="ml-1 h-3 w-3" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <CalendarComponent
-                mode="single"
-                selected={line.due_date ? new Date(line.due_date) : undefined}
-                onSelect={(date) => 
-                  handleCellEdit(line.id, 'due_date', date?.toISOString().split('T')[0] || null)
-                }
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-
-          {/* Status & Paid */}
-          <div className="flex items-center gap-2">
-            <Checkbox
-              checked={line.status === 'Settled'}
-              onCheckedChange={(checked) => handleCellEdit(line.id, 'paid', checked)}
+            {/* Description */}
+            <Input
+              value={line.description || ''}
+              onChange={(e) => handleCellEdit(line.id, 'description', e.target.value)}
+              className="h-8"
+              placeholder="Description"
             />
-            <Badge className={getStatusColor(line.status)}>
-              {line.status}
-            </Badge>
+
+            {/* Amount USD */}
+            <Input
+              type="number"
+              value={line.amount_usd || ''}
+              onChange={(e) => handleCellEdit(line.id, 'amount_usd', e.target.value)}
+              className="h-8"
+              placeholder="0.00"
+            />
+
+            {/* Amount BRL (read-only) */}
+            <div className="h-8 px-2 bg-gray-50 border rounded text-right leading-8 text-gray-600">
+              {fmtBRL(line.amount_local || 0)}
+            </div>
+
+            {/* Invoice # */}
+            <Input
+              value={line.invoice_no || ''}
+              onChange={(e) => handleCellEdit(line.id, 'invoice_no', e.target.value)}
+              className="h-8"
+              placeholder="Invoice #"
+            />
+
+            {/* Due Date */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="h-8 px-2 text-left font-normal">
+                  {line.due_date ? format(new Date(line.due_date), 'MM/dd/yyyy') : 'Select date'}
+                  <Calendar className="ml-1 h-3 w-3" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <CalendarComponent
+                  mode="single"
+                  selected={line.due_date ? new Date(line.due_date) : undefined}
+                  onSelect={(date) => 
+                    handleCellEdit(line.id, 'due_date', date?.toISOString().split('T')[0] || null)
+                  }
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+
+            {/* Paid/Received Checkbox */}
+            <div className="flex items-center justify-center">
+              <Checkbox
+                checked={line.status === 'Settled'}
+                onCheckedChange={(checked) => handleCellEdit(line.id, 'paid', checked)}
+              />
+            </div>
+
+            {/* Details Button */}
+            <div className="flex items-center justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-3"
+                onClick={() => navigate(`/fda/${fdaId}/line/${line.id}`)}
+              >
+                <ExternalLink className="h-3 w-3 mr-1" />
+                Details
+              </Button>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 
@@ -344,14 +346,8 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
           >
             Due Date <ArrowUpDown className="ml-1 h-3 w-3" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleSort('status')}
-            className="h-auto p-0 text-left justify-start"
-          >
-            Status <ArrowUpDown className="ml-1 h-3 w-3" />
-          </Button>
+          <div className="text-center">Paid/Received</div>
+          <div className="text-center">Details</div>
         </div>
 
         <Tabs defaultValue="all" className="w-full">
