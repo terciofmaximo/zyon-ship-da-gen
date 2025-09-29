@@ -78,7 +78,6 @@ export default function FDAList() {
         .from("fda")
         .select(`
           *,
-          pda:pda_id!left(pda_number),
           fda_ledger(amount_usd, side)
         `)
         .eq("created_by", user.id);
@@ -103,6 +102,25 @@ export default function FDAList() {
 
       if (error) throw error;
 
+      // Get PDA numbers for FDAs that have pda_id
+      const fdaWithPdaIds = data?.filter(fda => fda.pda_id) || [];
+      let pdaNumbers: Record<string, string> = {};
+      
+      if (fdaWithPdaIds.length > 0) {
+        const pdaIds = fdaWithPdaIds.map(fda => fda.pda_id);
+        const { data: pdaData } = await supabase
+          .from("pdas")
+          .select("id, pda_number")
+          .in("id", pdaIds);
+        
+        if (pdaData) {
+          pdaNumbers = pdaData.reduce((acc, pda) => {
+            acc[pda.id] = pda.pda_number;
+            return acc;
+          }, {} as Record<string, string>);
+        }
+      }
+
       // Calculate totals for each FDA
       const fdasWithTotals: FDAWithTotals[] = (data || []).map((fda: any) => {
         const ledger = fda.fda_ledger || [];
@@ -113,7 +131,7 @@ export default function FDAList() {
           total_ap_usd: totals.totalAP_USD,
           total_ar_usd: totals.totalAR_USD,
           net_usd: totals.net_USD,
-          pda_number: fda.pda?.pda_number,
+          pda_number: fda.pda_id ? pdaNumbers[fda.pda_id] : undefined,
         };
       });
 
