@@ -199,9 +199,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      setup_demo_admin: {
+        Args: { admin_email: string; admin_password: string }
+        Returns: Json
+      }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "platformAdmin"
       pda_status: "IN_PROGRESS" | "SENT" | "APPROVED"
     }
     CompositeTypes: {
@@ -330,7 +334,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "platformAdmin"],
       pda_status: ["IN_PROGRESS", "SENT", "APPROVED"],
     },
   },

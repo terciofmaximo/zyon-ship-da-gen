@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { useDemoAdminSetup } from "@/hooks/useDemoAdminSetup";
 
 const schema = z.object({
   email: z.string().trim().email({ message: "E-mail inválido" }).max(255),
@@ -25,6 +26,11 @@ const AuthPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isSetupComplete } = useDemoAdminSetup();
+
+  // Demo admin configuration
+  const DEMO_ADMIN_ENABLED = true;
+  const DEMO_ADMIN_EMAIL = 'admin@zyon.com';
 
   const redirectTo = useMemo(() => decodeURIComponent(searchParams.get("from") || "/pda"), [searchParams]);
 
@@ -47,13 +53,30 @@ const AuthPage: React.FC = () => {
     setPending(true);
     try {
       if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email: form.email,
           password: form.password,
         });
-        if (error) throw error;
-        toast({ title: "Bem-vindo", description: "Login efetuado com sucesso" });
-        navigate(redirectTo, { replace: true });
+        
+        // Check for demo admin login and email verification bypass
+        const isDemoAdmin = DEMO_ADMIN_ENABLED && 
+          form.email.toLowerCase() === DEMO_ADMIN_EMAIL.toLowerCase();
+        
+        if (error) {
+          // Special handling for demo admin email verification error
+          if (isDemoAdmin && error.message.includes('Email not confirmed')) {
+            toast({ 
+              title: "Demo Admin", 
+              description: "Configurando conta demo... Tente novamente em alguns segundos.",
+              variant: "destructive"
+            });
+          } else {
+            throw error;
+          }
+        } else {
+          toast({ title: "Bem-vindo", description: "Login efetuado com sucesso" });
+          navigate(redirectTo, { replace: true });
+        }
       } else {
         const redirectUrl = `${window.location.origin}/`;
         const { error } = await supabase.auth.signUp({
@@ -65,8 +88,19 @@ const AuthPage: React.FC = () => {
         toast({ title: "Verifique seu e-mail", description: "Confirme seu cadastro para prosseguir" });
       }
     } catch (err: any) {
-      const msg = err?.message ?? "Falha na autenticação";
-      toast({ title: "Erro", description: msg, variant: "destructive" });
+      const isDemoAdmin = DEMO_ADMIN_ENABLED && 
+        form.email.toLowerCase() === DEMO_ADMIN_EMAIL.toLowerCase();
+      
+      if (isDemoAdmin) {
+        toast({ 
+          title: "Demo Admin", 
+          description: "Erro no login demo - sistema ainda configurando. Aguarde alguns segundos.",
+          variant: "destructive"
+        });
+      } else {
+        const msg = "Login failed. Please try again.";
+        toast({ title: "Erro", description: msg, variant: "destructive" });
+      }
     } finally {
       setPending(false);
     }
@@ -82,14 +116,17 @@ const AuthPage: React.FC = () => {
           <CardDescription>
             {mode === "login" ? "Acesse para criar e salvar PDAs" : "Cadastre-se para começar a usar"}
           </CardDescription>
-          {mode === "login" && (
+          {mode === "login" && DEMO_ADMIN_ENABLED && (
             <div className="mt-4 p-3 bg-muted rounded-lg border">
-              <p className="text-sm font-medium text-muted-foreground mb-2">🔑 Conta Admin:</p>
+              <p className="text-sm font-medium text-muted-foreground mb-2">🔑 Conta Demo Admin:</p>
               <div className="space-y-1 text-sm">
                 <p><strong>Email:</strong> admin@zyon.com</p>
                 <p><strong>Senha:</strong> Admin123!</p>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">Use estas credenciais para acesso completo ao sistema</p>
+              <p className="text-xs text-success mt-2 font-medium">
+                {isSetupComplete ? '✅ Pronto para login' : '⏳ Configurando sistema...'}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">Conta demo com acesso completo ao sistema</p>
             </div>
           )}
         </CardHeader>

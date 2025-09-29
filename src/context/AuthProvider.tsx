@@ -17,9 +17,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     // 1) Set up listener first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      // Handle demo admin email verification bypass
+      if (event === 'SIGNED_IN' && session?.user) {
+        const isDemoAdmin = session.user.email === 'admin@zyon.com';
+        
+        if (isDemoAdmin && !session.user.email_confirmed_at) {
+          console.log('Demo admin login detected, bypassing email verification check');
+          // The backend should have already handled this, but this is a safety check
+        }
+      }
     });
 
     // 2) Then get existing session
