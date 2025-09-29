@@ -3,11 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Building2, Plus, Trash2, Edit2, ArrowRight, Globe, Copy, Check } from "lucide-react";
+import { Building2, Plus, Trash2, Edit2, ArrowRight, Globe, Copy, Check, RefreshCw, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useOrg } from "@/context/OrgProvider";
 import { useNavigate } from "react-router-dom";
+import { QRCodeSVG } from 'qrcode.react';
 import {
   Table,
   TableBody,
@@ -69,9 +70,10 @@ export function CompanyManagement() {
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [copiedInvite, setCopiedInvite] = useState(false);
-  const [lastInvitedEmail, setLastInvitedEmail] = useState<string | null>(null);
-  const [lastCreatedCompany, setLastCreatedCompany] = useState<{slug: string; name: string; orgId: string} | null>(null);
-  const [resending, setResending] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [currentCompany, setCurrentCompany] = useState<{slug: string; name: string; orgId: string} | null>(null);
+  const [currentOwnerEmail, setCurrentOwnerEmail] = useState<string | null>(null);
+  const [regenerating, setRegenerating] = useState(false);
   
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -108,6 +110,7 @@ export function CompanyManagement() {
     e.preventDefault();
     setErrors({});
     setInviteLink(null);
+    setShowInviteModal(false);
 
     // Validate inputs
     const validation = companySchema.safeParse({ 
@@ -186,44 +189,23 @@ export function CompanyManagement() {
         if (inviteError) {
           console.error("Invite creation error:", inviteError);
         } else {
-          // Send invitation email via edge function
+          // Generate invite link
           const inviteUrl = `https://${validation.data.slug}.vesselopsportal.com/auth/accept-invite?token=${inviteToken}`;
           
-          try {
-            const { error: emailError } = await supabase.functions.invoke('send-invitation-email', {
-              body: {
-                email: validation.data.owner_email,
-                companyName: validation.data.name,
-                inviteLink: inviteUrl,
-                tenantSlug: validation.data.slug,
-              }
-            });
-
-            if (emailError) {
-              console.error("Email send error:", emailError);
-              toast({
-                title: "Warning",
-                description: "Company created but invitation email failed to send",
-                variant: "destructive",
-              });
-            } else {
-              setInviteLink(inviteUrl);
-              setLastInvitedEmail(validation.data.owner_email);
-              setLastCreatedCompany({ 
-                slug: validation.data.slug, 
-                name: validation.data.name,
-                orgId: newOrg.id
-              });
-            }
-          } catch (emailError) {
-            console.error("Email function error:", emailError);
-          }
+          setInviteLink(inviteUrl);
+          setCurrentCompany({ 
+            slug: validation.data.slug, 
+            name: validation.data.name,
+            orgId: newOrg.id
+          });
+          setCurrentOwnerEmail(validation.data.owner_email);
+          setShowInviteModal(true);
         }
       }
 
       toast({
         title: "Success",
-        description: `Company "${validation.data.name}" created successfully${validation.data.owner_email ? ' and invitation sent' : ''}`,
+        description: `Company "${validation.data.name}" created successfully${validation.data.owner_email ? ' - Invite link generated' : ''}`,
       });
 
       // Reset form
@@ -359,17 +341,17 @@ export function CompanyManagement() {
       .replace(/^-|-$/g, "");
   };
 
-  const handleResendInvite = async () => {
-    if (!lastCreatedCompany || !lastInvitedEmail) return;
+  const handleRegenerateInvite = async () => {
+    if (!currentCompany || !currentOwnerEmail) return;
     
-    setResending(true);
+    setRegenerating(true);
     try {
-      // Invalidate old invite
+      // Invalidate old invites
       await supabase
         .from("organization_invites")
         .update({ expires_at: new Date().toISOString() })
-        .eq('org_id', lastCreatedCompany.orgId)
-        .eq('email', lastInvitedEmail);
+        .eq('org_id', currentCompany.orgId)
+        .eq('email', currentOwnerEmail);
 
       // Create new invite
       const inviteToken = crypto.randomUUID();
@@ -378,8 +360,8 @@ export function CompanyManagement() {
       const { error: inviteError } = await supabase
         .from("organization_invites")
         .insert({
-          org_id: lastCreatedCompany.orgId,
-          email: lastInvitedEmail,
+          org_id: currentCompany.orgId,
+          email: currentOwnerEmail,
           role: "owner",
           token: inviteToken,
           expires_at: expiresAt.toISOString(),
@@ -387,33 +369,62 @@ export function CompanyManagement() {
 
       if (inviteError) throw inviteError;
 
-      // Send new email
-      const inviteUrl = `https://${lastCreatedCompany.slug}.vesselopsportal.com/auth/accept-invite?token=${inviteToken}`;
-      
-      const { error: emailError } = await supabase.functions.invoke('send-invitation-email', {
-        body: {
-          email: lastInvitedEmail,
-          companyName: lastCreatedCompany.name,
-          inviteLink: inviteUrl,
-          tenantSlug: lastCreatedCompany.slug,
-        }
-      });
-
-      if (emailError) throw emailError;
-
+      // Generate new link
+      const inviteUrl = `https://${currentCompany.slug}.vesselopsportal.com/auth/accept-invite?token=${inviteToken}`;
       setInviteLink(inviteUrl);
+
       toast({
-        title: "Invitation resent",
-        description: `New invitation sent to ${lastInvitedEmail}`,
+        title: "Invitation regenerated",
+        description: `New invitation link created (previous link invalidated)`,
       });
     } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to resend invitation",
+        description: "Failed to regenerate invitation",
         variant: "destructive",
       });
     } finally {
-      setResending(false);
+      setRegenerating(false);
+    }
+  };
+
+  const handleCopyInviteForCompany = async (company: Company) => {
+    try {
+      // Get latest active invite for this company
+      const { data: invites, error } = await supabase
+        .from("organization_invites")
+        .select("*")
+        .eq('org_id', company.id)
+        .gt('expires_at', new Date().toISOString())
+        .is('accepted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+
+      if (!invites || invites.length === 0) {
+        toast({
+          title: "No active invite",
+          description: "Create a new company with owner email to generate an invite",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const invite = invites[0];
+      const inviteUrl = `https://${company.slug}.vesselopsportal.com/auth/accept-invite?token=${invite.token}`;
+      
+      await navigator.clipboard.writeText(inviteUrl);
+      toast({
+        title: "Copied",
+        description: "Invite link copied to clipboard",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to copy invite link",
+        variant: "destructive",
+      });
     }
   };
 
@@ -558,52 +569,69 @@ export function CompanyManagement() {
             </form>
           )}
 
-          {/* Success Banner */}
-          {lastInvitedEmail && inviteLink && (
-            <div className="mb-4 p-4 border rounded-lg bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <p className="font-medium text-green-900 dark:text-green-100 mb-1">
-                    ✓ Invitation sent to {lastInvitedEmail}
-                  </p>
-                  <p className="text-sm text-green-700 dark:text-green-300 mb-3">
-                    Company: {lastCreatedCompany?.name} ({lastCreatedCompany?.slug})
-                  </p>
+          {/* Invite Modal */}
+          {showInviteModal && inviteLink && currentCompany && (
+            <Dialog open={showInviteModal} onOpenChange={setShowInviteModal}>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Owner Invitation Link</DialogTitle>
+                  <DialogDescription>
+                    Share this link with {currentOwnerEmail} to activate their account for {currentCompany.name}
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="space-y-4">
+                  {/* QR Code */}
+                  <div className="flex justify-center p-4 bg-white rounded-lg border">
+                    <QRCodeSVG value={inviteLink} size={200} level="H" />
+                  </div>
+
+                  {/* Invite Link */}
+                  <div className="space-y-2">
+                    <Label>Invitation Link</Label>
+                    <div className="flex gap-2">
+                      <Input 
+                        value={inviteLink} 
+                        readOnly 
+                        className="font-mono text-xs"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={copyInviteLink}
+                      >
+                        {copiedInvite ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Valid for 72 hours • Single use only
+                    </p>
+                  </div>
+
+                  {/* Actions */}
                   <div className="flex gap-2">
                     <Button
                       type="button"
-                      size="sm"
                       variant="outline"
-                      onClick={handleResendInvite}
-                      disabled={resending}
+                      onClick={handleRegenerateInvite}
+                      disabled={regenerating}
+                      className="flex-1"
                     >
-                      {resending ? "Resending..." : "Resend"}
+                      <RefreshCw className={`h-4 w-4 mr-2 ${regenerating ? 'animate-spin' : ''}`} />
+                      {regenerating ? 'Regenerating...' : 'Regenerate'}
                     </Button>
                     <Button
                       type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={copyInviteLink}
+                      onClick={() => setShowInviteModal(false)}
+                      className="flex-1"
                     >
-                      {copiedInvite ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
-                      Copy link
+                      Done
                     </Button>
                   </div>
                 </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setLastInvitedEmail(null);
-                    setInviteLink(null);
-                    setLastCreatedCompany(null);
-                  }}
-                >
-                  ✕
-                </Button>
-              </div>
-            </div>
+              </DialogContent>
+            </Dialog>
           )}
 
           <div className="mb-4">
@@ -654,6 +682,15 @@ export function CompanyManagement() {
                           title="Switch to this organization"
                         >
                           <ArrowRight className="h-4 w-4" />
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCopyInviteForCompany(company)}
+                          title="Copy invite link"
+                        >
+                          <Mail className="h-4 w-4" />
                         </Button>
                         
                         <Dialog>
