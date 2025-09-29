@@ -79,7 +79,7 @@ export function usePDA() {
       } else {
         // Create new PDA with generated PDA number
         const { data: pdaNumber } = await supabase
-          .rpc("generate_pda_number", { tenant_id: mockTenantId });
+          .rpc("generate_pda_number", { p_tenant_id: mockTenantId });
         
         result = await supabase
           .from("pdas")

@@ -161,7 +161,7 @@ export type Database = {
     }
     Functions: {
       generate_pda_number: {
-        Args: { tenant_id: string }
+        Args: { p_tenant_id: string }
         Returns: string
       }
     }
