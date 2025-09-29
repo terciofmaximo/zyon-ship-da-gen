@@ -31,6 +31,7 @@ export interface FDALedger {
   due_date?: string;
   status: "Open" | "Settled" | "Partially Settled";
   source?: any;
+  settled_at?: string;
   created_at: string;
   updated_at: string;
 }

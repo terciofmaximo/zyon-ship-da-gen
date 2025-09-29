@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FDALedgerTable } from "@/components/fda/FDALedgerTable";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, RefreshCw, Download, Check, Edit, X, Save } from "lucide-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useFDA } from "@/hooks/useFDA";
@@ -331,8 +330,6 @@ export default function FDADetail() {
   }
 
   const totals = calculateFDATotals(fda.ledger);
-  const receivables = fda.ledger.filter(entry => entry.side === "AR");
-  const payables = fda.ledger.filter(entry => entry.side === "AP");
 
   const clientSharePct = (fda.meta as any)?.client_share_pct || 0;
   const dueFromClientUSD = totals.totalAP_USD * (clientSharePct / 100);
@@ -601,90 +598,15 @@ export default function FDADetail() {
         </CardContent>
       </Card>
 
-      {/* Ledger Tables */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Ledger Details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="receivables" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="receivables">Receivables (AR)</TabsTrigger>
-              <TabsTrigger value="payables">Payables (AP)</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="receivables">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Line #</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Counterparty</TableHead>
-                    <TableHead className="text-right">Amount (USD)</TableHead>
-                    <TableHead className="text-right">Amount (BRL)</TableHead>
-                    <TableHead>Invoice #</TableHead>
-                    <TableHead>Due Date</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {receivables.map((entry) => (
-                    <TableRow key={entry.id}>
-                      <TableCell>{entry.line_no}</TableCell>
-                      <TableCell>{entry.category}</TableCell>
-                      <TableCell>{entry.description}</TableCell>
-                      <TableCell>{entry.counterparty}</TableCell>
-                      <TableCell className="text-right">${(entry.amount_usd || 0).toFixed(2)}</TableCell>
-                      <TableCell className="text-right">R$ {(entry.amount_local || 0).toFixed(2)}</TableCell>
-                      <TableCell>{entry.invoice_no || "—"}</TableCell>
-                      <TableCell>{entry.due_date || "—"}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{entry.status}</Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TabsContent>
-
-            <TabsContent value="payables">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Line #</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Counterparty</TableHead>
-                    <TableHead className="text-right">Amount (USD)</TableHead>
-                    <TableHead className="text-right">Amount (BRL)</TableHead>
-                    <TableHead>Invoice #</TableHead>
-                    <TableHead>Due Date</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {payables.map((entry) => (
-                    <TableRow key={entry.id}>
-                      <TableCell>{entry.line_no}</TableCell>
-                      <TableCell>{entry.category}</TableCell>
-                      <TableCell>{entry.description}</TableCell>
-                      <TableCell>{entry.counterparty}</TableCell>
-                      <TableCell className="text-right">${(entry.amount_usd || 0).toFixed(2)}</TableCell>
-                      <TableCell className="text-right">R$ {(entry.amount_local || 0).toFixed(2)}</TableCell>
-                      <TableCell>{entry.invoice_no || "—"}</TableCell>
-                      <TableCell>{entry.due_date || "—"}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{entry.status}</Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+      {/* Ledger Details - Fully Editable Table */}
+      <FDALedgerTable
+        fdaId={id!}
+        ledger={fda.ledger}
+        exchangeRate={parseFloat(editForm.exchange_rate) || 1}
+        onLedgerUpdate={(updatedLedger) => {
+          setFda({ ...fda, ledger: updatedLedger });
+        }}
+      />
 
       {/* Actions */}
       <Card>

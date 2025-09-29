@@ -93,6 +93,7 @@ export type Database = {
           id: string
           invoice_no: string | null
           line_no: number
+          settled_at: string | null
           side: Database["public"]["Enums"]["fda_ledger_side"]
           source: Json | null
           status: Database["public"]["Enums"]["fda_ledger_status"]
@@ -110,6 +111,7 @@ export type Database = {
           id?: string
           invoice_no?: string | null
           line_no: number
+          settled_at?: string | null
           side: Database["public"]["Enums"]["fda_ledger_side"]
           source?: Json | null
           status?: Database["public"]["Enums"]["fda_ledger_status"]
@@ -127,6 +129,7 @@ export type Database = {
           id?: string
           invoice_no?: string | null
           line_no?: number
+          settled_at?: string | null
           side?: Database["public"]["Enums"]["fda_ledger_side"]
           source?: Json | null
           status?: Database["public"]["Enums"]["fda_ledger_status"]
