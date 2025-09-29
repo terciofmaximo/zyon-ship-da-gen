@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate, Link, useBlocker } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FDALedgerTable } from "@/components/fda/FDALedgerTable";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, RefreshCw, Download, Check, Edit, X, Save } from "lucide-react";
+import { ArrowLeft, Check, Edit, X, Save, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,12 +23,15 @@ export default function FDADetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { getFDA, rebuildFromPda, updateFDAStatus, calculateFDATotals, loading } = useFDA();
+  const { getFDA, updateFDAStatus, calculateFDATotals, loading } = useFDA();
   const [fda, setFda] = useState<FDAWithLedger | null>(null);
   const [loadingPage, setLoadingPage] = useState(true);
-  const [confirmRebuild, setConfirmRebuild] = useState(false);
   const [confirmPost, setConfirmPost] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
+  const [lastSavedBy, setLastSavedBy] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
     vessel_name: "",
     imo: "",
@@ -41,11 +44,50 @@ export default function FDADetail() {
     client_share_pct: 0,
   });
 
+  // Block navigation when there are unsaved changes
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      isDirty && currentLocation.pathname !== nextLocation.pathname
+  );
+
   useEffect(() => {
     if (id) {
       fetchFDA();
     }
   }, [id]);
+
+  // Keyboard shortcut for Save draft (Ctrl/Cmd + S)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (isDirty && fda?.status === "Draft") {
+          handleSaveDraft();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isDirty, fda?.status]);
+
+  // Mark as dirty when form changes
+  useEffect(() => {
+    if (fda) {
+      const hasChanges = 
+        editForm.vessel_name !== (fda.vessel_name || "") ||
+        editForm.imo !== (fda.imo || "") ||
+        editForm.port !== (fda.port || "") ||
+        editForm.terminal !== (fda.terminal || "") ||
+        editForm.client_name !== (fda.client_name || "") ||
+        editForm.client_id !== (fda.client_id || "") ||
+        editForm.exchange_rate !== (fda.exchange_rate?.toString() || "") ||
+        editForm.fx_source !== ((fda.meta as any)?.fx_source || "") ||
+        editForm.client_share_pct !== ((fda.meta as any)?.client_share_pct || 0);
+      
+      setIsDirty(hasChanges);
+    }
+  }, [editForm, fda]);
 
   const fetchFDA = async () => {
     if (!id) return;
@@ -66,6 +108,8 @@ export default function FDADetail() {
           fx_source: (fdaData.meta as any)?.fx_source || "",
           client_share_pct: (fdaData.meta as any)?.client_share_pct || 0,
         });
+        setIsDirty(false);
+        setLastSavedAt(fdaData.updated_at);
       } else {
         navigate("/fda");
       }
@@ -77,10 +121,38 @@ export default function FDADetail() {
     }
   };
 
-  const handleSave = async () => {
-    if (!fda || !id) return;
+  const handleSaveDraft = async () => {
+    if (!fda || !id || isSaving) return;
 
+    setIsSaving(true);
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Check for concurrent updates
+      const { data: currentFda, error: checkError } = await supabase
+        .from("fda")
+        .select("updated_at")
+        .eq("id", id)
+        .single();
+
+      if (checkError) throw checkError;
+
+      if (currentFda.updated_at !== fda.updated_at) {
+        toast({
+          title: "Concurrency Conflict",
+          description: "This FDA was updated in another tab. Please refresh.",
+          variant: "destructive",
+          action: (
+            <Button size="sm" onClick={() => window.location.reload()}>
+              Refresh
+            </Button>
+          ),
+        });
+        return;
+      }
+
+      // Update FDA header
       const { error } = await supabase
         .from("fda")
         .update({
@@ -102,7 +174,7 @@ export default function FDADetail() {
 
       if (error) throw error;
 
-      // Recalculate BRL amounts for all ledger entries
+      // Recalculate BRL amounts if exchange rate changed
       if (fda.exchange_rate !== parseFloat(editForm.exchange_rate)) {
         const newRate = parseFloat(editForm.exchange_rate) || 0;
         const updates = fda.ledger.map(entry => ({
@@ -116,29 +188,30 @@ export default function FDADetail() {
             .update({ amount_local: update.amount_local })
             .eq("id", update.id);
         }
-
-        toast({
-          title: "Exchange rate updated",
-          description: "BRL amounts recalculated.",
-        });
       }
 
       toast({
-        title: "FDA updated",
-        description: "Changes saved successfully.",
+        title: "Draft saved",
+        description: "All changes have been saved successfully.",
       });
 
+      setLastSavedAt(new Date().toISOString());
+      setLastSavedBy(user?.email || null);
+      setIsDirty(false);
       await fetchFDA();
       setIsEditing(false);
     } catch (error) {
-      console.error("Error updating FDA:", error);
+      console.error("Error saving draft:", error);
       toast({
         title: "Error",
-        description: "Failed to save changes.",
+        description: "Failed to save draft. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
+
 
   const handleCancel = () => {
     if (fda) {
@@ -157,15 +230,6 @@ export default function FDADetail() {
     setIsEditing(false);
   };
 
-  const handleRebuildFromPda = async () => {
-    if (!id) return;
-    
-    const success = await rebuildFromPda(id);
-    if (success) {
-      await fetchFDA(); // Refresh data
-    }
-    setConfirmRebuild(false);
-  };
 
   const handlePost = async () => {
     if (!id) return;
@@ -177,120 +241,6 @@ export default function FDADetail() {
     setConfirmPost(false);
   };
 
-  const handleGeneratePDF = () => {
-    if (!fda) return;
-
-    try {
-      const totals = calculateFDATotals(fda.ledger);
-      
-      // Create a simple HTML document for FDA
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>FDA ${fda.id}</title>
-            <style>
-              body { font-family: Arial, sans-serif; margin: 40px; }
-              .header { text-align: center; margin-bottom: 30px; }
-              .section { margin-bottom: 20px; }
-              table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-              th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-              th { background-color: #f5f5f5; }
-              .totals { font-weight: bold; background-color: #f9f9f9; }
-              .text-right { text-align: right; }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <h1>Final Disbursement Account</h1>
-              <h2>FDA ID: ${fda.id}</h2>
-            </div>
-            
-            <div class="section">
-              <h3>Vessel Information</h3>
-              <p><strong>Vessel:</strong> ${fda.vessel_name || "—"}</p>
-              <p><strong>IMO:</strong> ${fda.imo || "—"}</p>
-              <p><strong>Port:</strong> ${fda.port || "—"}</p>
-              <p><strong>Terminal:</strong> ${fda.terminal || "—"}</p>
-              <p><strong>Client:</strong> ${fda.client_name || "—"}</p>
-              <p><strong>Exchange Rate:</strong> ${fda.exchange_rate} ${fda.currency_base}/${fda.currency_local}</p>
-            </div>
-
-            <div class="section">
-              <h3>Financial Summary</h3>
-              <table>
-                <tr>
-                  <td><strong>Total AP (Payables)</strong></td>
-                  <td class="text-right">$${totals.totalAP_USD.toFixed(2)}</td>
-                  <td class="text-right">R$ ${totals.totalAP_BRL.toFixed(2)}</td>
-                </tr>
-                <tr>
-                  <td><strong>Total AR (Receivables)</strong></td>
-                  <td class="text-right">$${totals.totalAR_USD.toFixed(2)}</td>
-                  <td class="text-right">R$ ${totals.totalAR_BRL.toFixed(2)}</td>
-                </tr>
-                <tr class="totals">
-                  <td><strong>Net ${totals.net_USD >= 0 ? "Due from Client" : "Due to Client"}</strong></td>
-                  <td class="text-right">$${Math.abs(totals.net_USD).toFixed(2)}</td>
-                  <td class="text-right">R$ ${Math.abs(totals.net_BRL).toFixed(2)}</td>
-                </tr>
-              </table>
-            </div>
-
-            <div class="section">
-              <h3>Ledger Details</h3>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Line</th>
-                    <th>Side</th>
-                    <th>Category</th>
-                    <th>Counterparty</th>
-                    <th>USD</th>
-                    <th>BRL</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${fda.ledger.map(entry => `
-                    <tr>
-                      <td>${entry.line_no}</td>
-                      <td>${entry.side}</td>
-                      <td>${entry.category || "—"}</td>
-                      <td>${entry.counterparty || "—"}</td>
-                      <td class="text-right">$${(entry.amount_usd || 0).toFixed(2)}</td>
-                      <td class="text-right">R$ ${(entry.amount_local || 0).toFixed(2)}</td>
-                      <td>${entry.status}</td>
-                    </tr>
-                  `).join("")}
-                </tbody>
-              </table>
-            </div>
-          </body>
-        </html>
-      `;
-      
-      const newWindow = window.open('', '_blank');
-      if (newWindow) {
-        newWindow.document.write(htmlContent);
-        newWindow.document.close();
-        
-        toast({
-          title: "PDF Generated",
-          description: "FDA document opened in new tab. Use Ctrl+P to save as PDF.",
-        });
-      } else {
-        throw new Error('Failed to open new window. Check pop-up blocker settings.');
-      }
-    } catch (error) {
-      console.error('FDA PDF generation failed:', error);
-      toast({
-        title: "PDF Generation Failed",
-        description: error instanceof Error ? error.message : "Unknown error occurred",
-        variant: "destructive",
-      });
-    }
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -367,8 +317,12 @@ export default function FDADetail() {
                 <X className="h-4 w-4 mr-2" />
                 Cancel
               </Button>
-              <Button size="sm" onClick={handleSave}>
-                <Save className="h-4 w-4 mr-2" />
+              <Button size="sm" onClick={handleSaveDraft} disabled={isSaving || !isDirty}>
+                {isSaving ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
                 Save
               </Button>
             </div>
@@ -608,31 +562,40 @@ export default function FDADetail() {
         }}
       />
 
-      {/* Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
+      {/* Actions Bar - Sticky at bottom */}
+      <div className="sticky bottom-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t pt-4 pb-6">
+        <div className="flex flex-col gap-4">
+          {lastSavedAt && (
+            <p className="text-sm text-muted-foreground">
+              Last saved at {new Date(lastSavedAt).toLocaleString("en-US", {
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+              {lastSavedBy && ` by ${lastSavedBy}`}
+            </p>
+          )}
           <div className="flex flex-wrap gap-3">
-            <Button onClick={handleGeneratePDF} className="bg-blue-600 hover:bg-blue-700 text-white">
-              <Download className="mr-2 h-4 w-4" />
-              Export PDF
-            </Button>
-            
             {fda.status === "Draft" && (
               <>
                 <Button 
-                  variant="outline" 
-                  onClick={() => setConfirmRebuild(true)}
-                  disabled={loading}
+                  onClick={handleSaveDraft}
+                  disabled={isSaving || !isDirty}
+                  size="lg"
                 >
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Rebuild from PDA
+                  {isSaving ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  {isSaving ? "Saving..." : "Save draft"}
                 </Button>
                 <Button 
                   onClick={() => setConfirmPost(true)}
-                  disabled={loading}
+                  disabled={loading || isDirty}
+                  variant="secondary"
+                  size="lg"
                   className="bg-success hover:bg-success/90 text-success-foreground"
                 >
                   <Check className="mr-2 h-4 w-4" />
@@ -640,30 +603,14 @@ export default function FDADetail() {
                 </Button>
               </>
             )}
+            {isDirty && (
+              <p className="text-sm text-muted-foreground flex items-center">
+                You have unsaved changes. Press Ctrl/Cmd + S to save.
+              </p>
+            )}
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Rebuild Confirmation Dialog */}
-      <Dialog open={confirmRebuild} onOpenChange={setConfirmRebuild}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rebuild FDA from PDA</DialogTitle>
-            <DialogDescription>
-              This will refresh amounts from the linked PDA. Manual edits will be preserved when possible. 
-              Are you sure you want to continue?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmRebuild(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleRebuildFromPda} disabled={loading}>
-              {loading ? "Rebuilding..." : "Confirm Rebuild"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </div>
 
       {/* Post Confirmation Dialog */}
       <Dialog open={confirmPost} onOpenChange={setConfirmPost}>
@@ -681,6 +628,49 @@ export default function FDADetail() {
             </Button>
             <Button onClick={handlePost} disabled={loading}>
               {loading ? "Posting..." : "Post FDA"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Unsaved Changes Dialog */}
+      <Dialog open={blocker.state === "blocked"} onOpenChange={() => {}}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Unsaved Changes</DialogTitle>
+            <DialogDescription>
+              You have unsaved changes. Would you like to save before leaving?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsDirty(false);
+                blocker.proceed?.();
+              }}
+            >
+              Leave without saving
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => blocker.reset?.()}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={async () => {
+                await handleSaveDraft();
+                blocker.proceed?.();
+              }}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              Save & leave
             </Button>
           </DialogFooter>
         </DialogContent>
