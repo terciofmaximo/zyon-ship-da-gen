@@ -13,14 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { cn, formatRange } from "@/lib/utils";
 import { VESSEL_TYPES } from "@/lib/vesselData";
-import {
-  getShipTypeFromName,
-  getShipTypeRange,
-  calculateMeanValue,
-  isValueInRange,
-  formatRange as formatShipRange,
-  type ShipTypeRange
-} from "@/lib/shipTypeRanges";
+import { SHIP_TYPE_RANGES, getShipTypeFromName, calculateMeanValue, isValueInRange, formatRange as formatShipRange } from "@/lib/shipTypeRanges";
 import { usePortDirectory } from "@/hooks/usePortDirectory";
 import { pdaStep1Schema, type PDAStep1Data } from "@/schemas/pdaSchema";
 
@@ -53,11 +46,10 @@ interface PdaCreationStep1Props {
   initialData?: Partial<PDAStep1Data>;
 }
 
-export default function PdaCreationStep1({ onNext, initialData }: PdaCreationStep1Props) {
+export default function PdaCreationStep1({ onNext, initialData }: PdaCreationStep1Props = {}) {
 
   const [selectedVessel, setSelectedVessel] = useState<string>("");
   const [currentShipType, setCurrentShipType] = useState<string | null>(null);
-  const [currentShipTypeRanges, setCurrentShipTypeRanges] = useState<ShipTypeRange | null>(null);
   const [autoFilledValues, setAutoFilledValues] = useState<Record<string, boolean>>({});
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const [pendingShipType, setPendingShipType] = useState<string | null>(null);
@@ -98,8 +90,8 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
 
   const portState = usePortDirectory();
 
-  const fillShipParticulars = async (shipType: string, skipDialog = false) => {
-    const ranges = await getShipTypeRange(shipType);
+  const fillShipParticulars = (shipType: string, skipDialog = false) => {
+    const ranges = SHIP_TYPE_RANGES[shipType];
     if (!ranges) return;
 
     setValue("dwt", calculateMeanValue(ranges.dwt).toString());
@@ -115,28 +107,26 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
     });
     
     setCurrentShipType(shipType);
-    setCurrentShipTypeRanges(ranges);
     setSelectedVessel(vesselName);
   };
 
-  const validateFieldValue = async (fieldName: string, value: string) => {
+  const validateFieldValue = (fieldName: string, value: string) => {
     if (!currentShipType || !value) {
       setValidationWarnings(prev => ({ ...prev, [fieldName]: "" }));
       return;
     }
 
-    const ranges = await getShipTypeRange(currentShipType);
+    const ranges = SHIP_TYPE_RANGES[currentShipType];
     if (!ranges) return;
 
     const numValue = parseFloat(value);
     if (isNaN(numValue)) return;
 
-    const fieldRange = ranges[fieldName as keyof ShipTypeRange] as [number, number];
-    if (fieldRange && !isValueInRange(numValue, fieldRange)) {
-      const unit = fieldName === 'dwt' ? 'MT' : 'm';
+    const fieldRange = ranges[fieldName as keyof typeof ranges];
+    if (!isValueInRange(numValue, fieldRange)) {
       setValidationWarnings(prev => ({ 
         ...prev, 
-        [fieldName]: `Valor fora do range típico para ${currentShipType} (${formatShipRange(fieldRange, unit)})`
+        [fieldName]: `Valor fora do range típico para ${currentShipType} (${fieldRange[0]}–${fieldRange[1]}).`
       }));
     } else {
       setValidationWarnings(prev => ({ ...prev, [fieldName]: "" }));
@@ -144,45 +134,33 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
   };
 
   useEffect(() => {
-    const handleVesselNameChange = async () => {
-      if (vesselName && vesselName !== selectedVessel) {
-        const detectedType = await getShipTypeFromName(vesselName);
+    if (vesselName && vesselName !== selectedVessel) {
+      const shipType = getShipTypeFromName(vesselName);
+      
+      // Check legacy vessel data first
+      const vessel = VESSEL_TYPES.find(v => v.classification === vesselName);
+      
+      if (shipType && SHIP_TYPE_RANGES[shipType]) {
+        // Check if user has manual edits
+        const hasManualEdits = Object.values(autoFilledValues).some(val => !val) && currentShipType;
         
-        // Check legacy vessel data first
-        const vessel = VESSEL_TYPES.find(v => v.classification === vesselName);
-        
-        if (detectedType) {
-          // Check if user has manual edits
-          const hasManualEdits = Object.values(autoFilledValues).some(val => !val) && currentShipType;
-          
-          if (hasManualEdits && currentShipType !== detectedType) {
-            setPendingShipType(detectedType);
-            setShowUpdateDialog(true);
-          } else {
-            await fillShipParticulars(detectedType);
-          }
-        } else if (vessel) {
-          // Fallback to legacy system
-          setValue("dwt", formatRange(vessel.minDwt, vessel.maxDwt, "tons"));
-          setValue("loa", vessel.loa.toString());
-          setValue("beam", vessel.beam.toString());
-          setValue("draft", vessel.draft.toString());
-          setSelectedVessel(vesselName);
-          setCurrentShipType(null);
-          setAutoFilledValues({
-            dwt: true,
-            loa: true,
-            beam: true,
-            draft: true
-          });
+        if (hasManualEdits && currentShipType !== shipType) {
+          setPendingShipType(shipType);
+          setShowUpdateDialog(true);
         } else {
-          setCurrentShipType(null);
-          setSelectedVessel(vesselName);
+          fillShipParticulars(shipType, true);
         }
+      } else if (vessel) {
+        // Fallback to legacy system
+        setValue("dwt", formatRange(vessel.minDwt, vessel.maxDwt, "tons"));
+        setValue("loa", vessel.loa.toString());
+        setValue("beam", vessel.beam.toString());
+        setValue("draft", vessel.draft.toString());
+        setSelectedVessel(vesselName);
+        setCurrentShipType(null);
+        setAutoFilledValues({});
       }
-    };
-
-    handleVesselNameChange();
+    }
   }, [vesselName, selectedVessel, setValue, autoFilledValues, currentShipType]);
 
   // Initialize port directory with existing values
@@ -233,9 +211,9 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
     }
   };
 
-  const handleUpdateToNewType = async () => {
+  const handleUpdateToNewType = () => {
     if (pendingShipType) {
-      await fillShipParticulars(pendingShipType, true);
+      fillShipParticulars(pendingShipType, true);
       setPendingShipType(null);
     }
     setShowUpdateDialog(false);
@@ -247,9 +225,9 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
     setShowUpdateDialog(false);
   };
 
-  const handleFieldChange = async (fieldName: string, value: string) => {
+  const handleFieldChange = (fieldName: string, value: string) => {
     setAutoFilledValues(prev => ({ ...prev, [fieldName]: false }));
-    await validateFieldValue(fieldName, value);
+    validateFieldValue(fieldName, value);
   };
 
   const onSubmit = (data: PDAStep1Data) => {
@@ -456,9 +434,9 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                             }}
                           />
                         </FormControl>
-                        {currentShipType && currentShipTypeRanges && (
+                        {currentShipType && SHIP_TYPE_RANGES[currentShipType] && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            {formatShipRange(currentShipTypeRanges.dwt, "MT")}
+                            {formatShipRange(SHIP_TYPE_RANGES[currentShipType].dwt, "MT")}
                           </p>
                         )}
                         {validationWarnings.dwt && (
@@ -495,9 +473,9 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                             }}
                           />
                         </FormControl>
-                        {currentShipType && currentShipTypeRanges && (
+                        {currentShipType && SHIP_TYPE_RANGES[currentShipType] && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            {formatShipRange(currentShipTypeRanges.loa, "m")}
+                            {formatShipRange(SHIP_TYPE_RANGES[currentShipType].loa, "m")}
                           </p>
                         )}
                         {validationWarnings.loa && (
@@ -534,9 +512,9 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                             }}
                           />
                         </FormControl>
-                        {currentShipType && currentShipTypeRanges && (
+                        {currentShipType && SHIP_TYPE_RANGES[currentShipType] && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            {formatShipRange(currentShipTypeRanges.beam, "m")}
+                            {formatShipRange(SHIP_TYPE_RANGES[currentShipType].beam, "m")}
                           </p>
                         )}
                         {validationWarnings.beam && (
@@ -573,9 +551,9 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                             }}
                           />
                         </FormControl>
-                        {currentShipType && currentShipTypeRanges && (
+                        {currentShipType && SHIP_TYPE_RANGES[currentShipType] && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            {formatShipRange(currentShipTypeRanges.draft, "m")}
+                            {formatShipRange(SHIP_TYPE_RANGES[currentShipType].draft, "m")}
                           </p>
                         )}
                         {validationWarnings.draft && (
