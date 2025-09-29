@@ -16,12 +16,15 @@ import FDADetail from "@/pages/FDADetail";
 import FDANew from "@/pages/FDANew";
 import FDALineDetail from "@/pages/FDALineDetail";
 import InviteAccept from "@/pages/InviteAccept";
+import AcceptInvite from "@/pages/AcceptInvite";
+import ResetPassword from "@/pages/ResetPassword";
 import NoOrganization from "@/pages/NoOrganization";
 import OrganizationSettings from "@/pages/OrganizationSettings";
 import PlatformAdmin from "@/pages/PlatformAdmin";
 import SeedAdmin from "@/pages/SeedAdmin";
 import { AuthProvider } from "@/context/AuthProvider";
 import { OrgProvider } from "@/context/OrgProvider";
+import { TenantProvider } from "@/context/TenantProvider";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 
 const queryClient = new QueryClient();
@@ -31,29 +34,33 @@ const App = () => (
     <BrowserRouter>
       <AuthProvider>
         <OrgProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <Routes>
-              <Route path="/" element={<DashboardLayout><Index /></DashboardLayout>} />
-              <Route path="/auth" element={<AuthPage />} />
-              <Route path="/seed-admin" element={<SeedAdmin />} />
-              <Route path="/invite" element={<InviteAccept />} />
-              <Route path="/no-organization" element={<RequireAuth><NoOrganization /></RequireAuth>} />
-              <Route path="/settings" element={<RequireAuth><DashboardLayout><OrganizationSettings /></DashboardLayout></RequireAuth>} />
-              <Route path="/organization/settings" element={<Navigate to="/settings" replace />} />
-              <Route path="/platform-admin" element={<RequireAuth><PlatformAdmin /></RequireAuth>} />
-              <Route path="/pda" element={<RequireAuth><DashboardLayout><PDAList /></DashboardLayout></RequireAuth>} />
-              <Route path="/pda/new" element={<RequireAuth><DashboardLayout><NewPDAWizard /></DashboardLayout></RequireAuth>} />
-              <Route path="/pda/:id/review" element={<RequireAuth><DashboardLayout><PDAReview /></DashboardLayout></RequireAuth>} />
-              <Route path="/fda" element={<RequireAuth><DashboardLayout><FDAList /></DashboardLayout></RequireAuth>} />
-              <Route path="/fda/new" element={<RequireAuth><DashboardLayout><FDANew /></DashboardLayout></RequireAuth>} />
-              <Route path="/fda/:id" element={<RequireAuth><DashboardLayout><FDADetail /></DashboardLayout></RequireAuth>} />
-              <Route path="/fda/:fdaId/line/:lineId" element={<RequireAuth><DashboardLayout><FDALineDetail /></DashboardLayout></RequireAuth>} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </TooltipProvider>
+          <TenantProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <Routes>
+                <Route path="/" element={<DashboardLayout><Index /></DashboardLayout>} />
+                <Route path="/auth" element={<AuthPage />} />
+                <Route path="/auth/accept-invite" element={<AcceptInvite />} />
+                <Route path="/auth/reset-password" element={<ResetPassword />} />
+                <Route path="/seed-admin" element={<SeedAdmin />} />
+                <Route path="/invite" element={<InviteAccept />} />
+                <Route path="/no-organization" element={<RequireAuth><NoOrganization /></RequireAuth>} />
+                <Route path="/settings" element={<RequireAuth><DashboardLayout><OrganizationSettings /></DashboardLayout></RequireAuth>} />
+                <Route path="/organization/settings" element={<Navigate to="/settings" replace />} />
+                <Route path="/platform-admin" element={<RequireAuth><PlatformAdmin /></RequireAuth>} />
+                <Route path="/pda" element={<RequireAuth><DashboardLayout><PDAList /></DashboardLayout></RequireAuth>} />
+                <Route path="/pda/new" element={<RequireAuth><DashboardLayout><NewPDAWizard /></DashboardLayout></RequireAuth>} />
+                <Route path="/pda/:id/review" element={<RequireAuth><DashboardLayout><PDAReview /></DashboardLayout></RequireAuth>} />
+                <Route path="/fda" element={<RequireAuth><DashboardLayout><FDAList /></DashboardLayout></RequireAuth>} />
+                <Route path="/fda/new" element={<RequireAuth><DashboardLayout><FDANew /></DashboardLayout></RequireAuth>} />
+                <Route path="/fda/:id" element={<RequireAuth><DashboardLayout><FDADetail /></DashboardLayout></RequireAuth>} />
+                <Route path="/fda/:fdaId/line/:lineId" element={<RequireAuth><DashboardLayout><FDALineDetail /></DashboardLayout></RequireAuth>} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </TooltipProvider>
+          </TenantProvider>
         </OrgProvider>
       </AuthProvider>
     </BrowserRouter>

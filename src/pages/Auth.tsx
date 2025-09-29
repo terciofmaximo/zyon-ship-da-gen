@@ -73,6 +73,24 @@ const AuthPage: React.FC = () => {
           email: data.user?.email,
           emailConfirmed: data.user?.email_confirmed_at,
         });
+
+        // Check if user must reset password
+        if (data.user) {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('must_reset_password')
+            .eq('user_id', data.user.id)
+            .maybeSingle();
+
+          if (profile?.must_reset_password) {
+            toast({ 
+              title: "Password Reset Required", 
+              description: "You must reset your password before continuing" 
+            });
+            navigate('/auth/reset-password?forced=true', { replace: true });
+            return;
+          }
+        }
         
         toast({ title: "Bem-vindo", description: "Login efetuado com sucesso" });
         navigate(redirectTo, { replace: true });

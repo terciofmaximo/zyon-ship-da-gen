@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.seed-platform-admin]
 verify_jwt = false
+
+[functions.send-invitation-email]
+verify_jwt = false
+
+[functions.generate-pda-pdf]
+verify_jwt = true

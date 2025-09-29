@@ -69,6 +69,9 @@ export function CompanyManagement() {
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [copiedInvite, setCopiedInvite] = useState(false);
+  const [lastInvitedEmail, setLastInvitedEmail] = useState<string | null>(null);
+  const [lastCreatedCompany, setLastCreatedCompany] = useState<{slug: string; name: string; orgId: string} | null>(null);
+  const [resending, setResending] = useState(false);
   
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -166,15 +169,10 @@ export function CompanyManagement() {
 
       // 3. Handle owner assignment or invite
       if (validation.data.owner_email) {
-        // Check if user exists
-        const { data: existingUser } = await supabase
-          .from("organization_members")
-          .select("user_id")
-          .limit(1);
-
-        // Try to find user by email in auth (we can't query auth.users directly)
-        // Instead, we'll create an invite and let them accept it
+        // Generate invitation token
         const inviteToken = crypto.randomUUID();
+        const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000); // 72 hours
+        
         const { error: inviteError } = await supabase
           .from("organization_invites")
           .insert({
@@ -182,18 +180,50 @@ export function CompanyManagement() {
             email: validation.data.owner_email,
             role: "owner",
             token: inviteToken,
-            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+            expires_at: expiresAt.toISOString(),
           });
 
-        if (!inviteError) {
-          const inviteUrl = `${window.location.origin}/invite/${inviteToken}`;
-          setInviteLink(inviteUrl);
+        if (inviteError) {
+          console.error("Invite creation error:", inviteError);
+        } else {
+          // Send invitation email via edge function
+          const inviteUrl = `https://${validation.data.slug}.vesselopsportal.com/auth/accept-invite?token=${inviteToken}`;
+          
+          try {
+            const { error: emailError } = await supabase.functions.invoke('send-invitation-email', {
+              body: {
+                email: validation.data.owner_email,
+                companyName: validation.data.name,
+                inviteLink: inviteUrl,
+                tenantSlug: validation.data.slug,
+              }
+            });
+
+            if (emailError) {
+              console.error("Email send error:", emailError);
+              toast({
+                title: "Warning",
+                description: "Company created but invitation email failed to send",
+                variant: "destructive",
+              });
+            } else {
+              setInviteLink(inviteUrl);
+              setLastInvitedEmail(validation.data.owner_email);
+              setLastCreatedCompany({ 
+                slug: validation.data.slug, 
+                name: validation.data.name,
+                orgId: newOrg.id
+              });
+            }
+          } catch (emailError) {
+            console.error("Email function error:", emailError);
+          }
         }
       }
 
       toast({
         title: "Success",
-        description: `Company "${validation.data.name}" created successfully`,
+        description: `Company "${validation.data.name}" created successfully${validation.data.owner_email ? ' and invitation sent' : ''}`,
       });
 
       // Reset form
@@ -327,6 +357,64 @@ export function CompanyManagement() {
       .replace(/\s+/g, "-")
       .replace(/-+/g, "-")
       .replace(/^-|-$/g, "");
+  };
+
+  const handleResendInvite = async () => {
+    if (!lastCreatedCompany || !lastInvitedEmail) return;
+    
+    setResending(true);
+    try {
+      // Invalidate old invite
+      await supabase
+        .from("organization_invites")
+        .update({ expires_at: new Date().toISOString() })
+        .eq('org_id', lastCreatedCompany.orgId)
+        .eq('email', lastInvitedEmail);
+
+      // Create new invite
+      const inviteToken = crypto.randomUUID();
+      const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000);
+      
+      const { error: inviteError } = await supabase
+        .from("organization_invites")
+        .insert({
+          org_id: lastCreatedCompany.orgId,
+          email: lastInvitedEmail,
+          role: "owner",
+          token: inviteToken,
+          expires_at: expiresAt.toISOString(),
+        });
+
+      if (inviteError) throw inviteError;
+
+      // Send new email
+      const inviteUrl = `https://${lastCreatedCompany.slug}.vesselopsportal.com/auth/accept-invite?token=${inviteToken}`;
+      
+      const { error: emailError } = await supabase.functions.invoke('send-invitation-email', {
+        body: {
+          email: lastInvitedEmail,
+          companyName: lastCreatedCompany.name,
+          inviteLink: inviteUrl,
+          tenantSlug: lastCreatedCompany.slug,
+        }
+      });
+
+      if (emailError) throw emailError;
+
+      setInviteLink(inviteUrl);
+      toast({
+        title: "Invitation resent",
+        description: `New invitation sent to ${lastInvitedEmail}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to resend invitation",
+        variant: "destructive",
+      });
+    } finally {
+      setResending(false);
+    }
   };
 
   const filteredCompanies = companies.filter(company =>
@@ -468,6 +556,54 @@ export function CompanyManagement() {
                 </Button>
               </div>
             </form>
+          )}
+
+          {/* Success Banner */}
+          {lastInvitedEmail && inviteLink && (
+            <div className="mb-4 p-4 border rounded-lg bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <p className="font-medium text-green-900 dark:text-green-100 mb-1">
+                    ✓ Invitation sent to {lastInvitedEmail}
+                  </p>
+                  <p className="text-sm text-green-700 dark:text-green-300 mb-3">
+                    Company: {lastCreatedCompany?.name} ({lastCreatedCompany?.slug})
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={handleResendInvite}
+                      disabled={resending}
+                    >
+                      {resending ? "Resending..." : "Resend"}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={copyInviteLink}
+                    >
+                      {copiedInvite ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+                      Copy link
+                    </Button>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setLastInvitedEmail(null);
+                    setInviteLink(null);
+                    setLastCreatedCompany(null);
+                  }}
+                >
+                  ✕
+                </Button>
+              </div>
+            </div>
           )}
 
           <div className="mb-4">
