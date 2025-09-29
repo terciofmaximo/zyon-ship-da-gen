@@ -165,6 +165,15 @@ export const useFDA = () => {
 
       if (fdaError) throw fdaError;
 
+      // Ensure all PDA lines exist in the ledger for Draft FDAs
+      if ((fda as any).status === 'Draft') {
+        try {
+          await supabase.rpc('sync_fda_from_pda', { p_fda_id: id });
+        } catch (e) {
+          console.warn('sync_fda_from_pda failed (non-blocking):', e);
+        }
+      }
+
       const { data: ledger, error: ledgerError } = await supabase
         .from("fda_ledger")
         .select("*")

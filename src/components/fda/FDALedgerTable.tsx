@@ -116,7 +116,7 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
       const newFullLedger = [...fullLedger];
       newFullLedger[lineIndex] = updatedLine;
       setFullLedger(newFullLedger);
-      onLedgerUpdate(newFullLedger.filter(l => !l.id.startsWith('standard-') || l.amount_usd > 0));
+      onLedgerUpdate(newFullLedger);
       
     } catch (error) {
       console.error('Failed to save line:', error);
