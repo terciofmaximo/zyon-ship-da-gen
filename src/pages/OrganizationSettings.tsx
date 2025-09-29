@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOrg } from "@/context/OrgProvider";
@@ -156,30 +155,27 @@ export default function OrganizationSettings() {
   // Allow platformAdmin to access settings without an active org
   if (!activeOrg && !isPlatformAdmin) {
     return (
-      <DashboardLayout>
-        <div className="space-y-6">
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-muted-foreground text-center">No organization selected</p>
-            </CardContent>
-          </Card>
-        </div>
-      </DashboardLayout>
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-muted-foreground text-center">No organization selected</p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-          <p className="text-muted-foreground">
-            {isPlatformAdmin && !activeOrg 
-              ? "Platform administration and company management"
-              : "Manage your organization configuration, members, and domains"
-            }
-          </p>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+        <p className="text-muted-foreground">
+          {isPlatformAdmin && !activeOrg 
+            ? "Platform administration and company management"
+            : "Manage your organization configuration, members, and domains"
+          }
+        </p>
+      </div>
 
         <Tabs value={activeTab} onValueChange={(tab) => setSearchParams({ tab })}>
           <TabsList>
@@ -405,6 +401,5 @@ export default function OrganizationSettings() {
           )}
         </Tabs>
       </div>
-    </DashboardLayout>
   );
 }

@@ -42,7 +42,7 @@ export function Header() {
   };
 
   return (
-    <header className="border-b bg-background shadow-soft">
+    <header className="sticky top-0 z-50 border-b bg-background shadow-soft">
       <div className="flex h-16 items-center justify-between px-6">
         <div className="flex items-center gap-4">
           <SidebarTrigger className="h-8 w-8" />
