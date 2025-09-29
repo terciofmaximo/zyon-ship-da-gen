@@ -19,11 +19,15 @@ export function usePDA() {
   const savePDA = async (data: PDAData, pdaId?: string) => {
     setLoading(true);
     try {
-      // For now using hardcoded user ID as tenant - will be replaced with proper auth
-      const mockTenantId = "123e4567-e89b-12d3-a456-426614174000";
+      // Get the authenticated user's ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("User must be authenticated to create/update PDAs");
+      }
+      const tenantId = user.id;
       
       const pdaData = {
-        tenant_id: mockTenantId,
+        tenant_id: tenantId,
         vessel_name: data.shipData.vesselName || "",
         imo_number: data.shipData.imoNumber,
         dwt: data.shipData.dwt,
@@ -79,13 +83,13 @@ export function usePDA() {
       } else {
         // Create new PDA with generated PDA number
         const { data: pdaNumber } = await supabase
-          .rpc("generate_pda_number", { p_tenant_id: mockTenantId });
+          .rpc("generate_pda_number", { p_tenant_id: tenantId });
         
         const insertData = {
           ...pdaData,
           pda_number: pdaNumber,
           status: "CREATED" as any, // Cast to avoid TypeScript enum mismatch
-          created_by: mockTenantId // Set creator
+          created_by: tenantId // Set creator
         };
         
         result = await supabase

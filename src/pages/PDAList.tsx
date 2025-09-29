@@ -136,13 +136,23 @@ export default function PDAList() {
   const fetchPDAs = async () => {
     setLoading(true);
     try {
-      // For now using hardcoded user ID as tenant - will be replaced with proper auth
-      const mockTenantId = "123e4567-e89b-12d3-a456-426614174000";
+      // Get the authenticated user's ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to view your PDAs",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+      const tenantId = user.id;
       
       let query = supabase
         .from("pdas")
         .select("id, pda_number, vessel_name, port_name, to_display_name, date_field, sent_at, sent_by_user_id, created_by, status, created_at, updated_at")
-        .eq("tenant_id", mockTenantId);
+        .eq("tenant_id", tenantId);
 
       // Apply sorting
       switch (sortBy) {
