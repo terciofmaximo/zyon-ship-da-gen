@@ -1,4 +1,4 @@
-import { Settings, User, Users, UserPlus } from "lucide-react";
+import { Settings, User, Users, UserPlus, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
@@ -12,16 +12,34 @@ import { OrgSwitcher } from "./OrgSwitcher";
 import { useOrg } from "@/context/OrgProvider";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthProvider";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 
 export function Header() {
   const navigate = useNavigate();
   const { organizations, activeOrg } = useOrg();
   const { isPlatformAdmin } = useUserRole();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const showOrgSwitcher = organizations.length > 1 || isPlatformAdmin;
   
   // Check if user is admin/owner of the active org
   const canInvite = isPlatformAdmin || (activeOrg && ['admin', 'owner'].includes(activeOrg.role));
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate("/auth");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to sign out",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <header className="border-b bg-background shadow-soft">
@@ -76,14 +94,16 @@ export function Header() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-foreground hover:bg-accent hover:text-accent-foreground">
-                <User className="h-4 w-4 mr-2" />
-                Operations Analyst
+              <Button variant="ghost" size="sm" className="text-foreground hover:bg-accent hover:text-accent-foreground max-w-[200px]">
+                <User className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span className="truncate">{user?.email || "User"}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>Profile</DropdownMenuItem>
-              <DropdownMenuItem>Logout</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
