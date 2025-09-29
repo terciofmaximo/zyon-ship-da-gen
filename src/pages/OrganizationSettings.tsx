@@ -52,7 +52,9 @@ export default function OrganizationSettings() {
   const [orgSlug, setOrgSlug] = useState("");
   const [savingOrg, setSavingOrg] = useState(false);
 
-  const activeTab = searchParams.get("tab") || "organization";
+  // Default to 'companies' tab if platformAdmin with no active org
+  const defaultTab = isPlatformAdmin && !activeOrg ? "companies" : "organization";
+  const activeTab = searchParams.get("tab") || defaultTab;
 
   const isViewer = activeOrg && activeOrg.role === "viewer";
   const canEdit = isPlatformAdmin || (activeOrg && ['admin', 'owner'].includes(activeOrg.role));
@@ -151,7 +153,8 @@ export default function OrganizationSettings() {
     }
   };
 
-  if (!activeOrg) {
+  // Allow platformAdmin to access settings without an active org
+  if (!activeOrg && !isPlatformAdmin) {
     return (
       <DashboardLayout>
         <div className="space-y-6">
@@ -171,24 +174,31 @@ export default function OrganizationSettings() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
           <p className="text-muted-foreground">
-            Manage your organization configuration, members, and domains
+            {isPlatformAdmin && !activeOrg 
+              ? "Platform administration and company management"
+              : "Manage your organization configuration, members, and domains"
+            }
           </p>
         </div>
 
         <Tabs value={activeTab} onValueChange={(tab) => setSearchParams({ tab })}>
           <TabsList>
-            <TabsTrigger value="organization">
-              <Building2 className="h-4 w-4 mr-2" />
-              Organization
-            </TabsTrigger>
-            <TabsTrigger value="people">
-              <Users className="h-4 w-4 mr-2" />
-              People
-            </TabsTrigger>
-            <TabsTrigger value="domains">
-              <Globe className="h-4 w-4 mr-2" />
-              Domains
-            </TabsTrigger>
+            {activeOrg && (
+              <>
+                <TabsTrigger value="organization">
+                  <Building2 className="h-4 w-4 mr-2" />
+                  Organization
+                </TabsTrigger>
+                <TabsTrigger value="people">
+                  <Users className="h-4 w-4 mr-2" />
+                  People
+                </TabsTrigger>
+                <TabsTrigger value="domains">
+                  <Globe className="h-4 w-4 mr-2" />
+                  Domains
+                </TabsTrigger>
+              </>
+            )}
             {isPlatformAdmin && (
               <TabsTrigger value="companies">
                 <Building className="h-4 w-4 mr-2" />
@@ -197,7 +207,8 @@ export default function OrganizationSettings() {
             )}
           </TabsList>
 
-          <TabsContent value="organization" className="space-y-4">
+          {activeOrg && (
+            <TabsContent value="organization" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Organization Details</CardTitle>
@@ -282,9 +293,11 @@ export default function OrganizationSettings() {
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
+            </TabsContent>
+          )}
 
-          <TabsContent value="people" className="space-y-4">
+          {activeOrg && (
+            <TabsContent value="people" className="space-y-4">
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -366,9 +379,11 @@ export default function OrganizationSettings() {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
+            </TabsContent>
+          )}
 
-          <TabsContent value="domains" className="space-y-4">
+          {activeOrg && (
+            <TabsContent value="domains" className="space-y-4">
             {canEdit ? (
               <DomainManagement />
             ) : (
@@ -380,7 +395,8 @@ export default function OrganizationSettings() {
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
+            </TabsContent>
+          )}
 
           {isPlatformAdmin && (
             <TabsContent value="companies" className="space-y-4">

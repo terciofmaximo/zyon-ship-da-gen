@@ -15,6 +15,7 @@ interface OrgContextValue {
   activeOrg: Organization | null;
   setActiveOrg: (org: Organization) => void;
   loading: boolean;
+  reloadOrganizations: () => Promise<void>;
 }
 
 const OrgContext = createContext<OrgContextValue | undefined>(undefined);
@@ -111,8 +112,13 @@ export const OrgProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem("active_org_id", org.id);
   };
 
+  const reloadOrganizations = async () => {
+    if (!user || isPlatformAdmin) return;
+    await fetchUserOrganizations();
+  };
+
   return (
-    <OrgContext.Provider value={{ organizations, activeOrg, setActiveOrg, loading }}>
+    <OrgContext.Provider value={{ organizations, activeOrg, setActiveOrg, loading, reloadOrganizations }}>
       {children}
     </OrgContext.Provider>
   );
