@@ -37,6 +37,8 @@ export interface FDALedger {
   created_at: string;
   updated_at: string;
   tenant_id: string;
+  pda_field?: string;
+  origin?: "PDA" | "MANUAL";
 }
 
 export interface FDAWithLedger extends FDA {

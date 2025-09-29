@@ -115,13 +115,14 @@ export const useFDA = () => {
           amount_usd: amountUSD.toNumber(),
           amount_local: amountLocal.toNumber(),
           status: "Open",
-          tenant_id: pda.tenant_id, // Copy tenant_id from PDA
+          tenant_id: pda.tenant_id,
+          pda_field: pdaField, // Track source PDA field
+          origin: 'PDA' as const,
           source: {
             pdaField,
             originalAmount: amount,
             exchangeRate: fdaData.exchange_rate,
-            pda_item_id: pdaField, // Track source PDA field
-            // Preserve Itaqui auto-pricing metadata if present
+            pda_item_id: pdaField,
             ...(pda.comments?.[pdaField] || {}),
           },
         });
@@ -174,7 +175,10 @@ export const useFDA = () => {
 
       return {
         ...fda,
-        ledger: ledger || [],
+        ledger: (ledger || []).map(entry => ({
+          ...entry,
+          origin: (entry.origin as "PDA" | "MANUAL" | undefined) || "PDA"
+        })) as FDALedger[],
       };
     } catch (error) {
       console.error("Error fetching FDA:", error);
@@ -244,12 +248,14 @@ export const useFDA = () => {
           amount_usd: amountUSD.toNumber(),
           amount_local: amountLocal.toNumber(),
           status: "Open",
-          tenant_id: fda.tenant_id, // Copy tenant_id from FDA
+          tenant_id: fda.tenant_id,
+          pda_field: pdaField, // Track source PDA field
+          origin: 'PDA' as const,
           source: {
             pdaField,
             originalAmount: amount,
             exchangeRate: fda.exchange_rate,
-            pda_item_id: pdaField, // Track source PDA field
+            pda_item_id: pdaField,
           },
         });
       });
@@ -339,12 +345,39 @@ export const useFDA = () => {
     return totals;
   };
 
+  const resyncFromPda = async (fdaId: string): Promise<boolean> => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('sync_fda_from_pda', { p_fda_id: fdaId });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: `Added ${data || 0} missing PDA lines to FDA`,
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error resyncing FDA from PDA:", error);
+      toast({
+        title: "Error",
+        description: "Failed to resync from PDA",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     convertPdaToFda,
     getFDA,
     rebuildFromPda,
     updateFDAStatus,
     calculateFDATotals,
+    resyncFromPda,
     loading,
   };
 };

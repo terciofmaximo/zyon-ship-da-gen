@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FDALedgerTable } from "@/components/fda/FDALedgerTable";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Check, Edit, X, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, Check, Edit, X, Save, Loader2, RefreshCw } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +23,7 @@ export default function FDADetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { getFDA, updateFDAStatus, calculateFDATotals, loading } = useFDA();
+  const { getFDA, updateFDAStatus, calculateFDATotals, resyncFromPda, loading } = useFDA();
   const [fda, setFda] = useState<FDAWithLedger | null>(null);
   const [loadingPage, setLoadingPage] = useState(true);
   const [confirmPost, setConfirmPost] = useState(false);
@@ -238,6 +238,15 @@ export default function FDADetail() {
   };
 
 
+  const handleResync = async () => {
+    if (!id) return;
+    
+    const success = await resyncFromPda(id);
+    if (success) {
+      await fetchFDA(); // Reload FDA data to show new lines
+    }
+  };
+
   const handlePost = async () => {
     if (!id) return;
     
@@ -314,10 +323,22 @@ export default function FDADetail() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>FDA Information</CardTitle>
           {!isEditing ? (
-            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
-            </Button>
+            <div className="flex gap-2">
+              {fda.status === "Draft" && (
+                <Button variant="outline" size="sm" onClick={handleResync} disabled={loading}>
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                  )}
+                  Resync from PDA
+                </Button>
+              )}
+              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            </div>
           ) : (
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={handleCancel}>

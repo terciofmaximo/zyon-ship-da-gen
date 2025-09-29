@@ -111,7 +111,9 @@ export type Database = {
           line_no: number
           markup_pct: number | null
           notes: string | null
+          origin: string | null
           payment_terms: string | null
+          pda_field: string | null
           settled_at: string | null
           side: Database["public"]["Enums"]["fda_ledger_side"]
           source: Json | null
@@ -145,7 +147,9 @@ export type Database = {
           line_no: number
           markup_pct?: number | null
           notes?: string | null
+          origin?: string | null
           payment_terms?: string | null
+          pda_field?: string | null
           settled_at?: string | null
           side: Database["public"]["Enums"]["fda_ledger_side"]
           source?: Json | null
@@ -179,7 +183,9 @@ export type Database = {
           line_no?: number
           markup_pct?: number | null
           notes?: string | null
+          origin?: string | null
           payment_terms?: string | null
+          pda_field?: string | null
           settled_at?: string | null
           side?: Database["public"]["Enums"]["fda_ledger_side"]
           source?: Json | null
@@ -676,6 +682,10 @@ export type Database = {
       setup_demo_admin: {
         Args: { admin_email: string; admin_password: string }
         Returns: Json
+      }
+      sync_fda_from_pda: {
+        Args: { p_fda_id: string }
+        Returns: number
       }
       validate_invite_token: {
         Args: { invite_token: string }
