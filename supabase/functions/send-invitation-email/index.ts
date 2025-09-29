@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@4.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -27,11 +27,9 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Company:', companyName);
     console.log('Tenant slug:', tenantSlug);
 
-    const emailResponse = await resend.emails.send({
-      from: "Vessel Ops Portal <onboarding@resend.dev>",
-      to: [email],
-      subject: `Welcome to Vessel Ops Portal — your access to ${companyName}`,
-      html: `
+    const subject = `Welcome to Vessel Ops Portal — your access to ${companyName}`;
+
+    const html = `
         <!DOCTYPE html>
         <html>
           <head>
@@ -117,8 +115,9 @@ const handler = async (req: Request): Promise<Response> => {
             </div>
           </body>
         </html>
-      `,
-      text: `
+      `;
+
+    const text = `
 Welcome to Vessel Ops Portal!
 
 You've been invited to access Vessel Ops Portal for ${companyName}.
@@ -133,8 +132,32 @@ This link expires in 72 hours.
 If you didn't expect this invitation, please ignore this email.
 
 — Vessel Ops Portal
-      `,
+      `;
+
+    if (!RESEND_API_KEY) {
+      throw new Error('Missing RESEND_API_KEY');
+    }
+
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'Vessel Ops Portal <onboarding@resend.dev>',
+        to: [email],
+        subject,
+        html,
+        text,
+      }),
     });
+
+    const emailResponse = await res.json();
+    if (!res.ok) {
+      console.error('Resend API error:', emailResponse);
+      throw new Error(emailResponse?.message || 'Failed to send email via Resend');
+    }
 
     console.log("Email sent successfully:", emailResponse);
 
