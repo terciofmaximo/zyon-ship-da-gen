@@ -49,6 +49,8 @@ import {
 interface PDA {
   id: string;
   pda_number: string;
+  vessel_name: string | null;
+  port_name: string | null;
   to_display_name: string | null;
   date_field: string | null; // PDA's own date from Step 1
   sent_at: string | null;
@@ -139,7 +141,7 @@ export default function PDAList() {
       
       let query = supabase
         .from("pdas")
-        .select("id, pda_number, to_display_name, date_field, sent_at, sent_by_user_id, created_by, status, created_at, updated_at")
+        .select("id, pda_number, vessel_name, port_name, to_display_name, date_field, sent_at, sent_by_user_id, created_by, status, created_at, updated_at")
         .eq("tenant_id", mockTenantId);
 
       // Apply sorting
@@ -192,7 +194,9 @@ export default function PDAList() {
     return pdas.filter((pda) => {
       const matchesSearch = 
         pda.pda_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (pda.to_display_name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+        (pda.to_display_name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+        (pda.vessel_name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+        (pda.port_name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
       
       const matchesStatus = statusFilter === "all" || pda.status === statusFilter;
       
@@ -336,7 +340,7 @@ export default function PDAList() {
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar por número ou cliente..."
+                  placeholder="Search PDAs, vessels, ports..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-8 w-[300px]"
@@ -402,6 +406,8 @@ export default function PDAList() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>PDA #</TableHead>
+                    <TableHead>Vessel</TableHead>
+                    <TableHead>Port</TableHead>
                     <TableHead>Client (To)</TableHead>
                     <TableHead>Sent on</TableHead>
                     <TableHead>Sent by</TableHead>
@@ -429,6 +435,16 @@ export default function PDAList() {
                         >
                           {pda.pda_number}
                         </Button>
+                      </TableCell>
+                      <TableCell>
+                        <div className="max-w-[150px] truncate" title={pda.vessel_name || ""}>
+                          {pda.vessel_name || "—"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="max-w-[120px] truncate" title={pda.port_name || ""}>
+                          {pda.port_name || "—"}
+                        </div>
                       </TableCell>
                       <TableCell>{pda.to_display_name || "—"}</TableCell>
                       <TableCell>{formatDate(pda.date_field)}</TableCell>
