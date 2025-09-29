@@ -16,9 +16,11 @@ import { useUserRole } from "@/hooks/useUserRole";
 
 export function Header() {
   const { organizations, activeOrg } = useOrg();
-  const { isAdmin, isPlatformAdmin } = useUserRole();
+  const { isPlatformAdmin } = useUserRole();
   const showOrgSwitcher = organizations.length > 1;
-  const canInvite = isAdmin || isPlatformAdmin;
+  
+  // Check if user is admin/owner of the active org
+  const canInvite = isPlatformAdmin || (activeOrg && ['admin', 'owner'].includes(activeOrg.role));
 
   return (
     <header className="border-b bg-background shadow-soft">
