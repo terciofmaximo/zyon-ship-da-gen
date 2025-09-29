@@ -34,30 +34,46 @@ export default function InviteAccept() {
 
   const validateAndFetchInvite = async (token: string) => {
     try {
-      const { data, error } = await supabase
-        .from("organization_invites")
-        .select(`
-          *,
-          organizations (
-            id,
-            name,
-            slug
-          )
-        `)
-        .eq("token", token)
-        .is("accepted_at", null)
-        .single();
+      // Use secure RPC function to get invite by token
+      const { data, error } = await supabase.rpc("get_invite_by_token", {
+        invite_token: token,
+      });
 
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("Invite not found");
+      }
+
+      const inviteData = data[0];
+
+      // Check if already accepted
+      if (inviteData.accepted_at) {
+        setError("This invite has already been used");
+        setLoading(false);
+        return;
+      }
 
       // Check if expired
-      if (new Date(data.expires_at) < new Date()) {
+      if (new Date(inviteData.expires_at) < new Date()) {
         setError("This invite has expired");
         setLoading(false);
         return;
       }
 
-      setInvite(data);
+      // Fetch organization details
+      const { data: orgData, error: orgError } = await supabase
+        .from("organizations")
+        .select("id, name, slug")
+        .eq("id", inviteData.org_id)
+        .single();
+
+      if (orgError) throw orgError;
+
+      // Combine invite and org data
+      setInvite({
+        ...inviteData,
+        organizations: orgData,
+      });
       setLoading(false);
     } catch (error: any) {
       setError("Invalid or expired invite");

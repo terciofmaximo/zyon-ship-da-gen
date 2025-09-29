@@ -596,6 +596,20 @@ export type Database = {
         Args: { p_tenant_id: string }
         Returns: string
       }
+      get_invite_by_token: {
+        Args: { invite_token: string }
+        Returns: {
+          accepted_at: string
+          created_at: string
+          created_by: string
+          email: string
+          expires_at: string
+          id: string
+          org_id: string
+          role: string
+          token: string
+        }[]
+      }
       get_user_org_ids: {
         Args: { _user_id: string }
         Returns: {
