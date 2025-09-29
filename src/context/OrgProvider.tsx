@@ -40,16 +40,39 @@ export const OrgProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
 
-    // Platform admins don't need org membership
+    // Platform admins can see all orgs
     if (isPlatformAdmin) {
-      setOrganizations([]);
-      setActiveOrgState(null);
-      setLoading(false);
+      fetchAllOrganizations();
       return;
     }
 
     fetchUserOrganizations();
   }, [user, isPlatformAdmin, roleLoading]);
+
+  const fetchAllOrganizations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("organizations")
+        .select("id, name, slug")
+        .order("name");
+
+      if (error) throw error;
+
+      const orgs: Organization[] = (data || []).map((org: any) => ({
+        id: org.id,
+        name: org.name,
+        slug: org.slug,
+        role: "platformAdmin",
+      }));
+
+      setOrganizations(orgs);
+      setActiveOrgState(null); // Default to "All Tenants" view
+    } catch (error) {
+      console.error("Error fetching organizations:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Redirect to no-organization page if user has no orgs (but not platformAdmin)
   useEffect(() => {
@@ -113,8 +136,12 @@ export const OrgProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const reloadOrganizations = async () => {
-    if (!user || isPlatformAdmin) return;
-    await fetchUserOrganizations();
+    if (!user) return;
+    if (isPlatformAdmin) {
+      await fetchAllOrganizations();
+    } else {
+      await fetchUserOrganizations();
+    }
   };
 
   return (

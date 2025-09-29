@@ -59,7 +59,7 @@ type Company = {
 
 export function CompanyManagement() {
   const { toast } = useToast();
-  const { organizations, setActiveOrg } = useOrg();
+  const { organizations, setActiveOrg, reloadOrganizations } = useOrg();
   const navigate = useNavigate();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,7 +110,7 @@ export function CompanyManagement() {
     const validation = companySchema.safeParse({ 
       name, 
       slug, 
-      primary_domain: primaryDomain || undefined,
+      primary_domain: primaryDomain ? sanitizeDomain(primaryDomain) : undefined,
       owner_email: ownerEmail || undefined 
     });
     
@@ -203,8 +203,9 @@ export function CompanyManagement() {
       setOwnerEmail("");
       setShowForm(false);
       
-      // Reload companies
+      // Reload companies and organizations
       await loadCompanies();
+      await reloadOrganizations();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -307,6 +308,17 @@ export function CompanyManagement() {
     }
   };
 
+  const sanitizeDomain = (domain: string): string => {
+    if (!domain) return "";
+    // Remove protocol (http://, https://)
+    let cleaned = domain.replace(/^https?:\/\//, "");
+    // Remove trailing slash
+    cleaned = cleaned.replace(/\/$/, "");
+    // Remove www. prefix if present
+    cleaned = cleaned.replace(/^www\./, "");
+    return cleaned.toLowerCase().trim();
+  };
+
   const generateSlugFromName = (name: string) => {
     return name
       .toLowerCase()
@@ -389,14 +401,14 @@ export function CompanyManagement() {
                   <Input
                     id="primary-domain"
                     value={primaryDomain}
-                    onChange={(e) => setPrimaryDomain(e.target.value.toLowerCase())}
-                    placeholder="acme.com"
+                    onChange={(e) => setPrimaryDomain(e.target.value)}
+                    placeholder="acme.com or https://acme.com"
                   />
                   {errors.primary_domain && (
                     <p className="text-sm text-destructive">{errors.primary_domain}</p>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    Auto-verified domain for this org
+                    Domain will be auto-verified. Protocol and www are auto-stripped.
                   </p>
                 </div>
 
