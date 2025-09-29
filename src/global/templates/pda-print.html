@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Port Disbursement Account - {{PDA_NUMBER}}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #0066cc;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            color: #0066cc;
+            font-size: 18pt;
+            margin: 0;
+            font-weight: bold;
+        }
+        
+        .header .subtitle {
+            color: #666;
+            font-size: 10pt;
+            margin-top: 5px;
+        }
+        
+        .vessel-info {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .vessel-info h2 {
+            color: #0066cc;
+            font-size: 12pt;
+            margin: 0 0 10px 0;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 5px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .info-item {
+            display: flex;
+        }
+        
+        .info-item .label {
+            font-weight: bold;
+            min-width: 80px;
+        }
+        
+        .costs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .costs-table th,
+        .costs-table td {
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        .costs-table th {
+            background-color: #0066cc;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .costs-table .amount {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .total-row {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        
+        .exchange-rate {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 15px 0;
+        }
+        
+        .exchange-rate .rate {
+            font-weight: bold;
+            color: #856404;
+        }
+        
+        .remarks {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #0066cc;
+        }
+        
+        .remarks h3 {
+            margin: 0 0 10px 0;
+            color: #0066cc;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            border-top: 1px solid #dee2e6;
+            padding-top: 15px;
+            color: #666;
+            font-size: 9pt;
+        }
+        
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 48pt;
+            color: rgba(0, 102, 204, 0.1);
+            z-index: -1;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="watermark">{{WATERMARK_TEXT}}</div>
+    
+    <div class="header">
+        <h1>PORT DISBURSEMENT ACCOUNT</h1>
+        <div class="subtitle">PDA Number: {{PDA_NUMBER}} | Date: {{DATE}}</div>
+    </div>
+    
+    <div class="vessel-info">
+        <h2>Vessel Information</h2>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="label">Vessel Name:</span>
+                <span>{{VESSEL_NAME}}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">IMO Number:</span>
+                <span>{{IMO_NUMBER}}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">DWT:</span>
+                <span>{{DWT}} MT</span>
+            </div>
+            <div class="info-item">
+                <span class="label">LOA:</span>
+                <span>{{LOA}} m</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Port:</span>
+                <span>{{PORT_NAME}}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Terminal:</span>
+                <span>{{TERMINAL}}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Berth:</span>
+                <span>{{BERTH}}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Cargo:</span>
+                <span>{{CARGO}}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="exchange-rate">
+        <strong>Exchange Rate:</strong> 
+        <span class="rate">{{EXCHANGE_RATE}}</span>
+        <span style="font-size: 9pt; color: #666;">(Source: {{EXCHANGE_RATE_SOURCE}})</span>
+    </div>
+    
+    <table class="costs-table">
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th>Amount (USD)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{COST_ITEMS}}
+            <tr class="total-row">
+                <td><strong>TOTAL</strong></td>
+                <td class="amount"><strong>{{TOTAL_AMOUNT}}</strong></td>
+            </tr>
+        </tbody>
+    </table>
+    
+    {{#REMARKS}}
+    <div class="remarks">
+        <h3>Remarks</h3>
+        <p>{{REMARKS}}</p>
+    </div>
+    {{/REMARKS}}
+    
+    {{#COMMENTS}}
+    <div class="remarks">
+        <h3>Additional Comments</h3>
+        <p>{{COMMENTS}}</p>
+    </div>
+    {{/COMMENTS}}
+    
+    <div class="footer">
+        <p>This document was generated automatically by the PDA System</p>
+        <p>Generated on {{GENERATION_DATE}} | Version {{GLOBAL_BASE_VERSION}}</p>
+    </div>
+</body>
+</html>

@@ -140,15 +140,15 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
       // Check legacy vessel data first
       const vessel = VESSEL_TYPES.find(v => v.classification === vesselName);
       
-      if (shipType && SHIP_TYPE_RANGES[shipType]) {
+      if (detectedType) {
         // Check if user has manual edits
         const hasManualEdits = Object.values(autoFilledValues).some(val => !val) && currentShipType;
         
-        if (hasManualEdits && currentShipType !== shipType) {
-          setPendingShipType(shipType);
+        if (hasManualEdits && currentShipType !== detectedType) {
+          setPendingShipType(detectedType);
           setShowUpdateDialog(true);
         } else {
-          fillShipParticulars(shipType, true);
+          await fillShipParticulars(vesselName);
         }
       } else if (vessel) {
         // Fallback to legacy system
