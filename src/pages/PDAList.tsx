@@ -47,6 +47,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { useOrg } from "@/context/OrgProvider";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface PDA {
   id: string;
@@ -97,6 +98,7 @@ export default function PDAList() {
   const { toast } = useToast();
   const { convertPdaToFda, loading: fdaLoading } = useFDA();
   const { activeOrg } = useOrg();
+  const { isPlatformAdmin } = useUserRole();
   const [pdas, setPdas] = useState<PDA[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -109,10 +111,11 @@ export default function PDAList() {
   const tableRef = useRef<HTMLTableElement>(null);
 
   useEffect(() => {
-    if (activeOrg) {
+    // platformAdmin can fetch without activeOrg, regular users need activeOrg
+    if (isPlatformAdmin || activeOrg) {
       fetchPDAs();
     }
-  }, [sortBy, currentPage, pageSize, activeOrg]);
+  }, [sortBy, currentPage, pageSize, activeOrg, isPlatformAdmin]);
 
   useEffect(() => {
     // Handle highlighting from URL params
@@ -140,14 +143,16 @@ export default function PDAList() {
   }, [pdas, searchParams, setSearchParams]);
 
   const fetchPDAs = async () => {
-    if (!activeOrg) return;
-    
     setLoading(true);
     try {
       let query = supabase
         .from("pdas")
-        .select("id, pda_number, vessel_name, port_name, to_display_name, date_field, sent_at, sent_by_user_id, created_by, status, created_at, updated_at")
-        .eq("tenant_id", activeOrg.id);
+        .select("id, pda_number, vessel_name, port_name, to_display_name, date_field, sent_at, sent_by_user_id, created_by, status, created_at, updated_at");
+
+      // platformAdmin sees all orgs, regular users only see their active org
+      if (!isPlatformAdmin && activeOrg) {
+        query = query.eq("tenant_id", activeOrg.id);
+      }
 
       // Apply sorting
       switch (sortBy) {

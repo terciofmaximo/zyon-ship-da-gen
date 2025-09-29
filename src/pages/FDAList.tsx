@@ -32,6 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { FDA } from "@/types/fda";
 import { useFDA } from "@/hooks/useFDA";
 import { useOrg } from "@/context/OrgProvider";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const statusVariants = {
   Draft: "secondary",
@@ -51,6 +52,7 @@ export default function FDAList() {
   const { toast } = useToast();
   const { calculateFDATotals } = useFDA();
   const { activeOrg } = useOrg();
+  const { isPlatformAdmin } = useUserRole();
   const [fdas, setFdas] = useState<FDAWithTotals[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -58,14 +60,13 @@ export default function FDAList() {
   const [sortBy, setSortBy] = useState("updated_desc");
 
   useEffect(() => {
-    if (activeOrg) {
+    // platformAdmin can fetch without activeOrg, regular users need activeOrg
+    if (isPlatformAdmin || activeOrg) {
       fetchFDAs();
     }
-  }, [sortBy, activeOrg]);
+  }, [sortBy, activeOrg, isPlatformAdmin]);
 
   const fetchFDAs = async () => {
-    if (!activeOrg) return;
-    
     setLoading(true);
     try {
       let query = supabase
@@ -73,8 +74,12 @@ export default function FDAList() {
         .select(`
           *,
           fda_ledger(amount_usd, side)
-        `)
-        .eq("tenant_id", activeOrg.id);
+        `);
+
+      // platformAdmin sees all orgs, regular users only see their active org
+      if (!isPlatformAdmin && activeOrg) {
+        query = query.eq("tenant_id", activeOrg.id);
+      }
 
       // Apply sorting
       switch (sortBy) {
