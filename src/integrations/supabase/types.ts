@@ -643,20 +643,6 @@ export type Database = {
         Args: { p_tenant_id: string }
         Returns: string
       }
-      get_invite_by_token: {
-        Args: { invite_token: string }
-        Returns: {
-          accepted_at: string
-          created_at: string
-          created_by: string
-          email: string
-          expires_at: string
-          id: string
-          org_id: string
-          role: string
-          token: string
-        }[]
-      }
       get_tenant_by_slug: {
         Args: { tenant_slug: string }
         Returns: {
@@ -690,6 +676,18 @@ export type Database = {
       setup_demo_admin: {
         Args: { admin_email: string; admin_password: string }
         Returns: Json
+      }
+      validate_invite_token: {
+        Args: { invite_token: string }
+        Returns: {
+          accepted_at: string
+          email: string
+          expires_at: string
+          id: string
+          org_id: string
+          org_name: string
+          role: string
+        }[]
       }
     }
     Enums: {

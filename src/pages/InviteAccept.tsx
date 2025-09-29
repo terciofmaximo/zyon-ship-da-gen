@@ -34,49 +34,30 @@ export default function InviteAccept() {
 
   const validateAndFetchInvite = async (token: string) => {
     try {
-      // Use secure RPC function to get invite by token
-      const { data, error } = await supabase.rpc("get_invite_by_token", {
+      // Use secure RPC function to validate and get invite by token
+      const { data, error } = await supabase.rpc("validate_invite_token", {
         invite_token: token,
       });
 
       if (error) throw error;
       if (!data || data.length === 0) {
-        throw new Error("Invite not found");
+        throw new Error("Invite not found, expired, or already used");
       }
 
       const inviteData = data[0];
 
-      // Check if already accepted
-      if (inviteData.accepted_at) {
-        setError("This invite has already been used");
-        setLoading(false);
-        return;
-      }
-
-      // Check if expired
-      if (new Date(inviteData.expires_at) < new Date()) {
-        setError("This invite has expired");
-        setLoading(false);
-        return;
-      }
-
-      // Fetch organization details
-      const { data: orgData, error: orgError } = await supabase
-        .from("organizations")
-        .select("id, name, slug")
-        .eq("id", inviteData.org_id)
-        .single();
-
-      if (orgError) throw orgError;
-
-      // Combine invite and org data
+      // The new function already validates expiry and acceptance status
+      // So if we get here, the invite is valid
       setInvite({
         ...inviteData,
-        organizations: orgData,
+        organizations: {
+          id: inviteData.org_id,
+          name: inviteData.org_name,
+        },
       });
       setLoading(false);
     } catch (error: any) {
-      setError("Invalid or expired invite");
+      setError("Invalid, expired, or already used invite");
       setLoading(false);
     }
   };

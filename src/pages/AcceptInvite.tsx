@@ -48,14 +48,14 @@ export default function AcceptInvite() {
 
     try {
       const { data, error } = await supabase
-        .rpc('get_invite_by_token', { invite_token: token });
+        .rpc('validate_invite_token', { invite_token: token });
 
       if (error) throw error;
 
       if (!data || data.length === 0) {
         toast({
           title: "Invalid invitation",
-          description: "This invitation link is invalid or has expired",
+          description: "This invitation link is invalid, expired, or has already been used",
           variant: "destructive",
         });
         navigate("/");
@@ -64,37 +64,8 @@ export default function AcceptInvite() {
 
       const invite = data[0];
 
-      // Check if already accepted
-      if (invite.accepted_at) {
-        toast({
-          title: "Invitation already used",
-          description: "This invitation has already been accepted",
-          variant: "destructive",
-        });
-        navigate("/");
-        return;
-      }
-
-      // Check if expired
-      if (new Date(invite.expires_at) < new Date()) {
-        toast({
-          title: "Invitation expired",
-          description: "This invitation has expired. Please request a new one.",
-          variant: "destructive",
-        });
-        navigate("/");
-        return;
-      }
-
-      // Fetch organization name
-      const { data: orgData } = await supabase
-        .from('organizations')
-        .select('name')
-        .eq('id', invite.org_id)
-        .single();
-
       setEmail(invite.email);
-      setOrgName(orgData?.name || "");
+      setOrgName(invite.org_name || "");
       setInviteValid(true);
     } catch (error: any) {
       console.error('Error validating token:', error);
@@ -159,7 +130,7 @@ export default function AcceptInvite() {
 
       // Get invite details
       const { data: inviteData } = await supabase
-        .rpc('get_invite_by_token', { invite_token: token! });
+        .rpc('validate_invite_token', { invite_token: token! });
       
       if (!inviteData || inviteData.length === 0) {
         throw new Error("Invite not found");
