@@ -318,6 +318,11 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                         <FormControl>
                           <Input placeholder="e.g. 65,000 - 80,000 tons" {...field} />
                         </FormControl>
+                        {vesselName && VESSEL_TYPES.find(v => v.classification === vesselName) && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Autopreenchido a partir do cadastro do navio
+                          </p>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -332,6 +337,11 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                         <FormControl>
                           <Input type="number" step="0.01" placeholder="180.50" {...field} />
                         </FormControl>
+                        {vesselName && VESSEL_TYPES.find(v => v.classification === vesselName) && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Autopreenchido a partir do cadastro do navio
+                          </p>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -346,6 +356,11 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                         <FormControl>
                           <Input type="number" step="0.01" placeholder="32.3" {...field} />
                         </FormControl>
+                        {vesselName && VESSEL_TYPES.find(v => v.classification === vesselName) && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Autopreenchido a partir do cadastro do navio
+                          </p>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -360,6 +375,11 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                         <FormControl>
                           <Input type="number" step="0.01" placeholder="12.0" {...field} />
                         </FormControl>
+                        {vesselName && VESSEL_TYPES.find(v => v.classification === vesselName) && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Autopreenchido a partir do cadastro do navio
+                          </p>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
