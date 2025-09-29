@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ensureAuth } from "@/hooks/useEnsureAuth";
 import type { PDAStep1Data } from "@/schemas/pdaSchema";
 import type { CostData } from "@/types";
 
@@ -19,8 +20,8 @@ export function usePDA() {
   const savePDA = async (data: PDAData, pdaId?: string) => {
     setLoading(true);
     try {
-      // Get the authenticated user's ID
-      const { data: { user } } = await supabase.auth.getUser();
+      // Ensure authenticated user (attempt anonymous sign-in if needed)
+      const user = await ensureAuth();
       if (!user) {
         throw new Error("User must be authenticated to create/update PDAs");
       }
