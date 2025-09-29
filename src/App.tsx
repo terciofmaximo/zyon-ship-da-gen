@@ -12,6 +12,7 @@ import { NewPDAWizard } from "@/components/forms/NewPDAWizard";
 import AuthPage from "@/pages/Auth";
 import FDAList from "@/pages/FDAList";
 import FDADetail from "@/pages/FDADetail";
+import FDANew from "@/pages/FDANew";
 import { AuthProvider } from "@/context/AuthProvider";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/pda/new" element={<RequireAuth><DashboardLayout><NewPDAWizard /></DashboardLayout></RequireAuth>} />
             <Route path="/pda/:id/review" element={<RequireAuth><DashboardLayout><PDAReview /></DashboardLayout></RequireAuth>} />
             <Route path="/fda" element={<RequireAuth><DashboardLayout><FDAList /></DashboardLayout></RequireAuth>} />
+            <Route path="/fda/new" element={<RequireAuth><DashboardLayout><FDANew /></DashboardLayout></RequireAuth>} />
             <Route path="/fda/:id" element={<RequireAuth><DashboardLayout><FDADetail /></DashboardLayout></RequireAuth>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

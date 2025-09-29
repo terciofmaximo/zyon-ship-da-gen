@@ -78,7 +78,7 @@ export default function FDAList() {
         .from("fda")
         .select(`
           *,
-          pda:pda_id(pda_number),
+          pda:pda_id!left(pda_number),
           fda_ledger(amount_usd, side)
         `)
         .eq("created_by", user.id);
@@ -177,6 +177,9 @@ export default function FDAList() {
           <h1 className="text-3xl font-bold tracking-tight">FDAs</h1>
           <p className="text-muted-foreground">Manage your Final Disbursement Accounts</p>
         </div>
+        <Button onClick={() => navigate("/fda/new")}>
+          Create New FDA
+        </Button>
       </div>
 
       <Card>
