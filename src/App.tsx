@@ -39,6 +39,7 @@ const App = () => (
               <Toaster />
               <Sonner />
               <Routes>
+                {/* Root routes */}
                 <Route path="/" element={<DashboardLayout><Index /></DashboardLayout>} />
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/auth/accept-invite" element={<AcceptInvite />} />
@@ -56,6 +57,21 @@ const App = () => (
                 <Route path="/fda/new" element={<RequireAuth><DashboardLayout><FDANew /></DashboardLayout></RequireAuth>} />
                 <Route path="/fda/:id" element={<RequireAuth><DashboardLayout><FDADetail /></DashboardLayout></RequireAuth>} />
                 <Route path="/fda/:fdaId/line/:lineId" element={<RequireAuth><DashboardLayout><FDALineDetail /></DashboardLayout></RequireAuth>} />
+                
+                {/* Development fallback routes with /t/{slug} prefix */}
+                <Route path="/t/:slug" element={<DashboardLayout><Index /></DashboardLayout>} />
+                <Route path="/t/:slug/auth" element={<AuthPage />} />
+                <Route path="/t/:slug/auth/accept-invite" element={<AcceptInvite />} />
+                <Route path="/t/:slug/auth/reset-password" element={<ResetPassword />} />
+                <Route path="/t/:slug/settings" element={<RequireAuth><DashboardLayout><OrganizationSettings /></DashboardLayout></RequireAuth>} />
+                <Route path="/t/:slug/pda" element={<RequireAuth><DashboardLayout><PDAList /></DashboardLayout></RequireAuth>} />
+                <Route path="/t/:slug/pda/new" element={<RequireAuth><DashboardLayout><NewPDAWizard /></DashboardLayout></RequireAuth>} />
+                <Route path="/t/:slug/pda/:id/review" element={<RequireAuth><DashboardLayout><PDAReview /></DashboardLayout></RequireAuth>} />
+                <Route path="/t/:slug/fda" element={<RequireAuth><DashboardLayout><FDAList /></DashboardLayout></RequireAuth>} />
+                <Route path="/t/:slug/fda/new" element={<RequireAuth><DashboardLayout><FDANew /></DashboardLayout></RequireAuth>} />
+                <Route path="/t/:slug/fda/:id" element={<RequireAuth><DashboardLayout><FDADetail /></DashboardLayout></RequireAuth>} />
+                <Route path="/t/:slug/fda/:fdaId/line/:lineId" element={<RequireAuth><DashboardLayout><FDALineDetail /></DashboardLayout></RequireAuth>} />
+                
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

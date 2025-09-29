@@ -106,6 +106,20 @@ export function CompanyManagement() {
     }
   };
 
+
+  const generateInviteLink = (slug: string, token: string): string => {
+    const hostname = window.location.hostname;
+    const isDev = hostname === 'localhost' || hostname.includes('127.0.0.1');
+    
+    if (isDev) {
+      // Development: use /t/{slug} pattern
+      return `${window.location.origin}/t/${slug}/auth/accept-invite?token=${token}`;
+    } else {
+      // Production: use subdomain
+      return `https://${slug}.vesselopsportal.com/auth/accept-invite?token=${token}`;
+    }
+  };
+
   const handleCreateCompany = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -190,7 +204,7 @@ export function CompanyManagement() {
           console.error("Invite creation error:", inviteError);
         } else {
           // Generate invite link
-          const inviteUrl = `https://${validation.data.slug}.vesselopsportal.com/auth/accept-invite?token=${inviteToken}`;
+          const inviteUrl = generateInviteLink(validation.data.slug, inviteToken);
           
           setInviteLink(inviteUrl);
           setCurrentCompany({ 
@@ -370,7 +384,7 @@ export function CompanyManagement() {
       if (inviteError) throw inviteError;
 
       // Generate new link
-      const inviteUrl = `https://${currentCompany.slug}.vesselopsportal.com/auth/accept-invite?token=${inviteToken}`;
+      const inviteUrl = generateInviteLink(currentCompany.slug, inviteToken);
       setInviteLink(inviteUrl);
 
       toast({
@@ -412,7 +426,7 @@ export function CompanyManagement() {
       }
 
       const invite = invites[0];
-      const inviteUrl = `https://${company.slug}.vesselopsportal.com/auth/accept-invite?token=${invite.token}`;
+      const inviteUrl = generateInviteLink(company.slug, invite.token);
       
       await navigator.clipboard.writeText(inviteUrl);
       toast({
@@ -607,6 +621,13 @@ export function CompanyManagement() {
                     <p className="text-xs text-muted-foreground">
                       Valid for 72 hours • Single use only
                     </p>
+                    {inviteLink.includes('/t/') && (
+                      <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded">
+                        <p className="text-xs text-blue-900 dark:text-blue-100">
+                          <strong>Development mode:</strong> This link uses /t/{currentCompany.slug} pattern for local testing
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Actions */}

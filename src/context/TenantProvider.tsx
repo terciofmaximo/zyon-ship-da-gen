@@ -44,7 +44,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
         
         if (!slug) {
-          // No tenant context - allow for platformAdmin root access
+          // No tenant context - allow for platformAdmin root access or public auth routes
           setLoading(false);
           return;
         }
@@ -55,13 +55,21 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         
         if (error) {
           console.error('Error fetching tenant:', error);
-          navigate('/404');
+          // Only redirect to 404 if not on auth routes
+          if (!pathname.startsWith('/auth')) {
+            navigate('/404');
+          }
+          setLoading(false);
           return;
         }
         
         if (!data || data.length === 0) {
           console.error('Tenant not found:', slug);
-          navigate('/404');
+          // Only redirect to 404 if not on auth routes
+          if (!pathname.startsWith('/auth')) {
+            navigate('/404');
+          }
+          setLoading(false);
           return;
         }
         
@@ -71,7 +79,11 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setTenantName(tenant.name);
       } catch (error) {
         console.error('Error in tenant resolver:', error);
-        navigate('/404');
+        // Only redirect to 404 if not on auth routes
+        const pathname = window.location.pathname;
+        if (!pathname.startsWith('/auth')) {
+          navigate('/404');
+        }
       } finally {
         setLoading(false);
       }

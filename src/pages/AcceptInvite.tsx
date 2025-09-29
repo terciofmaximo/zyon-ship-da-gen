@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { z } from "zod";
+import { useTenant } from "@/context/TenantProvider";
 
 const passwordSchema = z.string()
   .min(8, "Password must be at least 8 characters")
@@ -19,6 +20,7 @@ export default function AcceptInvite() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { tenantId, tenantSlug, loading: tenantLoading } = useTenant();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,22 +29,34 @@ export default function AcceptInvite() {
   const [validating, setValidating] = useState(true);
   const [inviteValid, setInviteValid] = useState(false);
   const [orgName, setOrgName] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string }>({});
 
   const token = searchParams.get("token");
 
   useEffect(() => {
-    validateToken();
-  }, [token]);
+    if (!tenantLoading) {
+      validateToken();
+    }
+  }, [token, tenantLoading, tenantId]);
 
   const validateToken = async () => {
     if (!token) {
-      toast({
-        title: "Invalid invitation",
-        description: "No invitation token provided",
-        variant: "destructive",
-      });
-      navigate("/");
+      setErrorMessage("No invitation token provided");
+      setValidating(false);
+      return;
+    }
+
+    if (!tenantId) {
+      const hostname = window.location.hostname;
+      const isDev = hostname === 'localhost' || hostname.includes('127.0.0.1');
+      
+      if (isDev) {
+        setErrorMessage("Please access this page via /t/{slug}/auth/accept-invite in development mode");
+      } else {
+        setErrorMessage("Invalid tenant. Please access via the correct organization subdomain (e.g., https://your-company.vesselopsportal.com)");
+      }
+      setValidating(false);
       return;
     }
 
@@ -53,28 +67,26 @@ export default function AcceptInvite() {
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        toast({
-          title: "Invalid invitation",
-          description: "This invitation link is invalid, expired, or has already been used",
-          variant: "destructive",
-        });
-        navigate("/");
+        setErrorMessage("This invitation link is invalid, expired, or has already been used");
+        setValidating(false);
         return;
       }
 
       const invite = data[0];
+
+      // CRITICAL: Validate tenant mismatch
+      if (invite.org_id !== tenantId) {
+        setErrorMessage(`This invitation is for a different organization. Please access the correct subdomain.`);
+        setValidating(false);
+        return;
+      }
 
       setEmail(invite.email);
       setOrgName(invite.org_name || "");
       setInviteValid(true);
     } catch (error: any) {
       console.error('Error validating token:', error);
-      toast({
-        title: "Error",
-        description: "Failed to validate invitation",
-        variant: "destructive",
-      });
-      navigate("/");
+      setErrorMessage("Failed to validate invitation");
     } finally {
       setValidating(false);
     }
@@ -205,10 +217,42 @@ export default function AcceptInvite() {
     }
   };
 
-  if (validating) {
+  if (validating || tenantLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <div className="flex items-center gap-2 text-destructive mb-2">
+              <AlertCircle className="h-5 w-5" />
+              <CardTitle>Invalid Invitation</CardTitle>
+            </div>
+            <CardDescription>
+              {errorMessage}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                If you believe this is an error, please contact your organization administrator to request a new invitation link.
+              </p>
+              <Button
+                className="w-full"
+                variant="outline"
+                onClick={() => navigate('/auth')}
+              >
+                Go to Login
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
