@@ -16,13 +16,16 @@ export type Database = {
     Tables: {
       fda: {
         Row: {
+          assigned_user_id: string | null
           client_id: string | null
           client_name: string | null
+          client_share_pct: number | null
           created_at: string
           created_by: string | null
           currency_base: string
           currency_local: string
           exchange_rate: number | null
+          fx_source: string | null
           id: string
           imo: string | null
           meta: Json | null
@@ -34,13 +37,16 @@ export type Database = {
           vessel_name: string | null
         }
         Insert: {
+          assigned_user_id?: string | null
           client_id?: string | null
           client_name?: string | null
+          client_share_pct?: number | null
           created_at?: string
           created_by?: string | null
           currency_base?: string
           currency_local?: string
           exchange_rate?: number | null
+          fx_source?: string | null
           id?: string
           imo?: string | null
           meta?: Json | null
@@ -52,13 +58,16 @@ export type Database = {
           vessel_name?: string | null
         }
         Update: {
+          assigned_user_id?: string | null
           client_id?: string | null
           client_name?: string | null
+          client_share_pct?: number | null
           created_at?: string
           created_by?: string | null
           currency_base?: string
           currency_local?: string
           exchange_rate?: number | null
+          fx_source?: string | null
           id?: string
           imo?: string | null
           meta?: Json | null
