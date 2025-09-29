@@ -226,7 +226,7 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
       {data.map((line) => (
         <div
           key={line.id}
-          className={`grid grid-cols-8 gap-2 p-2 border rounded-md text-sm ${
+          className={`grid grid-cols-7 gap-2 p-2 border rounded-md text-sm ${
             line.side === 'AP' 
               ? 'bg-red-50 border-red-100' 
               : 'bg-green-50 border-green-100'
@@ -236,20 +236,6 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
           <div className="text-center font-mono text-gray-600">
             {line.line_no}
           </div>
-
-          {/* Side */}
-          <Select
-            value={line.side}
-            onValueChange={(value) => handleCellEdit(line.id, 'side', value)}
-          >
-            <SelectTrigger className="h-8">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="AP">AP</SelectItem>
-              <SelectItem value="AR">AR</SelectItem>
-            </SelectContent>
-          </Select>
 
           {/* Description */}
           <Input
@@ -337,7 +323,7 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
       </CardHeader>
       <CardContent>
         {/* Column Headers */}
-        <div className="grid grid-cols-8 gap-2 p-2 mb-2 text-sm font-medium text-gray-700 bg-gray-50 rounded">
+        <div className="grid grid-cols-7 gap-2 p-2 mb-2 text-sm font-medium text-gray-700 bg-gray-50 rounded">
           <Button
             variant="ghost"
             size="sm"
@@ -346,7 +332,6 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
           >
             Line # <ArrowUpDown className="ml-1 h-3 w-3" />
           </Button>
-          <div>Side</div>
           <div>Description</div>
           <div>Amount (USD)</div>
           <div>Amount (BRL)</div>
