@@ -12,9 +12,11 @@ import { OrgSwitcher } from "./OrgSwitcher";
 import { useOrg } from "@/context/OrgProvider";
 import { InviteMemberDialog } from "@/components/organization/InviteMemberDialog";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useNavigate } from "react-router-dom";
 
 
 export function Header() {
+  const navigate = useNavigate();
   const { organizations, activeOrg } = useOrg();
   const { isPlatformAdmin } = useUserRole();
   const showOrgSwitcher = organizations.length > 1;
@@ -43,7 +45,9 @@ export function Header() {
               <DropdownMenuContent align="end">
                 <InviteMemberDialog />
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>View Members</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/organization/settings')}>
+                  Organization Settings
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}

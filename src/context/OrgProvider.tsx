@@ -35,6 +35,18 @@ export const OrgProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fetchUserOrganizations();
   }, [user]);
 
+  // Redirect to no-organization page if user has no orgs
+  useEffect(() => {
+    if (!loading && user && organizations.length === 0) {
+      // Check if we're not already on the no-organization page
+      if (!window.location.pathname.includes('/no-organization') && 
+          !window.location.pathname.includes('/invite') &&
+          !window.location.pathname.includes('/auth')) {
+        window.location.href = '/no-organization';
+      }
+    }
+  }, [loading, user, organizations]);
+
   const fetchUserOrganizations = async () => {
     try {
       // Query organization_members directly instead of using the view
