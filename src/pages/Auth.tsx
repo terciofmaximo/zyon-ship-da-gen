@@ -82,6 +82,16 @@ const AuthPage: React.FC = () => {
           <CardDescription>
             {mode === "login" ? "Acesse para criar e salvar PDAs" : "Cadastre-se para começar a usar"}
           </CardDescription>
+          {mode === "login" && (
+            <div className="mt-4 p-3 bg-muted rounded-lg border">
+              <p className="text-sm font-medium text-muted-foreground mb-2">🔑 Conta Admin:</p>
+              <div className="space-y-1 text-sm">
+                <p><strong>Email:</strong> admin@zyon.com</p>
+                <p><strong>Senha:</strong> Admin123!</p>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">Use estas credenciais para acesso completo ao sistema</p>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
