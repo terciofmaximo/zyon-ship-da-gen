@@ -18,6 +18,7 @@ import FDALineDetail from "@/pages/FDALineDetail";
 import InviteAccept from "@/pages/InviteAccept";
 import NoOrganization from "@/pages/NoOrganization";
 import OrganizationSettings from "@/pages/OrganizationSettings";
+import PlatformAdmin from "@/pages/PlatformAdmin";
 import { AuthProvider } from "@/context/AuthProvider";
 import { OrgProvider } from "@/context/OrgProvider";
 import { RequireAuth } from "@/components/auth/RequireAuth";
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/invite" element={<InviteAccept />} />
               <Route path="/no-organization" element={<RequireAuth><NoOrganization /></RequireAuth>} />
               <Route path="/organization/settings" element={<RequireAuth><DashboardLayout><OrganizationSettings /></DashboardLayout></RequireAuth>} />
+              <Route path="/platform-admin" element={<RequireAuth><PlatformAdmin /></RequireAuth>} />
               <Route path="/pda" element={<RequireAuth><DashboardLayout><PDAList /></DashboardLayout></RequireAuth>} />
               <Route path="/pda/new" element={<RequireAuth><DashboardLayout><NewPDAWizard /></DashboardLayout></RequireAuth>} />
               <Route path="/pda/:id/review" element={<RequireAuth><DashboardLayout><PDAReview /></DashboardLayout></RequireAuth>} />

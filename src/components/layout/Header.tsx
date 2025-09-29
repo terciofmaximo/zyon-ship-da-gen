@@ -19,7 +19,7 @@ export function Header() {
   const navigate = useNavigate();
   const { organizations, activeOrg } = useOrg();
   const { isPlatformAdmin } = useUserRole();
-  const showOrgSwitcher = organizations.length > 1;
+  const showOrgSwitcher = organizations.length > 1 || isPlatformAdmin;
   
   // Check if user is admin/owner of the active org
   const canInvite = isPlatformAdmin || (activeOrg && ['admin', 'owner'].includes(activeOrg.role));
@@ -52,19 +52,24 @@ export function Header() {
             </DropdownMenu>
           )}
           
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-foreground hover:bg-accent hover:text-accent-foreground">
-                <Settings className="h-4 w-4 mr-2" />
-                Admin
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>Tariff Management</DropdownMenuItem>
-              <DropdownMenuItem>Port Settings</DropdownMenuItem>
-              <DropdownMenuItem>User Management</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {isPlatformAdmin && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-foreground hover:bg-accent hover:text-accent-foreground">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Platform Admin
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => navigate('/platform-admin')}>
+                  User Management
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Tariff Management</DropdownMenuItem>
+                <DropdownMenuItem>Port Settings</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
