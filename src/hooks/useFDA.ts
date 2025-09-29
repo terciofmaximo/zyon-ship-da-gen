@@ -2,7 +2,6 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { FDA, FDALedger, FDAWithLedger, FDATotals } from "@/types/fda";
-import fdaRules from "@/data/fdaRules.json";
 import Decimal from "decimal.js";
 
 // Cost item mapping for PDA to FDA conversion
@@ -92,7 +91,7 @@ export const useFDA = () => {
       const ledgerEntries: Omit<FDALedger, "id" | "created_at" | "updated_at">[] = [];
       let lineNo = 1;
 
-      // Process each cost item from PDA
+      // Process each cost item from PDA - create single line per item
       Object.entries(COST_ITEM_MAPPING).forEach(([pdaField, category]) => {
         const amount = parseFloat(pda[pdaField] || "0");
         if (amount <= 0) return;
@@ -101,37 +100,29 @@ export const useFDA = () => {
         const amountUSD = new Decimal(amount);
         const amountLocal = amountUSD.mul(exchangeRate);
 
-        // Determine which sides to create based on rules
-        const sides: ("AP" | "AR")[] = [];
-        if (fdaRules.both.includes(category)) {
-          sides.push("AP", "AR");
-        } else if (fdaRules.ar_only.includes(category)) {
-          sides.push("AR");
-        } else if (fdaRules.ap_only.includes(category)) {
-          sides.push("AP");
-        }
+        // Side mapping: Agency fee → AR, everything else → AP
+        const side: "AP" | "AR" = category === "Agency fee" ? "AR" : "AP";
 
-        sides.forEach((side) => {
-          ledgerEntries.push({
-            fda_id: newFda.id,
-            line_no: lineNo++,
-            side,
-            category,
-            description: category,
-            counterparty: side === "AP" 
-              ? "Vendor — to assign" 
-              : (pda.to_display_name || "Client"),
-            amount_usd: amountUSD.toNumber(),
-            amount_local: amountLocal.toNumber(),
-            status: "Open",
-            source: {
-              pdaField,
-              originalAmount: amount,
-              exchangeRate: fdaData.exchange_rate,
-              // Preserve Itaqui auto-pricing metadata if present
-              ...(pda.comments?.[pdaField] || {}),
-            },
-          });
+        ledgerEntries.push({
+          fda_id: newFda.id,
+          line_no: lineNo++,
+          side,
+          category,
+          description: category,
+          counterparty: side === "AP" 
+            ? "Vendor — to assign" 
+            : (pda.to_display_name || "Client"),
+          amount_usd: amountUSD.toNumber(),
+          amount_local: amountLocal.toNumber(),
+          status: "Open",
+          source: {
+            pdaField,
+            originalAmount: amount,
+            exchangeRate: fdaData.exchange_rate,
+            pda_item_id: pdaField, // Track source PDA field
+            // Preserve Itaqui auto-pricing metadata if present
+            ...(pda.comments?.[pdaField] || {}),
+          },
         });
       });
 
@@ -238,34 +229,27 @@ export const useFDA = () => {
         const amountUSD = new Decimal(amount);
         const amountLocal = amountUSD.mul(exchangeRate);
 
-        const sides: ("AP" | "AR")[] = [];
-        if (fdaRules.both.includes(category)) {
-          sides.push("AP", "AR");
-        } else if (fdaRules.ar_only.includes(category)) {
-          sides.push("AR");
-        } else if (fdaRules.ap_only.includes(category)) {
-          sides.push("AP");
-        }
+        // Side mapping: Agency fee → AR, everything else → AP
+        const side: "AP" | "AR" = category === "Agency fee" ? "AR" : "AP";
 
-        sides.forEach((side) => {
-          ledgerEntries.push({
-            fda_id: fdaId,
-            line_no: lineNo++,
-            side,
-            category,
-            description: category,
-            counterparty: side === "AP" 
-              ? "Vendor — to assign" 
-              : (fda.client_name || "Client"),
-            amount_usd: amountUSD.toNumber(),
-            amount_local: amountLocal.toNumber(),
-            status: "Open",
-            source: {
-              pdaField,
-              originalAmount: amount,
-              exchangeRate: fda.exchange_rate,
-            },
-          });
+        ledgerEntries.push({
+          fda_id: fdaId,
+          line_no: lineNo++,
+          side,
+          category,
+          description: category,
+          counterparty: side === "AP" 
+            ? "Vendor — to assign" 
+            : (fda.client_name || "Client"),
+          amount_usd: amountUSD.toNumber(),
+          amount_local: amountLocal.toNumber(),
+          status: "Open",
+          source: {
+            pdaField,
+            originalAmount: amount,
+            exchangeRate: fda.exchange_rate,
+            pda_item_id: pdaField, // Track source PDA field
+          },
         });
       });
 

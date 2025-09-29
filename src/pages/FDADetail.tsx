@@ -569,6 +569,35 @@ export default function FDADetail() {
         }}
       />
 
+      {/* Remarks Field */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Remarks</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <textarea
+            className="w-full min-h-[100px] p-3 border rounded-md resize-y"
+            placeholder="Add remarks here..."
+            value={fda.remarks || ""}
+            onChange={(e) => {
+              setFda({ ...fda, remarks: e.target.value });
+              setIsDirty(true);
+            }}
+            onBlur={async () => {
+              if (!id) return;
+              try {
+                await supabase
+                  .from("fda")
+                  .update({ remarks: fda.remarks })
+                  .eq("id", id);
+              } catch (error) {
+                console.error("Error saving remarks:", error);
+              }
+            }}
+          />
+        </CardContent>
+      </Card>
+
       {/* Actions Bar - Sticky at bottom */}
       <div className="sticky bottom-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t pt-4 pb-6">
         <div className="flex flex-col gap-4">

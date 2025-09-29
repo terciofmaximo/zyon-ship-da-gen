@@ -5,8 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Calendar, Plus, ArrowUpDown, ExternalLink } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Calendar, ArrowUpDown, ExternalLink } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format } from 'date-fns';
@@ -23,25 +22,6 @@ interface FDALedgerTableProps {
   onLedgerUpdate: (updatedLedger: FDALedger[]) => void;
 }
 
-// Standard FDA categories from PDA rules
-const STANDARD_CATEGORIES = [
-  { name: 'Pilotage IN', side: 'AP' as const },
-  { name: 'Pilotage OUT', side: 'AP' as const },
-  { name: 'Towage IN', side: 'AP' as const },
-  { name: 'Towage OUT', side: 'AP' as const },
-  { name: 'Light dues', side: 'AP' as const },
-  { name: 'Dockage', side: 'AP' as const },
-  { name: 'Linesman', side: 'AP' as const },
-  { name: 'Launch boat', side: 'AP' as const },
-  { name: 'Immigration tax', side: 'AP' as const },
-  { name: 'Free pratique tax', side: 'AP' as const },
-  { name: 'Shipping association', side: 'AP' as const },
-  { name: 'Clearance', side: 'AP' as const },
-  { name: 'Paperless Port System', side: 'AP' as const },
-  { name: 'Waterway channel (Table I)', side: 'AP' as const },
-  { name: 'Agency fee', side: 'AR' as const },
-];
-
 const fmtUSD = (n: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n ?? 0);
 const fmtBRL = (n: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n ?? 0);
 
@@ -54,40 +34,16 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
   const [fullLedger, setFullLedger] = useState<FDALedger[]>([]);
   const [editingCell, setEditingCell] = useState<{ id: string; field: string } | null>(null);
   const [editValues, setEditValues] = useState<Record<string, any>>({});
-  const [insertModalOpen, setInsertModalOpen] = useState(false);
   const [sortField, setSortField] = useState<string>('line_no');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [openDatePickers, setOpenDatePickers] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Initialize full ledger with standard categories
+  // Use ledger as-is, no standard categories bootstrap
   useEffect(() => {
-    const existingCategories = new Set(ledger.map(l => l.category));
-    const missingCategories = STANDARD_CATEGORIES.filter(
-      cat => !existingCategories.has(cat.name)
-    );
-
-    const standardLines: FDALedger[] = missingCategories.map((cat, index) => ({
-      id: `standard-${index}`,
-      fda_id: fdaId,
-      line_no: ledger.length + index + 1,
-      side: cat.side,
-      category: cat.name,
-      description: cat.name,
-      counterparty: cat.side === 'AR' ? 'Client' : '',
-      amount_usd: 0,
-      amount_local: 0,
-      invoice_no: null,
-      due_date: null,
-      status: 'Open',
-      source: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }));
-
-    setFullLedger([...ledger, ...standardLines]);
-  }, [ledger, fdaId]);
+    setFullLedger(ledger);
+  }, [ledger]);
 
   const saveLineChange = useCallback(async (lineId: string, field: string, value: any) => {
     try {
@@ -370,22 +326,8 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+      <CardHeader>
         <CardTitle>Ledger Details</CardTitle>
-        <Dialog open={insertModalOpen} onOpenChange={setInsertModalOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Insert Line
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Insert New Ledger Line</DialogTitle>
-            </DialogHeader>
-            {/* Insert modal content would go here */}
-          </DialogContent>
-        </Dialog>
       </CardHeader>
       <CardContent>
         {/* Column Headers */}

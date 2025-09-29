@@ -31,6 +31,7 @@ export type Database = {
           meta: Json | null
           pda_id: string
           port: string | null
+          remarks: string | null
           status: Database["public"]["Enums"]["fda_status"]
           terminal: string | null
           updated_at: string
@@ -52,6 +53,7 @@ export type Database = {
           meta?: Json | null
           pda_id: string
           port?: string | null
+          remarks?: string | null
           status?: Database["public"]["Enums"]["fda_status"]
           terminal?: string | null
           updated_at?: string
@@ -73,6 +75,7 @@ export type Database = {
           meta?: Json | null
           pda_id?: string
           port?: string | null
+          remarks?: string | null
           status?: Database["public"]["Enums"]["fda_status"]
           terminal?: string | null
           updated_at?: string

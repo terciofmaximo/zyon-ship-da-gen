@@ -15,6 +15,7 @@ export interface FDA {
   created_at: string;
   updated_at: string;
   meta?: any;
+  remarks?: string;
 }
 
 export interface FDALedger {
