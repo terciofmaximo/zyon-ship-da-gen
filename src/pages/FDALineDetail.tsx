@@ -79,6 +79,7 @@ export default function FDALineDetail() {
   
   const [line, setLine] = useState<LedgerLine | null>(null);
   const [fdaExchangeRate, setFdaExchangeRate] = useState<number>(1);
+  const [fdaData, setFdaData] = useState<any>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,15 +113,36 @@ export default function FDALineDetail() {
       if (lineError) throw lineError;
       setLine(lineData);
       
-      // Load FDA header for exchange rate
-      const { data: fdaData, error: fdaError } = await supabase
+      // Load FDA header for exchange rate and other data
+      const { data: fdaHeaderData, error: fdaError } = await supabase
         .from('fda')
-        .select('exchange_rate')
+        .select('*')
         .eq('id', fdaId)
         .single();
       
       if (fdaError) throw fdaError;
-      setFdaExchangeRate(fdaData.exchange_rate || 1);
+      setFdaData(fdaHeaderData);
+      setFdaExchangeRate(fdaHeaderData.exchange_rate || 1);
+      
+      // Auto-fill line details from FDA if not already set
+      if (lineData) {
+        const currentDetails = (lineData.details as any) || {};
+        if (!currentDetails.port) {
+          const autoDetails = {
+            ...currentDetails,
+            port: currentDetails.port || fdaHeaderData.port || '',
+            terminal: currentDetails.terminal || fdaHeaderData.terminal || '',
+            vessel_name: currentDetails.vessel_name || fdaHeaderData.vessel_name || '',
+            imo: currentDetails.imo || fdaHeaderData.imo || '',
+          };
+          lineData.details = autoDetails;
+        }
+        
+        // Auto-fill client_po from FDA client_name if not set
+        if (!lineData.client_po && fdaHeaderData.client_name) {
+          lineData.client_po = fdaHeaderData.client_name;
+        }
+      }
       
       // Load payments
       const { data: paymentsData, error: paymentsError } = await supabase
@@ -353,24 +375,6 @@ export default function FDALineDetail() {
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Counterparty ({line.side === 'AP' ? 'Vendor' : 'Client'})</Label>
-              <Input
-                value={line.counterparty || ''}
-                onChange={(e) => saveField('counterparty', e.target.value)}
-                placeholder={line.side === 'AP' ? 'Vendor name' : 'Client name'}
-              />
-            </div>
-            <div>
-              <Label>Assigned To</Label>
-              <Input
-                value={line.assigned_to || ''}
-                onChange={(e) => saveField('assigned_to', e.target.value)}
-                placeholder="User ID or name"
-              />
-            </div>
-          </div>
           
           <div className="grid grid-cols-3 gap-4">
             <div>
@@ -432,43 +436,32 @@ export default function FDALineDetail() {
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Due Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start">
-                    {line.due_date ? format(new Date(line.due_date), 'PPP') : 'Pick a date'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={line.due_date ? new Date(line.due_date) : undefined}
-                    onSelect={(date) => saveField('due_date', date?.toISOString().split('T')[0])}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div>
-              <Label>Payment Terms</Label>
-              <Input
-                value={line.payment_terms || ''}
-                onChange={(e) => saveField('payment_terms', e.target.value)}
-                placeholder="e.g., Net 30"
-              />
-            </div>
+          <div>
+            <Label>Due Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start">
+                  {line.due_date ? format(new Date(line.due_date), 'PPP') : 'Pick a date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={line.due_date ? new Date(line.due_date) : undefined}
+                  onSelect={(date) => saveField('due_date', date?.toISOString().split('T')[0])}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Client PO / Reference</Label>
-              <Input
-                value={line.client_po || ''}
-                onChange={(e) => saveField('client_po', e.target.value)}
-              />
-            </div>
+          <div>
+            <Label>Client PO / Reference</Label>
+            <Input
+              value={line.client_po || ''}
+              onChange={(e) => saveField('client_po', e.target.value)}
+              placeholder={fdaData?.client_name || 'Client reference'}
+            />
           </div>
           
           <div>
@@ -700,24 +693,6 @@ export default function FDALineDetail() {
                 onChange={(e) => saveField('details', { ...line.details, pilotage_group: e.target.value })}
               />
             </div>
-          </div>
-          
-          <div>
-            <Label>Service Date(s) / Window</Label>
-            <Input
-              value={line.details?.service_dates || ''}
-              onChange={(e) => saveField('details', { ...line.details, service_dates: e.target.value })}
-              placeholder="e.g., 2024-01-15 to 2024-01-20"
-            />
-          </div>
-          
-          <div>
-            <Label>SOF Link (optional)</Label>
-            <Input
-              value={line.details?.sof_link || ''}
-              onChange={(e) => saveField('details', { ...line.details, sof_link: e.target.value })}
-              placeholder="Link to Statement of Facts"
-            />
           </div>
         </CardContent>
       </Card>
