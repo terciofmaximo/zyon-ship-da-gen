@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getPortOptions, getTerminalOptions, getBerthOptions, hasTerminals, hasBerths } from "@/lib/portDirectory";
+import { getGlobalPortOptions, getGlobalTerminalOptions, getGlobalBerthOptions, hasGlobalTerminals, hasGlobalBerths } from "@/services/globalPortDirectory";
 
 interface PortDirectoryState {
   selectedPort: string;
@@ -21,7 +21,7 @@ export function usePortDirectory() {
     selectedPort: "",
     selectedTerminal: "",
     selectedBerth: "",
-    portOptions: getPortOptions(),
+    portOptions: [],
     terminalOptions: [],
     berthOptions: [],
     showTerminalField: true,
@@ -32,52 +32,73 @@ export function usePortDirectory() {
     berthHint: "Selecione um Terminal primeiro."
   });
 
-  const updatePortSelection = (port: string, onPortChange?: (port: string) => void, onTerminalChange?: (terminal: string) => void, onBerthChange?: (berth: string) => void) => {
-    const newTerminalOptions = port ? getTerminalOptions(port) : [];
-    const showTerminal = port ? hasTerminals(port) : false;
-    
-    setState(prev => ({
-      ...prev,
-      selectedPort: port,
-      selectedTerminal: "",
-      selectedBerth: "",
-      terminalOptions: newTerminalOptions,
-      berthOptions: [],
-      showTerminalField: showTerminal,
-      showBerthField: true,
-      terminalDisabled: !port || !showTerminal,
-      berthDisabled: true,
-      terminalHint: port 
-        ? (showTerminal ? "" : "Este porto não possui terminais cadastrados.")
-        : "Selecione um Porto primeiro.",
-      berthHint: "Selecione um Terminal primeiro."
-    }));
+  // Load initial port options
+  useEffect(() => {
+    const loadPorts = async () => {
+      try {
+        const ports = await getGlobalPortOptions();
+        setState(prev => ({ ...prev, portOptions: ports }));
+      } catch (error) {
+        console.error("Failed to load port options:", error);
+      }
+    };
+    loadPorts();
+  }, []);
 
-    // Call the onChange handlers
-    onPortChange?.(port);
-    onTerminalChange?.("");
-    onBerthChange?.("");
+  const updatePortSelection = async (port: string, onPortChange?: (port: string) => void, onTerminalChange?: (terminal: string) => void, onBerthChange?: (berth: string) => void) => {
+    try {
+      const newTerminalOptions = port ? await getGlobalTerminalOptions(port) : [];
+      const showTerminal = port ? await hasGlobalTerminals(port) : false;
+      
+      setState(prev => ({
+        ...prev,
+        selectedPort: port,
+        selectedTerminal: "",
+        selectedBerth: "",
+        terminalOptions: newTerminalOptions,
+        berthOptions: [],
+        showTerminalField: showTerminal,
+        showBerthField: true,
+        terminalDisabled: !port || !showTerminal,
+        berthDisabled: true,
+        terminalHint: port 
+          ? (showTerminal ? "" : "Este porto não possui terminais cadastrados.")
+          : "Selecione um Porto primeiro.",
+        berthHint: "Selecione um Terminal primeiro."
+      }));
+
+      // Call the onChange handlers
+      onPortChange?.(port);
+      onTerminalChange?.("");
+      onBerthChange?.("");
+    } catch (error) {
+      console.error("Error updating port selection:", error);
+    }
   };
 
-  const updateTerminalSelection = (terminal: string, onTerminalChange?: (terminal: string) => void, onBerthChange?: (berth: string) => void) => {
-    const newBerthOptions = state.selectedPort && terminal ? getBerthOptions(state.selectedPort, terminal) : [];
-    const showBerth = state.selectedPort && terminal ? hasBerths(state.selectedPort, terminal) : false;
-    
-    setState(prev => ({
-      ...prev,
-      selectedTerminal: terminal,
-      selectedBerth: "",
-      berthOptions: newBerthOptions,
-      showBerthField: showBerth,
-      berthDisabled: !terminal || !showBerth,
-      berthHint: terminal
-        ? (showBerth ? "" : "Este terminal não possui berços cadastrados.")
-        : "Selecione um Terminal primeiro."
-    }));
+  const updateTerminalSelection = async (terminal: string, onTerminalChange?: (terminal: string) => void, onBerthChange?: (berth: string) => void) => {
+    try {
+      const newBerthOptions = state.selectedPort && terminal ? await getGlobalBerthOptions(state.selectedPort, terminal) : [];
+      const showBerth = state.selectedPort && terminal ? await hasGlobalBerths(state.selectedPort, terminal) : false;
+      
+      setState(prev => ({
+        ...prev,
+        selectedTerminal: terminal,
+        selectedBerth: "",
+        berthOptions: newBerthOptions,
+        showBerthField: showBerth,
+        berthDisabled: !terminal || !showBerth,
+        berthHint: terminal
+          ? (showBerth ? "" : "Este terminal não possui berços cadastrados.")
+          : "Selecione um Terminal primeiro."
+      }));
 
-    // Call the onChange handlers
-    onTerminalChange?.(terminal);
-    onBerthChange?.("");
+      // Call the onChange handlers
+      onTerminalChange?.(terminal);
+      onBerthChange?.("");
+    } catch (error) {
+      console.error("Error updating terminal selection:", error);
+    }
   };
 
   const updateBerthSelection = (berth: string, onBerthChange?: (berth: string) => void) => {
@@ -89,37 +110,41 @@ export function usePortDirectory() {
     onBerthChange?.(berth);
   };
 
-  const initialize = (port: string = "", terminal: string = "", berth: string = "") => {
+  const initialize = async (port: string = "", terminal: string = "", berth: string = "") => {
     if (port) {
-      const terminalOptions = getTerminalOptions(port);
-      const showTerminal = hasTerminals(port);
-      
-      let berthOptions: Array<{ value: string; label: string }> = [];
-      let showBerth = true;
-      let berthDisabled = true;
-      let berthHint = "Selecione um Terminal primeiro.";
-      
-      if (terminal && showTerminal) {
-        berthOptions = getBerthOptions(port, terminal);
-        showBerth = hasBerths(port, terminal);
-        berthDisabled = !showBerth;
-        berthHint = showBerth ? "" : "Este terminal não possui berços cadastrados.";
+      try {
+        const terminalOptions = await getGlobalTerminalOptions(port);
+        const showTerminal = await hasGlobalTerminals(port);
+        
+        let berthOptions: Array<{ value: string; label: string }> = [];
+        let showBerth = true;
+        let berthDisabled = true;
+        let berthHint = "Selecione um Terminal primeiro.";
+        
+        if (terminal && showTerminal) {
+          berthOptions = await getGlobalBerthOptions(port, terminal);
+          showBerth = await hasGlobalBerths(port, terminal);
+          berthDisabled = !showBerth;
+          berthHint = showBerth ? "" : "Este terminal não possui berços cadastrados.";
+        }
+        
+        setState(prev => ({
+          ...prev,
+          selectedPort: port,
+          selectedTerminal: terminal,
+          selectedBerth: berth,
+          terminalOptions,
+          berthOptions,
+          showTerminalField: showTerminal,
+          showBerthField: showBerth,
+          terminalDisabled: !showTerminal,
+          berthDisabled,
+          terminalHint: showTerminal ? "" : "Este porto não possui terminais cadastrados.",
+          berthHint
+        }));
+      } catch (error) {
+        console.error("Error initializing port directory:", error);
       }
-      
-      setState(prev => ({
-        ...prev,
-        selectedPort: port,
-        selectedTerminal: terminal,
-        selectedBerth: berth,
-        terminalOptions,
-        berthOptions,
-        showTerminalField: showTerminal,
-        showBerthField: showBerth,
-        terminalDisabled: !showTerminal,
-        berthDisabled,
-        terminalHint: showTerminal ? "" : "Este porto não possui terminais cadastrados.",
-        berthHint
-      }));
     }
   };
 

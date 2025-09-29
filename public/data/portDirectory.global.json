@@ -1,0 +1,115 @@
+{
+  "Santos": {
+    "terminals": {
+      "ADM": { "berths": ["39"] },
+      "Alamoa": { "berths": ["ALA 1","ALA 1,2","ALA 2","ALA 2,3,4","ALA 3","ALA 4"] },
+      "CLI": { "berths": ["16/17","19"] },
+      "Commercial Quay": { "berths": ["351","352","12A","25","29/30","29A","31","32","33","34","Outeirinhos 02","Outeirinhos 03","TEC II"] },
+      "Copersucar": { "berths": ["20/21"] },
+      "Cutrale": { "berths": ["Cutrale"] },
+      "Dow Química": { "berths": ["Dow Química"] },
+      "DP World": { "berths": ["DPW 2","DPW 3","DPW 4"] },
+      "Ecoporto": { "berths": ["Corte","CS 4","Valongo"] },
+      "Export Corridor": { "berths": ["Terminal XXXIX","TES"] },
+      "Hidrovias do Brasil": { "berths": ["HBSA  Shed 23"] },
+      "Ilha Barnabé": { "berths": ["IB Ageo","IB BC","IB SP","IBOE","TBC"] },
+      "Saboo": { "berths": ["CS 1","CS 2","CS 3"] },
+      "Santos Brasil": { "berths": ["Tecon 1"] },
+      "TEAG": { "berths": ["TEAG"] },
+      "TEG": { "berths": ["Cargill 2"] },
+      "Termag": { "berths": ["TMG"] },
+      "Terminal Export Cofco": { "berths": ["TEC I","TEC II"] },
+      "TEV": { "berths": ["TEV"] },
+      "TGG": { "berths": ["01"] },
+      "Tiplam": { "berths": ["Tiplam Berth 1","Tiplam Berth 2","Tiplam Berth 3","Tiplam Berth 4"] },
+      "Usiminas": { "berths": ["COS 2","COS 3","COS 4"] }
+    }
+  },
+  "Vitória": {
+    "terminals": {
+      "Anchorage Area": { "berths": ["Anchorage Area"] },
+      "Jurong": { "berths": ["South Quay Extension"] },
+      "PEIU": { "berths": ["206"] },
+      "Samarco  Ponta Ubu": { "berths": ["East Side","Terminal de Cargas Diversas","West Side"] },
+      "Terminal da Ilha do Principe (FLEXIBRAS)": { "berths": ["906"] },
+      "Terminal de Barra do Riacho  PETROBRAS": { "berths": ["BR501","BR502"] },
+      "Terminal de Barra do Riacho  PORTOCEL": { "berths": ["1","2","3"] },
+      "Terminal de Graneis Liquidos": { "berths": ["5"] },
+      "Terminal de Praia Mole  TPM": { "berths": ["CV1","CV2"] },
+      "Terminal de Praia Mole Steel  TPS": { "berths": ["S  1","S  2","S  3"] },
+      "Terminal de Vila Velha  TVV": { "berths": ["203","204"] },
+      "Terminal do Aribiri CPVV": { "berths": ["903"] },
+      "Terminal Zemax": { "berths": ["909"] },
+      "TPD": { "berths": ["3","4"] },
+      "Tubarão Iron Ore Complex": { "berths": ["Pier 1 North Side","Pier 1 South Side","Pier 2"] },
+      "VPORTS  Cais Comercial": { "berths": ["101","102","103"] },
+      "VPORTS  Capuaba": { "berths": ["201","202","207"] },
+      "VPORTS  Paul": { "berths": ["905"] }
+    }
+  },
+  "Antonina": {
+    "terminals": {
+      "Terminais Portuários da Ponta do Félix S/A": { "berths": ["PT Felix 01", "PT Felix 02"] }
+    }
+  },
+  "Aratu": {
+    "terminals": {
+      "Cotegipe": { "berths": ["Pier I", "Pier II", "Pier III"] },
+      "Dow Quimica": { "berths": ["Dow Quimica"] },
+      "TGL": { "berths": ["North Pier", "South Pier"] },
+      "TGS I": { "berths": ["North Pier", "South Pier", "TGS  TBC"] },
+      "TGS II": { "berths": ["New Pier"] },
+      "TPG": { "berths": ["Tegal"] }
+    }
+  },
+  "Barcarena": {
+    "terminals": {
+      "Hidrovias do Brasil": { "berths": ["Pier 1"] },
+      "Monobuoy": { "berths": ["Pier 2 (Monobuoy)"] },
+      "IMERYS TERMINAL": { "berths": ["Pier 1"] },
+      "TGPM": { "berths": ["Pier 1"] },
+      "Unitapajós": { "berths": ["Pier I"] }
+    }
+  },
+  "Barra dos Coqueiros": {
+    "terminals": {
+      "TMIB": { "berths": ["TMIB"] }
+    }
+  },
+  "Belém": {
+    "terminals": {
+      "ATEM": { "berths": ["Pier 1"] },
+      "Icoaraci": { "berths": ["Anchorage Area 1", "Anchorage Area 2", "Anchorage Area 3"] },
+      "MIRAMAR": { "berths": ["Miramar Pier 1", "Miramar Pier 2"] },
+      "Ocrim": { "berths": ["Berth 01"] },
+      "Outeiro": { "berths": ["Berth 101 TGS Externo"] }
+    }
+  },
+  "Cabedelo": {
+    "terminals": {
+      "Commercial Quay": { "berths": ["101", "105", "107"] }
+    }
+  },
+  "Fortaleza": {
+    "terminals": {
+      "Mucuripe": { "berths": ["102", "103", "104", "105", "106", "201", "202", "Anchorage"] },
+      "Pecém": { "berths": ["Berço 1 (Coal)", "Berço 2 (Iron Ore)", "TMUT 05", "TMUT 06", "TMUT 07", "TMUT 08", "TMUT 09", "TMUT 10"] }
+    }
+  },
+  "Ilhéus": {
+    "terminals": {
+      "Commercial Quay": { "berths": ["101", "102", "Commercial Quay"] }
+    }
+  },
+  "Imbituba": {
+    "terminals": {
+      "Commercial Quay": { "berths": ["Pier 1", "Pier 2", "Pier 3"] }
+    }
+  },
+  "Itacoatiara": {
+    "terminals": {
+      "Itacoatiara  Hermasa": { "berths": ["Anchorage", "Hermasa", "Hermasa 2"] },
+      "Novo Remanso": { "berths": ["TGSA"] }
+    }
+  }
+}
