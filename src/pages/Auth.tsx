@@ -89,7 +89,8 @@ const AuthPage: React.FC = () => {
                 <p><strong>Email:</strong> admin@zyon.com</p>
                 <p><strong>Senha:</strong> Admin123!</p>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">Use estas credenciais para acesso completo ao sistema</p>
+              <p className="text-xs text-orange-600 mt-2 font-medium">⚠️ Primeira vez? Clique em "Cadastre-se" para criar a conta admin</p>
+              <p className="text-xs text-muted-foreground mt-1">Depois de criar, volte aqui para fazer login</p>
             </div>
           )}
         </CardHeader>
