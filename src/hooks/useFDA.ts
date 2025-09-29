@@ -73,6 +73,7 @@ export const useFDA = () => {
         currency_local: "BRL",
         exchange_rate: parseFloat(pda.exchange_rate || "5.25"),
         created_by: user.id,
+        tenant_id: pda.tenant_id, // Copy tenant_id from PDA
         meta: {
           originalPdaNumber: pda.pda_number,
           conversionDate: new Date().toISOString(),
@@ -115,6 +116,7 @@ export const useFDA = () => {
           amount_usd: amountUSD.toNumber(),
           amount_local: amountLocal.toNumber(),
           status: "Open",
+          tenant_id: pda.tenant_id, // Copy tenant_id from PDA
           source: {
             pdaField,
             originalAmount: amount,
@@ -244,6 +246,7 @@ export const useFDA = () => {
           amount_usd: amountUSD.toNumber(),
           amount_local: amountLocal.toNumber(),
           status: "Open",
+          tenant_id: fda.tenant_id, // Copy tenant_id from FDA
           source: {
             pdaField,
             originalAmount: amount,

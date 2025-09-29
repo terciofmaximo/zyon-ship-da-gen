@@ -16,6 +16,7 @@ export interface FDA {
   updated_at: string;
   meta?: any;
   remarks?: string;
+  tenant_id: string;
 }
 
 export interface FDALedger {
@@ -35,6 +36,7 @@ export interface FDALedger {
   settled_at?: string;
   created_at: string;
   updated_at: string;
+  tenant_id: string;
 }
 
 export interface FDAWithLedger extends FDA {
