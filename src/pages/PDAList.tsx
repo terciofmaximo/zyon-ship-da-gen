@@ -98,7 +98,6 @@ export default function PDAList() {
   const [sortBy, setSortBy] = useState("updated_desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
-  const [confirmApprovalId, setConfirmApprovalId] = useState<string | null>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [convertingId, setConvertingId] = useState<string | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
@@ -200,41 +199,6 @@ export default function PDAList() {
       return matchesSearch && matchesStatus;
     });
   }, [pdas, searchTerm, statusFilter]);
-
-  const handleMarkAsApproved = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from("pdas")
-        .update({ 
-          status: "APPROVED",
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", id);
-
-      if (error) throw error;
-
-      setPdas(prev => 
-        prev.map(pda => 
-          pda.id === id 
-            ? { ...pda, status: "APPROVED" as const }
-            : pda
-        )
-      );
-
-      toast({
-        title: "Sucesso",
-        description: "PDA marcada como aprovada",
-      });
-    } catch (error) {
-      console.error("Error updating PDA:", error);
-      toast({
-        title: "Erro",
-        description: "Erro ao marcar PDA como aprovada",
-        variant: "destructive",
-      });
-    }
-    setConfirmApprovalId(null);
-  };
 
   const handleSendToBilling = async (id: string) => {
     try {
@@ -470,22 +434,36 @@ export default function PDAList() {
                       <TableCell>{formatDate(pda.date_field)}</TableCell>
                       <TableCell>—</TableCell>
                       <TableCell>
-                        <Badge 
-                          variant={statusVariants[pda.status]}
-                          className={
-                            pda.status === "IN_PROGRESS" || pda.status === "CREATED"
-                              ? "bg-muted text-muted-foreground" 
-                              : pda.status === "SENT"
-                              ? "bg-primary text-primary-foreground"
-                              : pda.status === "APPROVED"
-                              ? "bg-success text-success-foreground"
-                              : pda.status === "REJECTED"
-                              ? "bg-destructive text-destructive-foreground"
-                              : "bg-muted text-muted-foreground"
-                          }
+                        <Select
+                          value={pda.status}
+                          onValueChange={(newStatus) => handleUpdateStatus(pda.id, newStatus as PDA['status'])}
                         >
-                          {statusLabels[pda.status]}
-                        </Badge>
+                          <SelectTrigger className="w-[180px] h-8 border-none bg-transparent p-0 hover:bg-muted/50 focus:bg-muted">
+                            <Badge 
+                              variant={statusVariants[pda.status]}
+                              className={`cursor-pointer ${
+                                pda.status === "IN_PROGRESS" || pda.status === "CREATED"
+                                  ? "bg-muted text-muted-foreground hover:bg-muted/80" 
+                                  : pda.status === "SENT"
+                                  ? "bg-primary text-primary-foreground hover:bg-primary/80"
+                                  : pda.status === "APPROVED"
+                                  ? "bg-success text-success-foreground hover:bg-success/80"
+                                  : pda.status === "REJECTED"
+                                  ? "bg-destructive text-destructive-foreground hover:bg-destructive/80"
+                                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                              }`}
+                            >
+                              {statusLabels[pda.status]}
+                            </Badge>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="CREATED">PDA Created</SelectItem>
+                            <SelectItem value="SENT">PDA Sent</SelectItem>
+                            <SelectItem value="APPROVED">PDA Approved by Client</SelectItem>
+                            <SelectItem value="REJECTED">PDA Rejected by Client</SelectItem>
+                            <SelectItem value="UNDER_REVIEW">PDA Under Client Review</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </TableCell>
                       <TableCell>
                         <Button
@@ -518,23 +496,12 @@ export default function PDAList() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => navigate(`/pda/${pda.id}/review`)}>
                               <Eye className="mr-2 h-4 w-4" />
-                              Open
+                              View Details
                             </DropdownMenuItem>
-                            {pda.status !== "APPROVED" && (
-                              <DropdownMenuItem onClick={() => setConfirmApprovalId(pda.id)}>
-                                <Check className="mr-2 h-4 w-4" />
-                                Mark as Approved
-                              </DropdownMenuItem>
-                            )}
                             <DropdownMenuItem onClick={() => {/* PDF generation logic */}}>
                               <Download className="mr-2 h-4 w-4" />
                               Generate PDF
                             </DropdownMenuItem>
-                            {pda.status === "IN_PROGRESS" && (
-                              <DropdownMenuItem onClick={() => handleSendToBilling(pda.id)}>
-                                Send to Billing
-                              </DropdownMenuItem>
-                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -583,25 +550,6 @@ export default function PDAList() {
           )}
         </CardContent>
       </Card>
-
-      <Dialog open={!!confirmApprovalId} onOpenChange={() => setConfirmApprovalId(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmar aprovação</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja marcar esta PDA como aprovada? Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmApprovalId(null)}>
-              Cancelar
-            </Button>
-            <Button onClick={() => confirmApprovalId && handleMarkAsApproved(confirmApprovalId)}>
-              Confirmar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
