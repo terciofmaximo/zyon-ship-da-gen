@@ -226,7 +226,7 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
       {data.map((line) => (
         <div
           key={line.id}
-          className={`grid grid-cols-10 gap-2 p-2 border rounded-md text-sm ${
+          className={`grid grid-cols-8 gap-2 p-2 border rounded-md text-sm ${
             line.side === 'AP' 
               ? 'bg-red-50 border-red-100' 
               : 'bg-green-50 border-green-100'
@@ -251,28 +251,12 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
             </SelectContent>
           </Select>
 
-          {/* Category */}
-          <Input
-            value={line.category || ''}
-            onChange={(e) => handleCellEdit(line.id, 'category', e.target.value)}
-            className="h-8"
-            placeholder="Category"
-          />
-
           {/* Description */}
           <Input
             value={line.description || ''}
             onChange={(e) => handleCellEdit(line.id, 'description', e.target.value)}
             className="h-8"
             placeholder="Description"
-          />
-
-          {/* Counterparty */}
-          <Input
-            value={line.counterparty || ''}
-            onChange={(e) => handleCellEdit(line.id, 'counterparty', e.target.value)}
-            className="h-8"
-            placeholder="Counterparty"
           />
 
           {/* Amount USD */}
@@ -353,7 +337,7 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
       </CardHeader>
       <CardContent>
         {/* Column Headers */}
-        <div className="grid grid-cols-10 gap-2 p-2 mb-2 text-sm font-medium text-gray-700 bg-gray-50 rounded">
+        <div className="grid grid-cols-8 gap-2 p-2 mb-2 text-sm font-medium text-gray-700 bg-gray-50 rounded">
           <Button
             variant="ghost"
             size="sm"
@@ -363,9 +347,7 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
             Line # <ArrowUpDown className="ml-1 h-3 w-3" />
           </Button>
           <div>Side</div>
-          <div>Category</div>
           <div>Description</div>
-          <div>Counterparty</div>
           <div>Amount (USD)</div>
           <div>Amount (BRL)</div>
           <div>Invoice #</div>
