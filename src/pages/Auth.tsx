@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { useResetAdminPassword } from "@/hooks/useResetAdminPassword";
 
 
 const schema = z.object({
@@ -26,6 +27,7 @@ const AuthPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { resetAdminPassword, loading: resetLoading } = useResetAdminPassword();
 
   // Platform admin configuration
   const PLATFORM_ADMIN_EMAIL = 'contact@vesselopsportal.com';
@@ -185,12 +187,19 @@ const AuthPage: React.FC = () => {
               )}
             </div>
             {mode === "login" && (
-              <div className="text-center pt-2 border-t">
+              <div className="text-center pt-2 border-t space-y-2">
                 <button 
-                  className="text-xs text-muted-foreground hover:text-foreground underline"
+                  className="text-xs text-muted-foreground hover:text-foreground underline block mx-auto"
                   onClick={() => navigate('/seed-admin')}
                 >
                   🔧 Seed Platform Admin (Dev Tool)
+                </button>
+                <button 
+                  className="text-xs text-muted-foreground hover:text-foreground underline block mx-auto"
+                  onClick={resetAdminPassword}
+                  disabled={resetLoading}
+                >
+                  🔑 Resetar Senha Admin {resetLoading && "(...)"}
                 </button>
               </div>
             )}
