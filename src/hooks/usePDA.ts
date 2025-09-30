@@ -41,9 +41,33 @@ export function usePDA(sessionId?: string) {
         }
         tenantId = user.id;
       } else {
-        // Public mode - use sessionId
+        // Public mode - use sessionId and check rate limit
         const orgStorage = localStorage.getItem('active_org');
         tenantId = orgStorage ? JSON.parse(orgStorage).id : null;
+        
+        // Rate limit check for public PDA creation
+        if (!pdaId) { // Only check on creation, not updates
+          const { data: rateLimitCheck, error: rateLimitError } = await supabase
+            .rpc('check_pda_rate_limit', { 
+              p_session_id: sessionId,
+              p_max_requests: 20,
+              p_time_window_hours: 1
+            });
+          
+          if (rateLimitError) {
+            console.error("Rate limit check error:", rateLimitError);
+          } else if (rateLimitCheck) {
+            const checkResult = rateLimitCheck as { allowed: boolean; message?: string; attempts: number; limit: number };
+            if (!checkResult.allowed) {
+              const rateLimitErrorObj = createPDAError(
+                'E_AUTH_ERROR',
+                checkResult.message || 'Rate limit exceeded. Please try again later.'
+              );
+              logPDAError(rateLimitErrorObj, undefined, 'savePDA');
+              throw rateLimitErrorObj;
+            }
+          }
+        }
       }
       
       // Step 2: Transform and validate input data

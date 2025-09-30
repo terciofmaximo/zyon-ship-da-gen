@@ -552,6 +552,27 @@ export type Database = {
         }
         Relationships: []
       }
+      pda_creation_attempts: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: string | null
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          session_id?: string
+        }
+        Relationships: []
+      }
       pdas: {
         Row: {
           agency_fee: number | null
@@ -806,6 +827,15 @@ export type Database = {
           p_user_id: string
         }
         Returns: string
+      }
+      check_pda_rate_limit: {
+        Args: {
+          p_ip_address?: string
+          p_max_requests?: number
+          p_session_id: string
+          p_time_window_hours?: number
+        }
+        Returns: Json
       }
       convert_pda_to_fda: {
         Args: { p_pda_id: string }

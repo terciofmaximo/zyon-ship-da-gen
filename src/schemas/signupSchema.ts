@@ -8,6 +8,9 @@ const BLOCKED_DOMAINS = [
   "icloud.com",
   "bol.com.br",
   "uol.com.br",
+  "aol.com",
+  "protonmail.com",
+  "mail.com",
 ];
 
 export const signupSchema = z.object({
