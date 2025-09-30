@@ -3,14 +3,16 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOrg } from "@/context/OrgProvider";
+import { useCompany } from "@/context/CompanyProvider";
 import { useUserRole } from "@/hooks/useUserRole";
 import { DomainManagement } from "@/components/organization/DomainManagement";
 import { CompanyManagement } from "@/components/organization/CompanyManagement";
+import { TeamManagement } from "@/components/organization/TeamManagement";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Building2, Users, Globe, Shield, UserPlus, Trash2, Building } from "lucide-react";
+import { Building2, Users, Globe, Shield, UserPlus, Trash2, Building, Users2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { InviteMemberDialog } from "@/components/organization/InviteMemberDialog";
@@ -44,6 +46,7 @@ export default function OrganizationSettings() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { activeOrg } = useOrg();
+  const { activeCompanyId, companies } = useCompany();
   const { isPlatformAdmin } = useUserRole();
   const [members, setMembers] = useState<Member[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
@@ -52,11 +55,14 @@ export default function OrganizationSettings() {
   const [savingOrg, setSavingOrg] = useState(false);
 
   // Default to 'companies' tab if platformAdmin with no active org
-  const defaultTab = isPlatformAdmin && !activeOrg ? "companies" : "organization";
+  const activeCompany = companies.find(c => c.id === activeCompanyId);
+  const defaultTab = isPlatformAdmin && !activeOrg && !activeCompany ? "companies" : 
+                    activeCompany ? "team" : "organization";
   const activeTab = searchParams.get("tab") || defaultTab;
 
   const isViewer = activeOrg && activeOrg.role === "viewer";
-  const canEdit = isPlatformAdmin || (activeOrg && ['admin', 'owner'].includes(activeOrg.role));
+  const canEdit = isPlatformAdmin || (activeOrg && ['admin', 'owner'].includes(activeOrg.role)) ||
+                 (activeCompany && ['admin', 'owner'].includes(activeCompany.role));
 
   useEffect(() => {
     if (activeOrg) {
@@ -152,13 +158,13 @@ export default function OrganizationSettings() {
     }
   };
 
-  // Allow platformAdmin to access settings without an active org
-  if (!activeOrg && !isPlatformAdmin) {
+  // Allow platformAdmin to access settings without an active org or company
+  if (!activeOrg && !activeCompany && !isPlatformAdmin) {
     return (
       <div className="space-y-6">
         <Card>
           <CardContent className="pt-6">
-            <p className="text-muted-foreground text-center">No organization selected</p>
+            <p className="text-muted-foreground text-center">No organization or company selected</p>
           </CardContent>
         </Card>
       </div>
@@ -170,15 +176,23 @@ export default function OrganizationSettings() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
         <p className="text-muted-foreground">
-          {isPlatformAdmin && !activeOrg 
+          {isPlatformAdmin && !activeOrg && !activeCompany
             ? "Platform administration and company management"
-            : "Manage your organization configuration, members, and domains"
+            : activeCompany 
+              ? `Manage ${activeCompany.name} settings and team`
+              : "Manage your organization configuration, members, and domains"
           }
         </p>
       </div>
 
         <Tabs value={activeTab} onValueChange={(tab) => setSearchParams({ tab })}>
           <TabsList>
+            {activeCompany && (
+              <TabsTrigger value="team">
+                <Users2 className="h-4 w-4 mr-2" />
+                Team
+              </TabsTrigger>
+            )}
             {activeOrg && (
               <>
                 <TabsTrigger value="organization">
@@ -202,6 +216,12 @@ export default function OrganizationSettings() {
               </TabsTrigger>
             )}
           </TabsList>
+
+          {activeCompany && (
+            <TabsContent value="team" className="space-y-4">
+              <TeamManagement />
+            </TabsContent>
+          )}
 
           {activeOrg && (
             <TabsContent value="organization" className="space-y-4">
