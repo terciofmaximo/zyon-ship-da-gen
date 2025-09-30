@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Share2, Copy, ArrowLeft } from "lucide-react";
+import { FileText, Share2, Copy, ArrowLeft, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useAuth } from "@/context/AuthProvider";
 
 type PDADetail = {
   id: string;
@@ -24,13 +26,22 @@ type PDADetail = {
 export default function PublicPDAView() {
   const { trackingId } = useParams<{ trackingId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const [pda, setPda] = useState<PDADetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [converting, setConverting] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   useEffect(() => {
     loadPDA();
-  }, [trackingId]);
+    
+    // Check if we should trigger conversion after login
+    if (searchParams.get("action") === "toFDA" && user && pda) {
+      handleConvertToFDA();
+    }
+  }, [trackingId, searchParams, user]);
 
   const loadPDA = async () => {
     if (!trackingId) {
@@ -66,6 +77,46 @@ export default function PublicPDAView() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleConvertToFDA = async () => {
+    if (!user) {
+      // Show login modal
+      setShowLoginModal(true);
+      return;
+    }
+
+    if (!pda) return;
+
+    setConverting(true);
+    try {
+      const { data: fdaId, error } = await supabase.rpc("convert_pda_to_fda", {
+        p_pda_id: pda.id,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "FDA Criado",
+        description: "PDA convertido para FDA com sucesso!",
+      });
+
+      navigate(`/fda/${fdaId}`);
+    } catch (error: any) {
+      console.error("Conversion error:", error);
+      toast({
+        title: "Erro na conversão",
+        description: error.message || "Falha ao converter PDA para FDA",
+        variant: "destructive",
+      });
+    } finally {
+      setConverting(false);
+    }
+  };
+
+  const handleLoginRedirect = () => {
+    const returnUrl = `/pda/${trackingId}?action=toFDA`;
+    navigate(`/auth?returnUrl=${encodeURIComponent(returnUrl)}`);
   };
 
   const handleCopyLink = () => {
@@ -125,13 +176,17 @@ export default function PublicPDAView() {
             <h1 className="text-xl font-bold">PDA {pda.tracking_id}</h1>
           </div>
           <div className="flex gap-2">
+            <Button onClick={handleConvertToFDA} disabled={converting}>
+              <ArrowRight className="h-4 w-4 mr-2" />
+              {converting ? "Convertendo..." : "Converter para FDA"}
+            </Button>
             <Button variant="outline" onClick={handleCopyLink}>
               <Copy className="h-4 w-4 mr-2" />
-              Copy Link
+              Copiar Link
             </Button>
             <Button variant="outline" onClick={() => navigate("/pda")}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
+              Voltar
             </Button>
           </div>
         </div>
@@ -221,6 +276,32 @@ export default function PublicPDAView() {
             </div>
           </CardContent>
         </Card>
+
+        <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Login Necessário</DialogTitle>
+              <DialogDescription>
+                Para converter PDA em FDA, você precisa estar logado com uma conta corporativa.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              <Button onClick={handleLoginRedirect} className="w-full">
+                Fazer Login
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => navigate(`/auth/signup?returnUrl=${encodeURIComponent(`/pda/${trackingId}?action=toFDA`)}`)}
+                className="w-full"
+              >
+                Criar Conta Corporativa
+              </Button>
+              <Button variant="ghost" onClick={() => setShowLoginModal(false)} className="w-full">
+                Cancelar
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

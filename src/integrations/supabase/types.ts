@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      email_verifications: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          token: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          token: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       fda: {
         Row: {
           assigned_user_id: string | null
@@ -488,7 +515,10 @@ export type Database = {
       }
       organizations: {
         Row: {
+          cnpj: string | null
+          company_type: Database["public"]["Enums"]["company_type"] | null
           created_at: string
+          created_from_signup: boolean | null
           id: string
           name: string
           owner_user_id: string | null
@@ -496,7 +526,10 @@ export type Database = {
           slug: string
         }
         Insert: {
+          cnpj?: string | null
+          company_type?: Database["public"]["Enums"]["company_type"] | null
           created_at?: string
+          created_from_signup?: boolean | null
           id?: string
           name: string
           owner_user_id?: string | null
@@ -504,7 +537,10 @@ export type Database = {
           slug: string
         }
         Update: {
+          cnpj?: string | null
+          company_type?: Database["public"]["Enums"]["company_type"] | null
           created_at?: string
+          created_from_signup?: boolean | null
           id?: string
           name?: string
           owner_user_id?: string | null
@@ -757,6 +793,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      convert_pda_to_fda: {
+        Args: { p_pda_id: string }
+        Returns: string
+      }
       generate_pda_number: {
         Args: { p_tenant_id: string }
         Returns: string
@@ -805,6 +845,10 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      link_pda_to_new_org: {
+        Args: { p_org_id: string; p_pda_id: string }
+        Returns: undefined
+      }
       setup_admin_user: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -832,6 +876,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user" | "platformAdmin"
+      company_type: "Armador" | "Agente" | "Broker"
       fda_ledger_side: "AP" | "AR"
       fda_ledger_status: "Open" | "Settled" | "Partially Settled"
       fda_status: "Draft" | "Posted" | "Closed"
@@ -967,6 +1012,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "platformAdmin"],
+      company_type: ["Armador", "Agente", "Broker"],
       fda_ledger_side: ["AP", "AR"],
       fda_ledger_status: ["Open", "Settled", "Partially Settled"],
       fda_status: ["Draft", "Posted", "Closed"],

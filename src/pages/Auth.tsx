@@ -179,9 +179,17 @@ const AuthPage: React.FC = () => {
           </form>
           <Separator className="my-6" />
           <div className="space-y-3">
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-center text-muted-foreground">
               {mode === "login" ? (
-                <button className="underline" onClick={() => setMode("signup")}>Não tem conta? Cadastre-se</button>
+                <p>
+                  Não tem conta?{" "}
+                  <button 
+                    className="underline text-primary hover:text-primary/80" 
+                    onClick={() => navigate(`/auth/signup?returnUrl=${encodeURIComponent(redirectTo)}`)}
+                  >
+                    Criar Conta Corporativa
+                  </button>
+                </p>
               ) : (
                 <button className="underline" onClick={() => setMode("login")}>Já tem conta? Entrar</button>
               )}
