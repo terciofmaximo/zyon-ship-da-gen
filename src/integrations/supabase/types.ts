@@ -524,6 +524,7 @@ export type Database = {
           comments: Json | null
           created_at: string
           created_by: string | null
+          created_by_session_id: string | null
           date_field: string | null
           days_alongside: string | null
           dockage: number | null
@@ -558,6 +559,7 @@ export type Database = {
           to_display_name: string | null
           to_location: string | null
           towage_in: number | null
+          tracking_id: string | null
           updated_at: string
           vessel_name: string | null
           waterway: number | null
@@ -572,6 +574,7 @@ export type Database = {
           comments?: Json | null
           created_at?: string
           created_by?: string | null
+          created_by_session_id?: string | null
           date_field?: string | null
           days_alongside?: string | null
           dockage?: number | null
@@ -606,6 +609,7 @@ export type Database = {
           to_display_name?: string | null
           to_location?: string | null
           towage_in?: number | null
+          tracking_id?: string | null
           updated_at?: string
           vessel_name?: string | null
           waterway?: number | null
@@ -620,6 +624,7 @@ export type Database = {
           comments?: Json | null
           created_at?: string
           created_by?: string | null
+          created_by_session_id?: string | null
           date_field?: string | null
           days_alongside?: string | null
           dockage?: number | null
@@ -654,6 +659,7 @@ export type Database = {
           to_display_name?: string | null
           to_location?: string | null
           towage_in?: number | null
+          tracking_id?: string | null
           updated_at?: string
           vessel_name?: string | null
           waterway?: number | null
@@ -757,6 +763,10 @@ export type Database = {
       }
       generate_primary_domain: {
         Args: { org_slug: string }
+        Returns: string
+      }
+      generate_tracking_id: {
+        Args: Record<PropertyKey, never>
         Returns: string
       }
       get_tenant_by_hostname: {
