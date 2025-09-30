@@ -89,13 +89,15 @@ export default function InviteAccept() {
         window.location.href = "/";
         return;
       } else {
-        // Add user to organization
+        // Add user to organization with upsert logic
         const { error: memberError } = await supabase
           .from("organization_members")
-          .insert({
+          .upsert({
             org_id: invite.org_id,
             user_id: user.id,
             role: invite.role,
+          }, {
+            onConflict: 'org_id,user_id'
           });
 
         if (memberError) throw memberError;

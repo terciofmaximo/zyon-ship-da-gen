@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/context/CompanyProvider";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useInvitationCleanup } from "@/hooks/useInvitationCleanup";
 import {
   Table,
   TableBody,
@@ -135,6 +136,7 @@ export function TeamManagement() {
   const { toast } = useToast();
   const { activeCompanyId } = useCompany();
   const { canManageTeam, activeCompany, userRole, requirePermission } = usePermissions();
+  const { manualExpireInvitations } = useInvitationCleanup();
   const [members, setMembers] = useState<Member[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);

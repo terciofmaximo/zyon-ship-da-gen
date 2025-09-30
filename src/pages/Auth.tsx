@@ -57,8 +57,11 @@ const AuthPage: React.FC = () => {
       if (mode === "login") {
         console.log('Attempting login for:', form.email);
         
+        // Normalize email for signin
+        const normalizedEmail = form.email.toLowerCase().trim();
+        
         const { data, error } = await supabase.auth.signInWithPassword({
-          email: form.email,
+          email: normalizedEmail,
           password: form.password,
         });
         
@@ -99,9 +102,12 @@ const AuthPage: React.FC = () => {
         toast({ title: "Bem-vindo", description: "Login efetuado com sucesso" });
         navigate(redirectTo, { replace: true });
       } else {
+        // Normalize email for signup
+        const normalizedEmail = form.email.toLowerCase().trim();
+        
         const redirectUrl = `${import.meta.env.VITE_APP_URL ?? (typeof window !== 'undefined' ? window.location.origin : '')}/`;
         const { error } = await supabase.auth.signUp({
-          email: form.email,
+          email: normalizedEmail,
           password: form.password,
           options: { emailRedirectTo: redirectUrl },
         });
