@@ -34,6 +34,7 @@ import { OrgProvider } from "@/context/OrgProvider";
 import { TenantProvider } from "@/context/TenantProvider";
 import { CompanyProvider } from "@/context/CompanyProvider";
 import { RequireAuth } from "@/components/auth/RequireAuth";
+import { RootRedirect } from "@/components/routing/RootRedirect";
 
 const queryClient = new QueryClient();
 
@@ -49,7 +50,7 @@ const App = () => (
               <Sonner />
               <Routes>
                 {/* Public PDA routes - no auth required */}
-                <Route path="/" element={<Navigate to="/pda/new" replace />} />
+                <Route path="/" element={<RootRedirect />} />
                 <Route path="/pda/new" element={<PublicPDANew />} />
                 <Route path="/pda" element={<PublicPDAList />} />
                 <Route path="/pda/:trackingId" element={<PublicPDAView />} />

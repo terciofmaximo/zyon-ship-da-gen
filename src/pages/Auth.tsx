@@ -35,7 +35,7 @@ const AuthPage: React.FC = () => {
   const redirectTo = useMemo(() => {
     const callback = searchParams.get("callback");
     const from = searchParams.get("from");
-    return callback ? decodeURIComponent(callback) : decodeURIComponent(from || "/");
+    return callback ? decodeURIComponent(callback) : decodeURIComponent(from || "/dashboard");
   }, [searchParams]);
 
   useEffect(() => {
