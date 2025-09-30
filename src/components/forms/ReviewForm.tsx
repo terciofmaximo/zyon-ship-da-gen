@@ -19,12 +19,13 @@ interface ReviewFormProps {
   };
   costData: Partial<CostData>;
   pdaId?: string | null;
+  sessionId?: string;
 }
 
-export function ReviewForm({ onBack, shipData, costData, pdaId }: ReviewFormProps) {
+export function ReviewForm({ onBack, shipData, costData, pdaId, sessionId }: ReviewFormProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { savePDA, loading } = usePDA();
+  const { savePDA, loading } = usePDA(sessionId);
   const [isSaving, setIsSaving] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const totalUSD = Object.values(costData).reduce((sum: number, cost: number) => sum + (cost || 0), 0);

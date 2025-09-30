@@ -152,6 +152,7 @@ export function NewPDAWizard({ isPublic = false, sessionId }: NewPDAWizardProps 
             shipData={shipData}
             costData={costData}
             pdaId={savedPdaId}
+            sessionId={sessionId}
           />
         )}
       </CardContent>

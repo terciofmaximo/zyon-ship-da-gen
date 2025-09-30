@@ -198,12 +198,27 @@ export function usePDA(sessionId?: string) {
       // Step 6: Database transaction
       if (pdaId) {
         // Update existing PDA
-        result = await supabase
+        let updateQuery = supabase
           .from("pdas")
           .update(dbData)
-          .eq("id", pdaId)
-          .select()
-          .single();
+          .eq("id", pdaId);
+        
+        // For public mode (sessionId present and tenantId null), ensure we only update PDAs created by this session
+        if (sessionId && !tenantId) {
+          updateQuery = updateQuery.eq("created_by_session_id", sessionId);
+        }
+        
+        result = await updateQuery.select().maybeSingle();
+        
+        // Handle case where no rows were updated (RLS prevented it or PDA not found)
+        if (!result.data && !result.error) {
+          const updateError = createPDAError(
+            'E_AUTH_ERROR',
+            'Unable to update PDA. You may not have permission to modify this document.'
+          );
+          logPDAError(updateError, tenantId, 'savePDA', inputData);
+          throw updateError;
+        }
       } else {
         // Create new PDA with generated PDA number
         const { data: pdaNumber, error: numberError } = await supabase
