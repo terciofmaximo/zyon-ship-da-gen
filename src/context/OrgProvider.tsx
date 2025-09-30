@@ -66,12 +66,7 @@ export const OrgProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }));
 
       setOrganizations(orgs);
-      
-      // Platform admins: Default to "All Tenants" view (null)
-      // This allows them to see data across all tenants
-      const savedOrgId = localStorage.getItem("active_org_id");
-      const savedOrg = orgs.find(o => o.id === savedOrgId);
-      setActiveOrgState(savedOrg || null);
+      setActiveOrgState(null); // Default to "All Tenants" view
     } catch (error) {
       console.error("Error fetching organizations:", error);
     } finally {
@@ -93,9 +88,7 @@ export const OrgProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const fetchUserOrganizations = async () => {
     try {
-      // TENANT ISOLATION: Regular users see ONLY their tenant's organization
-      // This enforces domain-based multi-tenancy (e.g., @zyonshipping.com.br → zyonshipping tenant)
-      // Users can only access data from their own tenant's organization
+      // Query organization_members directly instead of using the view
       const { data, error } = await supabase
         .from("organization_members")
         .select(`
@@ -120,20 +113,15 @@ export const OrgProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       setOrganizations(orgs);
 
-      // Regular users: MUST have an active org (their tenant)
-      // Auto-select first org (usually the only one due to domain-based signup)
+      // Load saved active org or default to first
       const savedOrgId = localStorage.getItem("active_org_id");
       const savedOrg = orgs.find(o => o.id === savedOrgId);
       
       if (savedOrg) {
         setActiveOrgState(savedOrg);
       } else if (orgs.length > 0) {
-        // Auto-select the user's tenant
         setActiveOrgState(orgs[0]);
         localStorage.setItem("active_org_id", orgs[0].id);
-      } else {
-        // No organization found - user will be redirected by useEffect
-        setActiveOrgState(null);
       }
     } catch (error) {
       console.error("Error fetching organizations:", error);
