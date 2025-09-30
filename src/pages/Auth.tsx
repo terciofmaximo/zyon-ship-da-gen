@@ -99,7 +99,7 @@ const AuthPage: React.FC = () => {
         toast({ title: "Bem-vindo", description: "Login efetuado com sucesso" });
         navigate(redirectTo, { replace: true });
       } else {
-        const redirectUrl = `${window.location.origin}/`;
+        const redirectUrl = `${import.meta.env.VITE_APP_URL ?? (typeof window !== 'undefined' ? window.location.origin : '')}/`;
         const { error } = await supabase.auth.signUp({
           email: form.email,
           password: form.password,

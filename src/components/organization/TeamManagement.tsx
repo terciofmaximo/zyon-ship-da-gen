@@ -259,7 +259,8 @@ export function TeamManagement() {
       if (error) throw error;
 
       // Generate invite link
-      const inviteLink = `${window.location.origin}/invite/accept?token=${token}`;
+      const baseUrl = import.meta.env.VITE_APP_URL ?? (typeof window !== 'undefined' ? window.location.origin : '');
+      const inviteLink = `${baseUrl}/invite/accept?token=${token}`;
       setGeneratedInviteLink(inviteLink);
 
       toast({
@@ -320,7 +321,8 @@ export function TeamManagement() {
   };
 
   const copyInviteLink = async (token: string) => {
-    const inviteLink = `${window.location.origin}/invite/accept?token=${token}`;
+    const baseUrl = import.meta.env.VITE_APP_URL ?? (typeof window !== 'undefined' ? window.location.origin : '');
+    const inviteLink = `${baseUrl}/invite/accept?token=${token}`;
     
     try {
       await navigator.clipboard.writeText(inviteLink);
@@ -627,8 +629,8 @@ export function TeamManagement() {
                                   </DialogHeader>
                                   <div className="flex justify-center py-4">
                                     <div className="p-4 bg-white rounded-lg">
-                                      <QRCodeSVG 
-                                        value={`${window.location.origin}/invite/accept?token=${invitation.token}`} 
+                                       <QRCodeSVG 
+                                        value={`${import.meta.env.VITE_APP_URL ?? (typeof window !== 'undefined' ? window.location.origin : '')}/invite/accept?token=${invitation.token}`} 
                                         size={200} 
                                       />
                                     </div>
