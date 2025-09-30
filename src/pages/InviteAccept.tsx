@@ -57,7 +57,13 @@ export default function InviteAccept() {
       });
       setLoading(false);
     } catch (error: any) {
-      setError("Invalid, expired, or already used invite");
+      if (error.message.includes('expired')) {
+        setError("Este convite expirou. Solicite um novo convite ao administrador.");
+      } else if (error.message.includes('already used')) {
+        setError("Este convite já foi utilizado. Caso precise de acesso, solicite um novo convite.");
+      } else {
+        setError("Convite inválido, expirado ou já utilizado");
+      }
       setLoading(false);
     }
   };
@@ -77,9 +83,11 @@ export default function InviteAccept() {
 
       if (existingMember) {
         toast({
-          title: "Already a member",
-          description: `You're already a member of ${invite.organizations.name}`,
+          title: "Já é membro",
+          description: `Você já é membro da ${invite.organizations.name}`,
         });
+        window.location.href = "/";
+        return;
       } else {
         // Add user to organization
         const { error: memberError } = await supabase
@@ -105,8 +113,8 @@ export default function InviteAccept() {
       localStorage.setItem("active_org_id", invite.org_id);
       
       toast({
-        title: "Invite accepted",
-        description: `You've joined ${invite.organizations.name}`,
+        title: "Bem-vindo!",
+        description: `Você ingressou na ${invite.organizations.name} como ${invite.role}`,
       });
 
       // Reload to update org context
@@ -134,12 +142,12 @@ export default function InviteAccept() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Invalid Invite</CardTitle>
+            <CardTitle>Convite Inválido</CardTitle>
             <CardDescription>{error}</CardDescription>
           </CardHeader>
           <CardContent>
             <Button onClick={() => navigate("/")} className="w-full">
-              Go to Dashboard
+              Ir para Dashboard
             </Button>
           </CardContent>
         </Card>
@@ -152,17 +160,17 @@ export default function InviteAccept() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Organization Invite</CardTitle>
+            <CardTitle>Convite para Organização</CardTitle>
             <CardDescription>
-              You've been invited to join {invite?.organizations?.name}
+              Você foi convidado para ingressar na {invite?.organizations?.name}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Role: <span className="font-medium">{invite?.role}</span>
+              Função: <span className="font-medium">{invite?.role}</span>
             </p>
             <Button onClick={() => navigate(`/auth?from=${encodeURIComponent(`/invite?token=${searchParams.get("token")}`)}`)} className="w-full">
-              Sign In to Accept
+              Entrar para Aceitar
             </Button>
           </CardContent>
         </Card>

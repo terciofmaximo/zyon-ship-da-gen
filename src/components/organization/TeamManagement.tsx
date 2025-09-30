@@ -14,7 +14,9 @@ import {
   Mail,
   Shield,
   Eye,
-  Settings
+  Settings,
+  ArrowUp,
+  ArrowDown
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -99,6 +101,34 @@ const getRoleVariant = (role: string): "default" | "secondary" | "destructive" |
     case 'viewer': return "outline";
     default: return "outline";
   }
+};
+
+const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+  switch (status) {
+    case "pending": return "secondary";
+    case "accepted": return "default";
+    case "revoked": return "destructive";
+    case "expired": return "outline";
+    default: return "outline";
+  }
+};
+
+const getDaysRemaining = (expiresAt: string) => {
+  const now = new Date();
+  const expiry = new Date(expiresAt);
+  const diffTime = expiry.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+};
+
+const getInvitationStatus = (invitation: Invitation) => {
+  if (invitation.status === 'revoked') return 'revoked';
+  if (invitation.status === 'accepted') return 'accepted';
+  
+  const daysRemaining = getDaysRemaining(invitation.expires_at);
+  if (daysRemaining <= 0) return 'expired';
+  
+  return 'pending';
 };
 
 export function TeamManagement() {
@@ -264,8 +294,17 @@ export function TeamManagement() {
       setGeneratedInviteLink(inviteLink);
 
       toast({
-        title: "Success",
-        description: `Invitation created for ${validation.data.email}`,
+        title: "Convite gerado — expira em 7 dias",
+        description: `Convite criado para ${validation.data.email}`,
+        action: (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => copyInviteLink(token)}
+          >
+            Copiar Link
+          </Button>
+        ),
       });
 
       // Reset form
@@ -282,6 +321,64 @@ export function TeamManagement() {
       });
     } finally {
       setCreating(false);
+    }
+  };
+
+  const promoteUser = async (memberId: string, currentRole: string) => {
+    try {
+      requirePermission('manage_team');
+      
+      const newRole = currentRole === 'viewer' ? 'member' : 
+                     currentRole === 'member' ? 'admin' : 'admin';
+      
+      const { error } = await supabase
+        .from("memberships")
+        .update({ role: newRole })
+        .eq("id", memberId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `User promoted to ${newRole}`,
+      });
+
+      loadMembers();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const demoteUser = async (memberId: string, currentRole: string) => {
+    try {
+      requirePermission('manage_team');
+      
+      const newRole = currentRole === 'admin' ? 'member' : 
+                     currentRole === 'member' ? 'viewer' : 'viewer';
+      
+      const { error } = await supabase
+        .from("memberships")
+        .update({ role: newRole })
+        .eq("id", memberId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `User demoted to ${newRole}`,
+      });
+
+      loadMembers();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -533,9 +630,33 @@ export function TeamManagement() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={getRoleVariant(member.role)} className="capitalize">
-                            {member.role}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={getRoleVariant(member.role)} className="capitalize">
+                              {member.role}
+                            </Badge>
+                            {canManageTeam && member.role !== 'owner' && (
+                              <div className="flex gap-1">
+                                {member.role !== 'admin' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => promoteUser(member.id, member.role)}
+                                  >
+                                    <ArrowUp className="h-3 w-3" />
+                                  </Button>
+                                )}
+                                {member.role !== 'viewer' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => demoteUser(member.id, member.role)}
+                                  >
+                                    <ArrowDown className="h-3 w-3" />
+                                  </Button>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {new Date(member.created_at).toLocaleDateString()}
@@ -583,7 +704,7 @@ export function TeamManagement() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {invitations.filter(i => i.status === 'pending').map((invitation) => (
+                    {invitations.map((invitation) => (
                       <TableRow key={invitation.id}>
                         <TableCell className="font-medium">
                           {invitation.email}
@@ -593,12 +714,18 @@ export function TeamManagement() {
                             {invitation.role}
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="flex items-center gap-1 w-fit">
-                            <Clock className="h-3 w-3" />
-                            Pending
-                          </Badge>
-                        </TableCell>
+                         <TableCell>
+                           <div className="flex items-center gap-2">
+                             <Badge variant={getStatusBadgeVariant(getInvitationStatus(invitation))}>
+                               {getInvitationStatus(invitation)}
+                             </Badge>
+                             {getInvitationStatus(invitation) === 'pending' && (
+                               <span className="text-xs text-muted-foreground">
+                                 D-{getDaysRemaining(invitation.expires_at)}
+                               </span>
+                             )}
+                           </div>
+                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {new Date(invitation.expires_at).toLocaleDateString()}
                         </TableCell>
