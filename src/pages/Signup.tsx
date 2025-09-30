@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { signupSchema, type SignupData } from "@/schemas/signupSchema";
 import { Building2, Mail } from "lucide-react";
+import { getSessionId } from "@/utils/sessionTracking";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -47,6 +48,8 @@ export default function Signup() {
 
     setLoading(true);
     try {
+      const sessionId = getSessionId();
+      
       // Create user with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
@@ -54,8 +57,12 @@ export default function Signup() {
         options: {
           data: {
             full_name: formData.fullName,
+            company_name: formData.companyName,
+            cnpj: formData.cnpj,
+            company_type: formData.companyType,
+            session_id: sessionId,
           },
-          emailRedirectTo: `${window.location.origin}${returnUrl}`,
+          emailRedirectTo: `${window.location.origin}/auth/confirmed?returnUrl=${encodeURIComponent(returnUrl)}`,
         },
       });
 
@@ -65,47 +72,34 @@ export default function Signup() {
         throw new Error("Failed to create user");
       }
 
-      // Create organization with company slug
-      const companySlug = formData.companyName
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
-
-      const { data: orgData, error: orgError } = await supabase
-        .from("organizations")
-        .insert({
-          name: formData.companyName,
-          slug: companySlug,
-          owner_user_id: authData.user.id,
-          cnpj: formData.cnpj,
-          company_type: formData.companyType,
-          created_from_signup: true,
-        })
-        .select()
-        .single();
-
-      if (orgError) throw orgError;
-
-      // Add user as owner in organization_members
-      const { error: memberError } = await supabase
-        .from("organization_members")
-        .insert({
-          org_id: orgData.id,
-          user_id: authData.user.id,
-          role: "owner",
+      // If email confirmation is disabled, manually trigger organization association
+      if (authData.user.email_confirmed_at) {
+        const { error: orgError } = await supabase.rpc("auto_associate_organization_by_domain", {
+          p_user_id: authData.user.id,
+          p_email: formData.email,
+          p_company_name: formData.companyName,
+          p_cnpj: formData.cnpj,
+          p_company_type: formData.companyType,
+          p_session_id: sessionId,
         });
 
-      if (memberError) throw memberError;
+        if (orgError) {
+          console.error("Organization association error:", orgError);
+          // Don't throw - user is created, they can try again
+        }
+      }
 
       toast({
         title: "Conta criada com sucesso!",
         description: "Verifique seu email para confirmar o cadastro.",
       });
 
-      // Redirect to email verification message
-      navigate("/auth/verify-email");
+      // Redirect to email verification message or directly if confirmed
+      if (authData.user.email_confirmed_at) {
+        navigate("/auth/confirmed");
+      } else {
+        navigate("/auth/verify-email");
+      }
       
     } catch (error: any) {
       console.error("Signup error:", error);

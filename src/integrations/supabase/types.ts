@@ -519,6 +519,7 @@ export type Database = {
           company_type: Database["public"]["Enums"]["company_type"] | null
           created_at: string
           created_from_signup: boolean | null
+          domain: string | null
           id: string
           name: string
           owner_user_id: string | null
@@ -530,6 +531,7 @@ export type Database = {
           company_type?: Database["public"]["Enums"]["company_type"] | null
           created_at?: string
           created_from_signup?: boolean | null
+          domain?: string | null
           id?: string
           name: string
           owner_user_id?: string | null
@@ -541,6 +543,7 @@ export type Database = {
           company_type?: Database["public"]["Enums"]["company_type"] | null
           created_at?: string
           created_from_signup?: boolean | null
+          domain?: string | null
           id?: string
           name?: string
           owner_user_id?: string | null
@@ -793,6 +796,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_associate_organization_by_domain: {
+        Args: {
+          p_cnpj: string
+          p_company_name: string
+          p_company_type: Database["public"]["Enums"]["company_type"]
+          p_email: string
+          p_session_id?: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       convert_pda_to_fda: {
         Args: { p_pda_id: string }
         Returns: string

@@ -28,6 +28,7 @@ import PublicPDAList from "./pages/PublicPDAList";
 import PublicPDAView from "./pages/PublicPDAView";
 import Signup from "./pages/Signup";
 import VerifyEmail from "./pages/VerifyEmail";
+import EmailConfirmed from "./pages/EmailConfirmed";
 import { AuthProvider } from "@/context/AuthProvider";
 import { OrgProvider } from "@/context/OrgProvider";
 import { TenantProvider } from "@/context/TenantProvider";
@@ -61,6 +62,7 @@ const App = () => (
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/auth/signup" element={<Signup />} />
                 <Route path="/auth/verify-email" element={<VerifyEmail />} />
+                <Route path="/auth/confirmed" element={<EmailConfirmed />} />
                 <Route path="/auth/reset-password" element={<ResetPassword />} />
                 <Route path="/seed-admin" element={<SeedAdmin />} />
                 
