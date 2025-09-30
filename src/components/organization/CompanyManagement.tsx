@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useOrg } from "@/context/OrgProvider";
 import { useCompany } from "@/context/CompanyProvider";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useNavigate } from "react-router-dom";
 import {
   Table,
@@ -62,6 +63,7 @@ export function CompanyManagement() {
   const { toast } = useToast();
   const { organizations, setActiveOrg, reloadOrganizations } = useOrg();
   const { refetch: refetchCompanies } = useCompany();
+  const { isPlatformAdmin, requirePermission } = usePermissions();
   const navigate = useNavigate();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
@@ -127,6 +129,17 @@ export function CompanyManagement() {
 
   const handleCreateCompany = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check platform admin permission
+    if (!isPlatformAdmin) {
+      toast({
+        title: "Permission Denied",
+        description: "Only platform administrators can create companies",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setErrors({});
 
     // Validate inputs
@@ -222,6 +235,15 @@ export function CompanyManagement() {
   };
 
   const handleDeleteCompany = async (id: string, name: string) => {
+    if (!isPlatformAdmin) {
+      toast({
+        title: "Permission Denied",
+        description: "Only platform administrators can delete companies",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from("organizations")
@@ -246,6 +268,15 @@ export function CompanyManagement() {
   };
 
   const handleEditCompany = async (company: Company, newName: string, newSlug: string) => {
+    if (!isPlatformAdmin) {
+      toast({
+        title: "Permission Denied", 
+        description: "Only platform administrators can edit companies",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from("organizations")
@@ -329,7 +360,7 @@ export function CompanyManagement() {
                 Create and manage tenant organizations
               </CardDescription>
             </div>
-            {!showForm && (
+            {!showForm && isPlatformAdmin && (
               <Button onClick={() => setShowForm(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 New Company
@@ -338,7 +369,7 @@ export function CompanyManagement() {
           </div>
         </CardHeader>
         <CardContent>
-          {showForm && (
+          {showForm && isPlatformAdmin && (
             <form onSubmit={handleCreateCompany} className="space-y-4 mb-6 p-4 border rounded-lg bg-muted/50">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -502,7 +533,8 @@ export function CompanyManagement() {
                       {new Date(company.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
+                      {isPlatformAdmin && (
+                        <div className="flex justify-end gap-1">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -558,7 +590,8 @@ export function CompanyManagement() {
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
-                      </div>
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

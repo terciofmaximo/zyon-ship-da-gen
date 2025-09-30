@@ -19,6 +19,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/context/CompanyProvider";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   Table,
   TableBody,
@@ -102,7 +103,8 @@ const getRoleVariant = (role: string): "default" | "secondary" | "destructive" |
 
 export function TeamManagement() {
   const { toast } = useToast();
-  const { activeCompanyId, companies } = useCompany();
+  const { activeCompanyId } = useCompany();
+  const { canManageTeam, activeCompany, userRole, requirePermission } = usePermissions();
   const [members, setMembers] = useState<Member[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
@@ -115,9 +117,6 @@ export function TeamManagement() {
   const [role, setRole] = useState<"admin" | "member" | "viewer">("member");
   const [errors, setErrors] = useState<{ email?: string; role?: string }>({});
   const [generatedInviteLink, setGeneratedInviteLink] = useState<string>("");
-
-  const activeCompany = companies.find(c => c.id === activeCompanyId);
-  const canManageTeam = activeCompany && ['owner', 'admin'].includes(activeCompany.role);
 
   useEffect(() => {
     if (activeCompanyId && canManageTeam) {
@@ -144,38 +143,8 @@ export function TeamManagement() {
 
       if (error) throw error;
 
-      // Get user emails for the members
-      const userIds = data?.map(m => m.user_id) || [];
-      if (userIds.length > 0) {
-        const { data: users, error: usersError } = await supabase
-          .from("user_profiles")
-          .select("user_id")
-          .in("user_id", userIds);
-
-        if (usersError) throw usersError;
-
-        // Get emails from auth.users (need to use a more complex query)
-        const membersWithEmails = await Promise.all(
-          (data || []).map(async (member) => {
-            try {
-              const { data: authUser } = await supabase.auth.admin.getUserById(member.user_id);
-              return {
-                ...member,
-                user_email: authUser.user?.email || "Unknown"
-              };
-            } catch {
-              return {
-                ...member,
-                user_email: "Unknown"
-              };
-            }
-          })
-        );
-
-        setMembers(membersWithEmails);
-      } else {
-        setMembers(data || []);
-      }
+      // For simplicity, just show user IDs. In production, you'd fetch user emails
+      setMembers(data || []);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -221,7 +190,19 @@ export function TeamManagement() {
 
   const createInvitation = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeCompanyId || !canManageTeam) return;
+    
+    try {
+      requirePermission("manage_team");
+    } catch (error: any) {
+      toast({
+        title: "Permission Denied",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!activeCompanyId) return;
 
     setErrors({});
 
@@ -239,13 +220,6 @@ export function TeamManagement() {
 
     setCreating(true);
     try {
-      // Check if user is already a member
-      const { data: existingMember } = await supabase
-        .from("memberships")
-        .select("id")
-        .eq("company_id", activeCompanyId)
-        .eq("user_id", validation.data.email); // This won't work, need to check by email differently
-
       // Check if there's already a pending invitation
       const { data: existingInvitation } = await supabase
         .from("invitations")
@@ -312,6 +286,17 @@ export function TeamManagement() {
 
   const revokeInvitation = async (invitationId: string) => {
     try {
+      requirePermission("manage_team");
+    } catch (error: any) {
+      toast({
+        title: "Permission Denied",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
       const { error } = await supabase
         .from("invitations")
         .update({ status: "revoked" })
@@ -352,14 +337,16 @@ export function TeamManagement() {
     }
   };
 
-  if (!activeCompanyId || !canManageTeam) {
+  if (!activeCompanyId) {
     return (
       <Card>
         <CardContent className="pt-6">
           <p className="text-muted-foreground text-center">
             {!activeCompanyId 
               ? "No company selected" 
-              : "You don't have permission to manage this team"
+              : !canManageTeam
+                ? `You don't have permission to manage this team. Current role: ${userRole || 'none'}`
+                : "Access denied"
             }
           </p>
         </CardContent>
@@ -381,120 +368,122 @@ export function TeamManagement() {
                 Manage team members and invitations for {activeCompany?.name}
               </CardDescription>
             </div>
-            <Dialog open={showInviteModal} onOpenChange={setShowInviteModal}>
-              <DialogTrigger asChild>
-                <Button>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Invite Member
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Invite Team Member</DialogTitle>
-                  <DialogDescription>
-                    Send an invitation link to join {activeCompany?.name}
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <form onSubmit={createInvitation} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="invite-email">Email Address</Label>
-                    <Input
-                      id="invite-email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="member@company.com"
-                      required
-                    />
-                    {errors.email && (
-                      <p className="text-sm text-destructive">{errors.email}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="invite-role">Role</Label>
-                    <Select value={role} onValueChange={(value: any) => setRole(value)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="viewer">
-                          <div className="flex items-center gap-2">
-                            <Eye className="h-4 w-4" />
-                            Viewer - Read only access
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="member">
-                          <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4" />
-                            Member - Standard access
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="admin">
-                          <div className="flex items-center gap-2">
-                            <Settings className="h-4 w-4" />
-                            Admin - Full access
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {errors.role && (
-                      <p className="text-sm text-destructive">{errors.role}</p>
-                    )}
-                  </div>
-
-                  <div className="flex gap-2 pt-4">
-                    <Button type="submit" disabled={creating} className="flex-1">
-                      {creating ? "Creating..." : "Create Invitation"}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setShowInviteModal(false);
-                        setEmail("");
-                        setRole("member");
-                        setErrors({});
-                        setGeneratedInviteLink("");
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-
-                {generatedInviteLink && (
-                  <div className="mt-6 space-y-4 border-t pt-4">
-                    <div>
-                      <Label>Invitation Link</Label>
-                      <div className="flex gap-2 mt-2">
-                        <Input
-                          value={generatedInviteLink}
-                          readOnly
-                          className="text-xs"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => copyInviteLink(generatedInviteLink.split('token=')[1])}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      </div>
+            {canManageTeam && (
+              <Dialog open={showInviteModal} onOpenChange={setShowInviteModal}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Invite Member
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Invite Team Member</DialogTitle>
+                    <DialogDescription>
+                      Send an invitation link to join {activeCompany?.name}
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <form onSubmit={createInvitation} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="invite-email">Email Address</Label>
+                      <Input
+                        id="invite-email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="member@company.com"
+                        required
+                      />
+                      {errors.email && (
+                        <p className="text-sm text-destructive">{errors.email}</p>
+                      )}
                     </div>
 
-                    <div>
-                      <Label>QR Code</Label>
-                      <div className="flex justify-center mt-2 p-4 bg-white rounded-lg">
-                        <QRCodeSVG value={generatedInviteLink} size={120} />
+                    <div className="space-y-2">
+                      <Label htmlFor="invite-role">Role</Label>
+                      <Select value={role} onValueChange={(value: any) => setRole(value)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="viewer">
+                            <div className="flex items-center gap-2">
+                              <Eye className="h-4 w-4" />
+                              Viewer - Read only access
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="member">
+                            <div className="flex items-center gap-2">
+                              <Users className="h-4 w-4" />
+                              Member - Standard access
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="admin">
+                            <div className="flex items-center gap-2">
+                              <Settings className="h-4 w-4" />
+                              Admin - Full access
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {errors.role && (
+                        <p className="text-sm text-destructive">{errors.role}</p>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 pt-4">
+                      <Button type="submit" disabled={creating} className="flex-1">
+                        {creating ? "Creating..." : "Create Invitation"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setShowInviteModal(false);
+                          setEmail("");
+                          setRole("member");
+                          setErrors({});
+                          setGeneratedInviteLink("");
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+
+                  {generatedInviteLink && (
+                    <div className="mt-6 space-y-4 border-t pt-4">
+                      <div>
+                        <Label>Invitation Link</Label>
+                        <div className="flex gap-2 mt-2">
+                          <Input
+                            value={generatedInviteLink}
+                            readOnly
+                            className="text-xs"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => copyInviteLink(generatedInviteLink.split('token=')[1])}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label>QR Code</Label>
+                        <div className="flex justify-center mt-2 p-4 bg-white rounded-lg">
+                          <QRCodeSVG value={generatedInviteLink} size={120} />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </DialogContent>
-            </Dialog>
+                  )}
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -522,6 +511,7 @@ export function TeamManagement() {
                       <TableHead>Member</TableHead>
                       <TableHead>Role</TableHead>
                       <TableHead>Joined</TableHead>
+                      {canManageTeam && <TableHead className="text-right">Actions</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -533,7 +523,7 @@ export function TeamManagement() {
                               {getRoleIcon(member.role)}
                             </div>
                             <div>
-                              <div className="font-medium">{member.user_email}</div>
+                              <div className="font-medium">{member.user_email || 'User'}</div>
                               <div className="text-xs text-muted-foreground font-mono">
                                 {member.user_id}
                               </div>
@@ -548,6 +538,25 @@ export function TeamManagement() {
                         <TableCell className="text-sm text-muted-foreground">
                           {new Date(member.created_at).toLocaleDateString()}
                         </TableCell>
+                        {canManageTeam && (
+                          <TableCell className="text-right">
+                            {member.role !== 'owner' && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => {
+                                  // TODO: Implement remove member functionality
+                                  toast({
+                                    title: "Feature Coming Soon",
+                                    description: "Member removal functionality will be implemented soon",
+                                  });
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            )}
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -592,66 +601,68 @@ export function TeamManagement() {
                           {new Date(invitation.expires_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => copyInviteLink(invitation.token)}
-                              title="Copy invite link"
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                            
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button variant="ghost" size="sm" title="Show QR code">
-                                  <QrCode className="h-4 w-4" />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-sm">
-                                <DialogHeader>
-                                  <DialogTitle>Invitation QR Code</DialogTitle>
-                                  <DialogDescription>
-                                    Scan this QR code to accept the invitation
-                                  </DialogDescription>
-                                </DialogHeader>
-                                <div className="flex justify-center py-4">
-                                  <div className="p-4 bg-white rounded-lg">
-                                    <QRCodeSVG 
-                                      value={`${window.location.origin}/invite/accept?token=${invitation.token}`} 
-                                      size={200} 
-                                    />
+                          {canManageTeam && (
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => copyInviteLink(invitation.token)}
+                                title="Copy invite link"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                              
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="ghost" size="sm" title="Show QR code">
+                                    <QrCode className="h-4 w-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-sm">
+                                  <DialogHeader>
+                                    <DialogTitle>Invitation QR Code</DialogTitle>
+                                    <DialogDescription>
+                                      Scan this QR code to accept the invitation
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="flex justify-center py-4">
+                                    <div className="p-4 bg-white rounded-lg">
+                                      <QRCodeSVG 
+                                        value={`${window.location.origin}/invite/accept?token=${invitation.token}`} 
+                                        size={200} 
+                                      />
+                                    </div>
                                   </div>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
+                                </DialogContent>
+                              </Dialog>
 
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm" title="Revoke invitation">
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Revoke Invitation</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to revoke the invitation for {invitation.email}?
-                                    This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => revokeInvitation(invitation.id)}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  >
-                                    Revoke
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="sm" title="Revoke invitation">
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Revoke Invitation</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to revoke the invitation for {invitation.email}?
+                                      This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => revokeInvitation(invitation.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Revoke
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
