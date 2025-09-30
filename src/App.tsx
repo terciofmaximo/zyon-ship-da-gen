@@ -22,6 +22,10 @@ import NoOrganization from "@/pages/NoOrganization";
 import OrganizationSettings from "@/pages/OrganizationSettings";
 import PlatformAdmin from "@/pages/PlatformAdmin";
 import SeedAdmin from "@/pages/SeedAdmin";
+import InviteDisabled from "./pages/InviteDisabled";
+import PublicPDANew from "./pages/PublicPDANew";
+import PublicPDAList from "./pages/PublicPDAList";
+import PublicPDAView from "./pages/PublicPDAView";
 import { AuthProvider } from "@/context/AuthProvider";
 import { OrgProvider } from "@/context/OrgProvider";
 import { TenantProvider } from "@/context/TenantProvider";
@@ -41,20 +45,27 @@ const App = () => (
               <Toaster />
               <Sonner />
               <Routes>
-                {/* Root routes */}
-                <Route path="/" element={<DashboardLayout><Index /></DashboardLayout>} />
+                {/* Public PDA routes - no auth required */}
+                <Route path="/" element={<Navigate to="/pda/new" replace />} />
+                <Route path="/pda/new" element={<PublicPDANew />} />
+                <Route path="/pda" element={<PublicPDAList />} />
+                <Route path="/pda/:trackingId" element={<PublicPDAView />} />
+                
+                {/* Disabled invite routes */}
+                <Route path="/invite/*" element={<InviteDisabled />} />
+                <Route path="/auth/accept-invite" element={<InviteDisabled />} />
+                
+                {/* Auth routes */}
                 <Route path="/auth" element={<AuthPage />} />
-                <Route path="/invite/accept" element={<InviteAccept />} />
-                <Route path="/auth/accept-invite" element={<AcceptInvite />} />
                 <Route path="/auth/reset-password" element={<ResetPassword />} />
                 <Route path="/seed-admin" element={<SeedAdmin />} />
-                <Route path="/invite" element={<InviteAccept />} />
+                
+                {/* Protected routes */}
+                <Route path="/dashboard" element={<RequireAuth><DashboardLayout><Index /></DashboardLayout></RequireAuth>} />
                 <Route path="/no-organization" element={<RequireAuth><NoOrganization /></RequireAuth>} />
                 <Route path="/settings" element={<RequireAuth><DashboardLayout><OrganizationSettings /></DashboardLayout></RequireAuth>} />
                 <Route path="/organization/settings" element={<Navigate to="/settings" replace />} />
                 <Route path="/platform-admin" element={<RequireAuth><PlatformAdmin /></RequireAuth>} />
-                <Route path="/pda" element={<RequireAuth><DashboardLayout><PDAList /></DashboardLayout></RequireAuth>} />
-                <Route path="/pda/new" element={<RequireAuth><DashboardLayout><NewPDAWizard /></DashboardLayout></RequireAuth>} />
                 <Route path="/pda/:id/review" element={<RequireAuth><DashboardLayout><PDAReview /></DashboardLayout></RequireAuth>} />
                 <Route path="/fda" element={<RequireAuth><DashboardLayout><FDAList /></DashboardLayout></RequireAuth>} />
                 <Route path="/fda/new" element={<RequireAuth><DashboardLayout><FDANew /></DashboardLayout></RequireAuth>} />
@@ -62,13 +73,13 @@ const App = () => (
                 <Route path="/fda/:fdaId/line/:lineId" element={<RequireAuth><DashboardLayout><FDALineDetail /></DashboardLayout></RequireAuth>} />
                 
                 {/* Development fallback routes with /t/{slug} prefix */}
-                <Route path="/t/:slug" element={<DashboardLayout><Index /></DashboardLayout>} />
+                <Route path="/t/:slug" element={<RequireAuth><DashboardLayout><Index /></DashboardLayout></RequireAuth>} />
                 <Route path="/t/:slug/auth" element={<AuthPage />} />
-                <Route path="/t/:slug/auth/accept-invite" element={<AcceptInvite />} />
+                <Route path="/t/:slug/auth/accept-invite" element={<InviteDisabled />} />
                 <Route path="/t/:slug/auth/reset-password" element={<ResetPassword />} />
                 <Route path="/t/:slug/settings" element={<RequireAuth><DashboardLayout><OrganizationSettings /></DashboardLayout></RequireAuth>} />
-                <Route path="/t/:slug/pda" element={<RequireAuth><DashboardLayout><PDAList /></DashboardLayout></RequireAuth>} />
-                <Route path="/t/:slug/pda/new" element={<RequireAuth><DashboardLayout><NewPDAWizard /></DashboardLayout></RequireAuth>} />
+                <Route path="/t/:slug/pda" element={<PublicPDAList />} />
+                <Route path="/t/:slug/pda/new" element={<PublicPDANew />} />
                 <Route path="/t/:slug/pda/:id/review" element={<RequireAuth><DashboardLayout><PDAReview /></DashboardLayout></RequireAuth>} />
                 <Route path="/t/:slug/fda" element={<RequireAuth><DashboardLayout><FDAList /></DashboardLayout></RequireAuth>} />
                 <Route path="/t/:slug/fda/new" element={<RequireAuth><DashboardLayout><FDANew /></DashboardLayout></RequireAuth>} />

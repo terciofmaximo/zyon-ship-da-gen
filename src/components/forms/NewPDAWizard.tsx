@@ -16,7 +16,12 @@ const steps = [
   { id: 3, title: "Review & Export", icon: FileCheck, description: "Generate PDA document" },
 ];
 
-export function NewPDAWizard() {
+type NewPDAWizardProps = {
+  isPublic?: boolean;
+  sessionId?: string;
+};
+
+export function NewPDAWizard({ isPublic = false, sessionId }: NewPDAWizardProps = {}) {
   const [currentStep, setCurrentStep] = useState(1);
   const [shipData, setShipData] = useState<Partial<PDAStep1Data> & {
     remarks?: string;
@@ -26,7 +31,7 @@ export function NewPDAWizard() {
   const [remarks, setRemarks] = useState<string>("");
   const [comments, setComments] = useState<Record<string, string>>({});
   const [savedPdaId, setSavedPdaId] = useState<string | null>(null);
-  const { savePDA } = usePDA();
+  const { savePDA } = usePDA(sessionId);
 
   const handleNext = async (
     data: Partial<PDAStep1Data> | Partial<CostData>, 

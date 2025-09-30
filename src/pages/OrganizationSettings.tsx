@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Building2, Users, Globe, Shield, UserPlus, Trash2, Building, Users2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { InviteMemberDialog } from "@/components/organization/InviteMemberDialog";
+// import { InviteMemberDialog } from "@/components/organization/InviteMemberDialog"; // Disabled
 import {
   Table,
   TableBody,
@@ -323,9 +323,7 @@ export default function OrganizationSettings() {
                       {canEdit ? "Manage organization members and their roles" : "View organization members"}
                     </CardDescription>
                   </div>
-                  {canEdit && (
-                    <InviteMemberDialog />
-                  )}
+                  {/* Invite feature disabled */}
                 </div>
               </CardHeader>
               <CardContent>

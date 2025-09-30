@@ -214,116 +214,14 @@ export function TeamManagement() {
     }
   };
 
-  const generateSecureToken = () => {
-    const array = new Uint8Array(32);
-    crypto.getRandomValues(array);
-    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
-  };
-
+  // Invitation functionality disabled - no longer supported
   const createInvitation = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    try {
-      requirePermission("manage_team");
-    } catch (error: any) {
-      toast({
-        title: "Permission Denied",
-        description: error.message,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!activeCompanyId) return;
-
-    setErrors({});
-
-    // Validate input
-    const validation = inviteSchema.safeParse({ email, role });
-    if (!validation.success) {
-      const fieldErrors: any = {};
-      validation.error.issues.forEach((issue) => {
-        const field = issue.path[0] as string;
-        fieldErrors[field] = issue.message;
-      });
-      setErrors(fieldErrors);
-      return;
-    }
-
-    setCreating(true);
-    try {
-      // Check if there's already a pending invitation
-      const { data: existingInvitation } = await supabase
-        .from("invitations")
-        .select("id")
-        .eq("company_id", activeCompanyId)
-        .eq("email", validation.data.email)
-        .eq("status", "pending");
-
-      if (existingInvitation && existingInvitation.length > 0) {
-        toast({
-          title: "Error",
-          description: "An invitation is already pending for this email",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Generate secure token and expiration
-      const token = generateSecureToken();
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
-
-      // Create invitation
-      const { data: invitation, error } = await supabase
-        .from("invitations")
-        .insert({
-          company_id: activeCompanyId,
-          email: validation.data.email,
-          role: validation.data.role,
-          token,
-          expires_at: expiresAt.toISOString(),
-          status: "pending"
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Generate invite link
-      const baseUrl = import.meta.env.VITE_APP_URL ?? (typeof window !== 'undefined' ? window.location.origin : '');
-      const inviteLink = `${baseUrl}/invite/accept?token=${token}`;
-      setGeneratedInviteLink(inviteLink);
-
-      toast({
-        title: "Convite gerado — expira em 7 dias",
-        description: `Convite criado para ${validation.data.email}`,
-        action: (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => copyInviteLink(token)}
-          >
-            Copiar Link
-          </Button>
-        ),
-      });
-
-      // Reset form
-      setEmail("");
-      setRole("member");
-      
-      // Reload invitations
-      await loadInvitations();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setCreating(false);
-    }
+    toast({
+      title: "Invitations Disabled",
+      description: "The invitation system has been disabled. Please contact your administrator.",
+      variant: "destructive",
+    });
   };
 
   const promoteUser = async (memberId: string, currentRole: string) => {
@@ -470,6 +368,11 @@ export function TeamManagement() {
               </CardDescription>
             </div>
             {canManageTeam && (
+              <div className="text-sm text-muted-foreground">
+                {/* Invitation system disabled */}
+              </div>
+            )}
+            {false && canManageTeam && (
               <Dialog open={showInviteModal} onOpenChange={setShowInviteModal}>
                 <DialogTrigger asChild>
                   <Button>

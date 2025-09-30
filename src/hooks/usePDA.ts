@@ -15,7 +15,7 @@ interface PDAData {
   costData: Partial<CostData>;
 }
 
-export function usePDA() {
+export function usePDA(sessionId?: string) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -26,15 +26,25 @@ export function usePDA() {
     setLoading(true);
     
     try {
-      // Step 1: Authentication
-      const user = await ensureAuth();
-      if (!user) {
-        const authError = createPDAError('E_AUTH_ERROR', "User must be authenticated to create/update PDAs");
-        logPDAError(authError, undefined, 'savePDA');
-        throw authError;
-      }
+      // Step 1: Authentication (optional for public PDA creation)
+      // Step 1a: Get user (optional for public mode)
+      let user = null;
+      let tenantId = null;
       
-      const tenantId = user.id;
+      if (!sessionId) {
+        // Authenticated mode - require user
+        user = await ensureAuth();
+        if (!user) {
+          const authError = createPDAError('E_AUTH_ERROR', "User must be authenticated to create/update PDAs");
+          logPDAError(authError, undefined, 'savePDA');
+          throw authError;
+        }
+        tenantId = user.id;
+      } else {
+        // Public mode - use sessionId
+        const orgStorage = localStorage.getItem('active_org');
+        tenantId = orgStorage ? JSON.parse(orgStorage).id : null;
+      }
       
       // Step 2: Transform and validate input data
       const inputData = {
@@ -184,7 +194,8 @@ export function usePDA() {
         const insertData = {
           ...dbData,
           pda_number: pdaNumber,
-          created_by: tenantId
+          created_by: tenantId,
+          created_by_session_id: sessionId || null
         };
         
         result = await supabase
