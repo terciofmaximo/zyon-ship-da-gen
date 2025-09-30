@@ -25,6 +25,7 @@ import SeedAdmin from "@/pages/SeedAdmin";
 import { AuthProvider } from "@/context/AuthProvider";
 import { OrgProvider } from "@/context/OrgProvider";
 import { TenantProvider } from "@/context/TenantProvider";
+import { CompanyProvider } from "@/context/CompanyProvider";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 
 const queryClient = new QueryClient();
@@ -33,9 +34,10 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <AuthProvider>
-        <OrgProvider>
-          <TenantProvider>
-            <TooltipProvider>
+        <CompanyProvider>
+          <OrgProvider>
+            <TenantProvider>
+              <TooltipProvider>
               <Toaster />
               <Sonner />
               <Routes>
@@ -75,9 +77,10 @@ const App = () => (
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </TooltipProvider>
-          </TenantProvider>
-        </OrgProvider>
+              </TooltipProvider>
+            </TenantProvider>
+          </OrgProvider>
+        </CompanyProvider>
       </AuthProvider>
     </BrowserRouter>
   </QueryClientProvider>

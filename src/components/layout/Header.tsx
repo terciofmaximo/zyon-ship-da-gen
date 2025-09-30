@@ -9,7 +9,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { OrgSwitcher } from "./OrgSwitcher";
+import { CompanySwitcher } from "./CompanySwitcher";
 import { useOrg } from "@/context/OrgProvider";
+import { useCompany } from "@/context/CompanyProvider";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthProvider";
@@ -20,13 +22,17 @@ import { useToast } from "@/hooks/use-toast";
 export function Header() {
   const navigate = useNavigate();
   const { organizations, activeOrg } = useOrg();
+  const { companies, activeCompanyId } = useCompany();
   const { isPlatformAdmin } = useUserRole();
   const { user } = useAuth();
   const { toast } = useToast();
   const showOrgSwitcher = organizations.length > 1 || isPlatformAdmin;
+  const showCompanySwitcher = companies.length > 1;
   
-  // Check if user is admin/owner of the active org
-  const canInvite = isPlatformAdmin || (activeOrg && ['admin', 'owner'].includes(activeOrg.role));
+  // Check if user is admin/owner of the active org/company
+  const activeCompany = companies.find(c => c.id === activeCompanyId);
+  const canInvite = isPlatformAdmin || (activeOrg && ['admin', 'owner'].includes(activeOrg.role)) || 
+                   (activeCompany && ['admin', 'owner'].includes(activeCompany.role));
 
   const handleLogout = async () => {
     try {
@@ -49,9 +55,10 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-4">
+          {showCompanySwitcher && <CompanySwitcher />}
           {showOrgSwitcher && <OrgSwitcher />}
           
-          {activeOrg && canInvite && (
+          {(activeOrg || activeCompany) && canInvite && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="text-foreground hover:bg-accent hover:text-accent-foreground">
