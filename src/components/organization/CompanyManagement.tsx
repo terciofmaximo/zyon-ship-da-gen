@@ -7,6 +7,7 @@ import { Building2, Plus, Trash2, Edit2, ArrowRight, Globe } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useOrg } from "@/context/OrgProvider";
+import { useCompany } from "@/context/CompanyProvider";
 import { useNavigate } from "react-router-dom";
 import {
   Table,
@@ -60,6 +61,7 @@ type Company = {
 export function CompanyManagement() {
   const { toast } = useToast();
   const { organizations, setActiveOrg, reloadOrganizations } = useOrg();
+  const { refetch: refetchCompanies } = useCompany();
   const navigate = useNavigate();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
@@ -207,6 +209,7 @@ export function CompanyManagement() {
       // Reload companies and organizations
       await loadCompanies();
       await reloadOrganizations();
+      await refetchCompanies(); // This will refresh the company switcher
     } catch (error: any) {
       toast({
         title: "Error",
