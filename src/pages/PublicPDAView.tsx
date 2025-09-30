@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Share2, Copy, ArrowLeft, ArrowRight } from "lucide-react";
+import { Share2, Copy, ArrowLeft, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthProvider";
+import { PublicHeader } from "@/components/layout/PublicHeader";
 
 type PDADetail = {
   id: string;
@@ -131,11 +132,7 @@ export default function PublicPDAView() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="border-b">
-          <div className="container mx-auto px-4 py-4">
-            <Skeleton className="h-8 w-48" />
-          </div>
-        </header>
+        <PublicHeader />
         <main className="container mx-auto px-4 py-8">
           <Skeleton className="h-64 w-full" />
         </main>
@@ -146,12 +143,7 @@ export default function PublicPDAView() {
   if (error || !pda) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="border-b">
-          <div className="container mx-auto px-4 py-4 flex items-center gap-2">
-            <FileText className="h-6 w-6" />
-            <h1 className="text-xl font-bold">PDA Not Found</h1>
-          </div>
-        </header>
+        <PublicHeader />
         <main className="container mx-auto px-4 py-8">
           <Card>
             <CardContent className="pt-6 text-center space-y-4">
@@ -169,11 +161,15 @@ export default function PublicPDAView() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FileText className="h-6 w-6" />
-            <h1 className="text-xl font-bold">PDA {pda.tracking_id}</h1>
+      <PublicHeader />
+
+      <main className="container mx-auto px-4 py-8 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">PDA {pda.tracking_id}</h1>
+            <Badge variant="outline" className="mt-2">
+              {pda.status}
+            </Badge>
           </div>
           <div className="flex gap-2">
             <Button onClick={handleConvertToFDA} disabled={converting}>
@@ -190,19 +186,10 @@ export default function PublicPDAView() {
             </Button>
           </div>
         </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8 space-y-6">
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Pre-Departure Approval</CardTitle>
-                <CardDescription>Tracking ID: {pda.tracking_id}</CardDescription>
-              </div>
-              <Badge variant="outline" className="text-base px-3 py-1">
-                {pda.status}
-              </Badge>
+              <CardTitle>Pre-Departure Approval</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">

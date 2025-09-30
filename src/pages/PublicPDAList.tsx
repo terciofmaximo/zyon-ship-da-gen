@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FileText, Search, Plus } from "lucide-react";
+import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getSessionId } from "@/utils/sessionTracking";
 import { toast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { PublicHeader } from "@/components/layout/PublicHeader";
 
 type PDA = {
   id: string;
@@ -69,23 +70,7 @@ export default function PublicPDAList() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FileText className="h-6 w-6" />
-            <h1 className="text-xl font-bold">My PDAs</h1>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={() => navigate("/pda/new")}>
-              <Plus className="h-4 w-4 mr-2" />
-              New PDA
-            </Button>
-            <Button variant="ghost" onClick={() => navigate("/auth")}>
-              Sign In
-            </Button>
-          </div>
-        </div>
-      </header>
+      <PublicHeader />
 
       <main className="container mx-auto px-4 py-8 space-y-6">
         <Card>

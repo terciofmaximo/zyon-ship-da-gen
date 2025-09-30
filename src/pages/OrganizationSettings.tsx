@@ -187,22 +187,14 @@ export default function OrganizationSettings() {
 
         <Tabs value={activeTab} onValueChange={(tab) => setSearchParams({ tab })}>
           <TabsList>
-            {activeCompany && (
-              <TabsTrigger value="team">
-                <Users2 className="h-4 w-4 mr-2" />
-                Team
-              </TabsTrigger>
-            )}
+            {/* Team tab hidden - using domain-based auto-association */}
             {activeOrg && (
               <>
                 <TabsTrigger value="organization">
                   <Building2 className="h-4 w-4 mr-2" />
                   Organization
                 </TabsTrigger>
-                <TabsTrigger value="people">
-                  <Users className="h-4 w-4 mr-2" />
-                  People
-                </TabsTrigger>
+                {/* People/Invitations tab hidden - using domain-based auto-association */}
                 <TabsTrigger value="domains">
                   <Globe className="h-4 w-4 mr-2" />
                   Domains
@@ -217,11 +209,7 @@ export default function OrganizationSettings() {
             )}
           </TabsList>
 
-          {activeCompany && (
-            <TabsContent value="team" className="space-y-4">
-              <TeamManagement />
-            </TabsContent>
-          )}
+          {/* Team tab removed - using domain-based membership */}
 
           {activeOrg && (
             <TabsContent value="organization" className="space-y-4">
@@ -312,89 +300,7 @@ export default function OrganizationSettings() {
             </TabsContent>
           )}
 
-          {activeOrg && (
-            <TabsContent value="people" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Members</CardTitle>
-                    <CardDescription>
-                      {canEdit ? "Manage organization members and their roles" : "View organization members"}
-                    </CardDescription>
-                  </div>
-                  {/* Invite feature disabled */}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {loadingMembers ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Loading members...
-                  </p>
-                ) : members.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No members found
-                  </p>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>User ID</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Joined</TableHead>
-                        {canEdit && <TableHead className="text-right">Actions</TableHead>}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {members.map((member) => (
-                        <TableRow key={member.user_id}>
-                          <TableCell className="font-mono text-xs">{member.user_id}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="capitalize">
-                              {member.role}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {new Date(member.created_at).toLocaleDateString()}
-                          </TableCell>
-                          {canEdit && (
-                            <TableCell className="text-right">
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="sm">
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Remove Member</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to remove this member from the organization?
-                                      This action cannot be undone.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleRemoveMember(member.user_id)}
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    >
-                                      Remove
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </TableCell>
-                          )}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-            </TabsContent>
-          )}
+          {/* People tab removed - using domain-based membership */}
 
           {activeOrg && (
             <TabsContent value="domains" className="space-y-4">
