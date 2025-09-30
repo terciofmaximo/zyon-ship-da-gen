@@ -30,7 +30,11 @@ const AuthPage: React.FC = () => {
   // Platform admin configuration
   const PLATFORM_ADMIN_EMAIL = 'contact@vesselopsportal.com';
 
-  const redirectTo = useMemo(() => decodeURIComponent(searchParams.get("from") || "/pda"), [searchParams]);
+  const redirectTo = useMemo(() => {
+    const callback = searchParams.get("callback");
+    const from = searchParams.get("from");
+    return callback ? decodeURIComponent(callback) : decodeURIComponent(from || "/");
+  }, [searchParams]);
 
   useEffect(() => {
     document.title = mode === "login" ? "Entrar • Zyon" : "Cadastrar • Zyon";

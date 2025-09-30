@@ -1,336 +1,392 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import React, { useState, useEffect } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, CheckCircle, XCircle, Clock, Building2, Users } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthProvider";
+import { useCompany } from "@/context/CompanyProvider";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, AlertCircle } from "lucide-react";
-import { z } from "zod";
-import { useTenant } from "@/context/TenantProvider";
 
-const passwordSchema = z.string()
-  .min(8, "Password must be at least 8 characters")
-  .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-  .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-  .regex(/[0-9]/, "Password must contain at least one number");
+type InvitationData = {
+  id: string;
+  email: string;
+  role: 'admin' | 'member' | 'viewer';
+  company_id: string;
+  status: 'pending' | 'accepted' | 'expired' | 'revoked';
+  expires_at: string;
+  organizations: {
+    name: string;
+    slug: string;
+  };
+};
 
 export default function AcceptInvite() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { setActiveCompanyId, refetch: refetchCompanies } = useCompany();
   const { toast } = useToast();
-  const { tenantId, tenantSlug, loading: tenantLoading } = useTenant();
   
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [validating, setValidating] = useState(true);
-  const [inviteValid, setInviteValid] = useState(false);
-  const [orgName, setOrgName] = useState("");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string }>({});
+  const [invitation, setInvitation] = useState<InvitationData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [accepting, setAccepting] = useState(false);
+  const [error, setError] = useState<string>("");
+  const [forceAccept, setForceAccept] = useState(false);
+  const [canForceAccept, setCanForceAccept] = useState(false);
 
   const token = searchParams.get("token");
 
   useEffect(() => {
-    if (!tenantLoading) {
-      validateToken();
-    }
-  }, [token, tenantLoading, tenantId]);
-
-  const validateToken = async () => {
     if (!token) {
-      setErrorMessage("No invitation token provided");
-      setValidating(false);
+      setError("Invalid invitation link - missing token");
+      setLoading(false);
       return;
     }
 
-    if (!tenantId) {
-      const hostname = window.location.hostname;
-      const isDev = hostname === 'localhost' || hostname.includes('127.0.0.1');
-      
-      if (isDev) {
-        setErrorMessage("Please access this page via /t/{slug}/auth/accept-invite in development mode");
-      } else {
-        setErrorMessage("Invalid tenant. Please access via the correct organization subdomain (e.g., https://your-company.vesselopsportal.com)");
-      }
-      setValidating(false);
+    if (!user) {
+      // Redirect to login with callback
+      const callbackUrl = encodeURIComponent(`/invite/accept?token=${token}`);
+      navigate(`/auth?callback=${callbackUrl}`);
       return;
     }
 
-    try {
-      const { data, error } = await supabase
-        .rpc('validate_invite_token', { invite_token: token });
+    loadInvitation();
+  }, [token, user]);
 
-      if (error) throw error;
+  const loadInvitation = async () => {
+    if (!token) return;
 
-      if (!data || data.length === 0) {
-        setErrorMessage("This invitation link is invalid, expired, or has already been used");
-        setValidating(false);
-        return;
-      }
-
-      const invite = data[0];
-
-      // CRITICAL: Validate tenant mismatch
-      if (invite.org_id !== tenantId) {
-        setErrorMessage(`This invitation is for a different organization. Please access the correct subdomain.`);
-        setValidating(false);
-        return;
-      }
-
-      setEmail(invite.email);
-      setOrgName(invite.org_name || "");
-      setInviteValid(true);
-    } catch (error: any) {
-      console.error('Error validating token:', error);
-      setErrorMessage("Failed to validate invitation");
-    } finally {
-      setValidating(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validate password
-    const passwordValidation = passwordSchema.safeParse(password);
-    if (!passwordValidation.success) {
-      setErrors({ password: passwordValidation.error.issues[0].message });
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setErrors({ confirmPassword: "Passwords do not match" });
-      return;
-    }
-
-    setErrors({});
     setLoading(true);
+    setError("");
 
     try {
-      // Check if user exists
-      const { data: existingUser } = await supabase.auth.getUser();
-      
-      let userId: string;
-
-      if (existingUser?.user) {
-        // User exists, update password
-        const { error: updateError } = await supabase.auth.updateUser({
-          password: password
-        });
-        
-        if (updateError) throw updateError;
-        userId = existingUser.user.id;
-      } else {
-        // Create new user
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      const { data, error: fetchError } = await supabase
+        .from("invitations")
+        .select(`
+          id,
           email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-          }
-        });
-
-        if (signUpError) throw signUpError;
-        if (!signUpData.user) throw new Error("Failed to create user");
-        
-        userId = signUpData.user.id;
-      }
-
-      // Get invite details
-      const { data: inviteData } = await supabase
-        .rpc('validate_invite_token', { invite_token: token! });
-      
-      if (!inviteData || inviteData.length === 0) {
-        throw new Error("Invite not found");
-      }
-
-      const invite = inviteData[0];
-
-      // Update user profile
-      await supabase
-        .from('user_profiles')
-        .upsert({
-          user_id: userId,
-          tenant_id: invite.org_id,
-          must_reset_password: false,
-          invited_at: new Date().toISOString(),
-        });
-
-      // Add user to organization
-      await supabase
-        .from('organization_members')
-        .insert({
-          org_id: invite.org_id,
-          user_id: userId,
-          role: invite.role,
-        });
-
-      // Mark invite as accepted
-      await supabase
-        .from('organization_invites')
-        .update({
-          accepted_at: new Date().toISOString(),
-          used_at: new Date().toISOString(),
-        })
-        .eq('token', token!);
-
-      // Update organization owner if this is the first owner
-      const { data: orgData } = await supabase
-        .from('organizations')
-        .select('owner_user_id')
-        .eq('id', invite.org_id)
+          role,
+          company_id,
+          status,
+          expires_at,
+          organizations!inner (
+            name,
+            slug
+          )
+        `)
+        .eq("token", token)
         .single();
 
-      if (!orgData?.owner_user_id && invite.role === 'owner') {
-        await supabase
-          .from('organizations')
-          .update({ owner_user_id: userId })
-          .eq('id', invite.org_id);
+      if (fetchError) {
+        if (fetchError.code === 'PGRST116') {
+          setError("Invitation not found or invalid token");
+        } else {
+          throw fetchError;
+        }
+        return;
       }
 
-      toast({
-        title: "Welcome!",
-        description: "Your account has been activated successfully",
-      });
+      const invitation = data as InvitationData;
+      
+      // Check if invitation is expired
+      if (new Date(invitation.expires_at) < new Date()) {
+        setError("This invitation has expired");
+        return;
+      }
 
-      // Sign in the user
-      await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      // Check invitation status
+      if (invitation.status !== 'pending') {
+        switch (invitation.status) {
+          case 'accepted':
+            setError("This invitation has already been accepted");
+            break;
+          case 'revoked':
+            setError("This invitation has been revoked");
+            break;
+          case 'expired':
+            setError("This invitation has expired");
+            break;
+          default:
+            setError("This invitation is no longer valid");
+        }
+        return;
+      }
 
-      // Redirect to tenant dashboard
-      navigate('/');
+      setInvitation(invitation);
+
+      // Check if user can force accept (if email doesn't match)
+      if (user && invitation.email.toLowerCase() !== user.email?.toLowerCase()) {
+        await checkForceAcceptPermission(invitation.company_id);
+      }
     } catch (error: any) {
-      console.error('Error accepting invite:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to accept invitation",
-        variant: "destructive",
-      });
+      console.error("Error loading invitation:", error);
+      setError("Failed to load invitation details");
     } finally {
       setLoading(false);
     }
   };
 
-  if (validating || tenantLoading) {
+  const checkForceAcceptPermission = async (companyId: string) => {
+    if (!user) return;
+
+    try {
+      // Check if user is platform admin
+      const { data: userRoles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "platformAdmin");
+
+      if (userRoles && userRoles.length > 0) {
+        setCanForceAccept(true);
+        return;
+      }
+
+      // Check if user is owner of the company
+      const { data: membership } = await supabase
+        .from("memberships")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("company_id", companyId)
+        .eq("role", "owner");
+
+      if (membership && membership.length > 0) {
+        setCanForceAccept(true);
+      }
+    } catch (error) {
+      console.error("Error checking force accept permission:", error);
+    }
+  };
+
+  const acceptInvitation = async () => {
+    if (!invitation || !user) return;
+
+    // Check email match unless forcing
+    if (!forceAccept && invitation.email.toLowerCase() !== user.email?.toLowerCase()) {
+      setError(`This invitation is for ${invitation.email}, but you are logged in as ${user.email}`);
+      return;
+    }
+
+    setAccepting(true);
+    setError("");
+
+    try {
+      // Start transaction-like operations
+      // 1. Check if membership already exists
+      const { data: existingMembership } = await supabase
+        .from("memberships")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("company_id", invitation.company_id)
+        .single();
+
+      // 2. Create membership if it doesn't exist
+      if (!existingMembership) {
+        const { error: membershipError } = await supabase
+          .from("memberships")
+          .insert({
+            user_id: user.id,
+            company_id: invitation.company_id,
+            role: invitation.role
+          });
+
+        if (membershipError) {
+          throw membershipError;
+        }
+      } else {
+        // Update existing membership role if needed
+        const { error: updateError } = await supabase
+          .from("memberships")
+          .update({ role: invitation.role })
+          .eq("id", existingMembership.id);
+
+        if (updateError) {
+          throw updateError;
+        }
+      }
+
+      // 3. Mark invitation as accepted
+      const { error: invitationError } = await supabase
+        .from("invitations")
+        .update({ status: "accepted" })
+        .eq("id", invitation.id);
+
+      if (invitationError) {
+        throw invitationError;
+      }
+
+      // 4. Set active company and refresh company list
+      setActiveCompanyId(invitation.company_id);
+      await refetchCompanies();
+
+      toast({
+        title: "Success!",
+        description: `Welcome to ${invitation.organizations.name}! You are now a ${invitation.role}.`,
+      });
+
+      // 5. Redirect to dashboard
+      navigate("/");
+    } catch (error: any) {
+      console.error("Error accepting invitation:", error);
+      setError("Failed to accept invitation. Please try again.");
+    } finally {
+      setAccepting(false);
+    }
+  };
+
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (errorMessage) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md">
-          <CardHeader>
-            <div className="flex items-center gap-2 text-destructive mb-2">
-              <AlertCircle className="h-5 w-5" />
-              <CardTitle>Invalid Invitation</CardTitle>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin" />
             </div>
-            <CardDescription>
-              {errorMessage}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                If you believe this is an error, please contact your organization administrator to request a new invitation link.
-              </p>
-              <Button
-                className="w-full"
-                variant="outline"
-                onClick={() => navigate('/auth')}
-              >
-                Go to Login
-              </Button>
-            </div>
+            <p className="text-center mt-4 text-muted-foreground">
+              Loading invitation...
+            </p>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  if (!inviteValid) {
-    return null;
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <XCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <CardTitle>Invalid Invitation</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+            <Button 
+              onClick={() => navigate("/")} 
+              className="w-full"
+            >
+              Go to Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
+
+  if (!invitation) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground">
+              No invitation found
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const emailMismatch = user && invitation.email.toLowerCase() !== user.email?.toLowerCase();
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Set Your Password</CardTitle>
+        <CardHeader className="text-center">
+          <Building2 className="h-12 w-12 text-primary mx-auto mb-4" />
+          <CardTitle>Join {invitation.organizations.name}</CardTitle>
           <CardDescription>
-            Welcome to {orgName || "Vessel Ops Portal"}! Set your password to activate your account.
+            You've been invited to join as a {invitation.role}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                disabled
-                className="bg-muted"
-              />
+        <CardContent className="space-y-6">
+          {/* Invitation Details */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+              <span className="text-sm font-medium">Company:</span>
+              <span className="text-sm">{invitation.organizations.name}</span>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                required
-              />
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password}</p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Password must be at least 8 characters with uppercase, lowercase, and number
-              </p>
+            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+              <span className="text-sm font-medium">Role:</span>
+              <span className="text-sm capitalize flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                {invitation.role}
+              </span>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm your password"
-                required
-              />
-              {errors.confirmPassword && (
-                <p className="text-sm text-destructive">{errors.confirmPassword}</p>
-              )}
+            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+              <span className="text-sm font-medium">Invited Email:</span>
+              <span className="text-sm">{invitation.email}</span>
             </div>
+            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+              <span className="text-sm font-medium">Expires:</span>
+              <span className="text-sm flex items-center gap-1">
+                <Clock className="h-4 w-4" />
+                {new Date(invitation.expires_at).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
 
+          {/* Email Mismatch Warning */}
+          {emailMismatch && (
+            <Alert>
+              <AlertDescription>
+                This invitation is for <strong>{invitation.email}</strong>, but you are logged in as <strong>{user?.email}</strong>.
+                {canForceAccept && (
+                  <div className="mt-2">
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={forceAccept}
+                        onChange={(e) => setForceAccept(e.target.checked)}
+                        className="rounded"
+                      />
+                      <span className="text-sm">Accept anyway (Admin override)</span>
+                    </label>
+                  </div>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Actions */}
+          <div className="space-y-3">
             <Button
-              type="submit"
+              onClick={acceptInvitation}
+              disabled={accepting || (emailMismatch && !forceAccept && !canForceAccept)}
               className="w-full"
-              disabled={loading}
             >
-              {loading ? (
+              {accepting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Setting up your account...
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Accepting...
                 </>
               ) : (
-                "Activate Account"
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Accept Invitation
+                </>
               )}
             </Button>
-          </form>
+            
+            <Button
+              variant="outline"
+              onClick={() => navigate("/")}
+              className="w-full"
+            >
+              Cancel
+            </Button>
+          </div>
+
+          {/* Current User Info */}
+          {user && (
+            <div className="text-center text-sm text-muted-foreground border-t pt-4">
+              Logged in as: <strong>{user.email}</strong>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

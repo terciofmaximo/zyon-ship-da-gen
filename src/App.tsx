@@ -44,6 +44,7 @@ const App = () => (
                 {/* Root routes */}
                 <Route path="/" element={<DashboardLayout><Index /></DashboardLayout>} />
                 <Route path="/auth" element={<AuthPage />} />
+                <Route path="/invite/accept" element={<InviteAccept />} />
                 <Route path="/auth/accept-invite" element={<AcceptInvite />} />
                 <Route path="/auth/reset-password" element={<ResetPassword />} />
                 <Route path="/seed-admin" element={<SeedAdmin />} />
