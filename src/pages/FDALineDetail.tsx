@@ -50,6 +50,7 @@ interface LedgerLine {
   markup_pct?: number;
   is_billable?: boolean;
   settled_at?: string;
+  tenant_id: string;
 }
 
 interface Payment {
@@ -224,10 +225,12 @@ export default function FDALineDetail() {
       return;
     }
     
-    if (!activeOrg) {
+    const tenantId = line.tenant_id || fdaData?.tenant_id;
+    
+    if (!tenantId) {
       toast({
         title: "Error",
-        description: "No active organization",
+        description: "Cannot determine organization for this payment",
         variant: "destructive",
       });
       return;
@@ -247,7 +250,7 @@ export default function FDALineDetail() {
           fx_at_payment: fx,
           method: newPayment.method,
           reference: newPayment.reference || null,
-          tenant_id: activeOrg.id,
+          tenant_id: tenantId,
         })
         .select()
         .single();
