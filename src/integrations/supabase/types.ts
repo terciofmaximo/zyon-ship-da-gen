@@ -841,6 +841,10 @@ export type Database = {
         Args: { p_pda_id: string }
         Returns: string
       }
+      extract_slug_from_domain: {
+        Args: { p_domain: string }
+        Returns: string
+      }
       generate_pda_number: {
         Args: { p_tenant_id: string }
         Returns: string
