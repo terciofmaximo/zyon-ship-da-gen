@@ -613,7 +613,7 @@ export type Database = {
           sent_by_user_id: string | null
           shipping_association: number | null
           status: Database["public"]["Enums"]["pda_status"]
-          tenant_id: string
+          tenant_id: string | null
           terminal: string | null
           to_client_id: string | null
           to_display_name: string | null
@@ -663,7 +663,7 @@ export type Database = {
           sent_by_user_id?: string | null
           shipping_association?: number | null
           status?: Database["public"]["Enums"]["pda_status"]
-          tenant_id: string
+          tenant_id?: string | null
           terminal?: string | null
           to_client_id?: string | null
           to_display_name?: string | null
@@ -713,7 +713,7 @@ export type Database = {
           sent_by_user_id?: string | null
           shipping_association?: number | null
           status?: Database["public"]["Enums"]["pda_status"]
-          tenant_id?: string
+          tenant_id?: string | null
           terminal?: string | null
           to_client_id?: string | null
           to_display_name?: string | null
