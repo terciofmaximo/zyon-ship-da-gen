@@ -94,7 +94,8 @@ export const OrgProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const fetchUserOrganizations = async () => {
     try {
       // TENANT ISOLATION: Regular users see ONLY their tenant's organization
-      // This is enforced by organization_members table (user must be a member)
+      // This enforces domain-based multi-tenancy (e.g., @zyonshipping.com.br → zyonshipping tenant)
+      // Users can only access data from their own tenant's organization
       const { data, error } = await supabase
         .from("organization_members")
         .select(`

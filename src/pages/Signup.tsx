@@ -51,6 +51,9 @@ export default function Signup() {
       const sessionId = getSessionId();
       
       // Create user with Supabase Auth
+      // MULTI-TENANCY: User will be auto-associated to tenant based on email domain
+      // Example: user@zyonshipping.com.br → tenant "zyonshipping"
+      // Exception: contato@vesselopsportal.com → platformAdmin (access to all tenants)
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
