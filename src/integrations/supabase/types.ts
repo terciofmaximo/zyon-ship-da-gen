@@ -299,6 +299,82 @@ export type Database = {
           },
         ]
       }
+      invitations: {
+        Row: {
+          company_id: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          role: Database["public"]["Enums"]["invitation_role"]
+          status: Database["public"]["Enums"]["invitation_status"]
+          token: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          role?: Database["public"]["Enums"]["invitation_role"]
+          status?: Database["public"]["Enums"]["invitation_status"]
+          token: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["invitation_role"]
+          status?: Database["public"]["Enums"]["invitation_status"]
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memberships: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["membership_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["membership_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["membership_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memberships_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_domains: {
         Row: {
           created_at: string
@@ -749,6 +825,9 @@ export type Database = {
       fda_ledger_side: "AP" | "AR"
       fda_ledger_status: "Open" | "Settled" | "Partially Settled"
       fda_status: "Draft" | "Posted" | "Closed"
+      invitation_role: "admin" | "member" | "viewer"
+      invitation_status: "pending" | "accepted" | "expired" | "revoked"
+      membership_role: "owner" | "admin" | "member" | "viewer"
       pda_status: "IN_PROGRESS" | "SENT" | "APPROVED" | "CREATED"
     }
     CompositeTypes: {
@@ -881,6 +960,9 @@ export const Constants = {
       fda_ledger_side: ["AP", "AR"],
       fda_ledger_status: ["Open", "Settled", "Partially Settled"],
       fda_status: ["Draft", "Posted", "Closed"],
+      invitation_role: ["admin", "member", "viewer"],
+      invitation_status: ["pending", "accepted", "expired", "revoked"],
+      membership_role: ["owner", "admin", "member", "viewer"],
       pda_status: ["IN_PROGRESS", "SENT", "APPROVED", "CREATED"],
     },
   },
