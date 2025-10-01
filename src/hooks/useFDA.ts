@@ -101,6 +101,7 @@ export const useFDA = () => {
       let lineNo = 1;
 
       // Process each cost item from PDA - create single line per item
+      // IMPORTANT: Include ALL items, even those with value 0
       Object.entries(COST_ITEM_MAPPING).forEach(([pdaField, category]) => {
         const amount = parseFloat(pda[pdaField] || "0");
 
@@ -249,6 +250,7 @@ export const useFDA = () => {
       const ledgerEntries: Omit<FDALedger, "id" | "created_at" | "updated_at">[] = [];
       let lineNo = 1;
 
+      // IMPORTANT: Include ALL items, even those with value 0
       Object.entries(COST_ITEM_MAPPING).forEach(([pdaField, category]) => {
         const amount = parseFloat(pda[pdaField] || "0");
 

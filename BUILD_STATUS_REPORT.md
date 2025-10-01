@@ -1,7 +1,7 @@
 # Build Status Report
 
 **Data:** 2025-10-01  
-**Status:** ✅ Estável - Padronização tenant_id verificada e confirmada
+**Status:** ✅ Estável - UX do FDA aprimorada
 
 ## Verificações Realizadas
 
@@ -73,4 +73,42 @@ Verificar padronização do uso de `tenant_id` em PDAs e FDAs para garantir que 
 - ✅ Todas as queries - filtram por `activeOrg.id`
 
 **Detalhes completos:** Ver `TENANT_ID_AUDIT_REPORT.md`
+
+## Melhorias de UX do FDA (2025-10-01)
+
+### Objetivo
+Corrigir UX conforme solicitado:
+1. Tornar botão "Save Draft" sempre habilitado
+2. Garantir que linhas com valor 0 apareçam no ledger
+
+### Resultado
+✅ **Implementado com sucesso**
+
+#### 1. Botão "Save Draft" Sempre Habilitado
+**Arquivo:** `src/pages/FDADetail.tsx`
+
+**Mudanças:**
+- ❌ Removido `disabled={isSaving}` do botão "Save" inline (linha 372)
+- ❌ Removido `disabled={isSaving || !isDirty}` do botão "Save draft" bottom (linha 725)
+- ✅ Ambos os botões agora sempre clicáveis, salvam sem validação bloqueante
+
+#### 2. Linhas com Valor 0 no Ledger
+**Arquivo:** `src/hooks/useFDA.ts`
+
+**Verificação:**
+- ✅ `convertPdaToFda()` - cria TODAS as 13 linhas do COST_ITEM_MAPPING, incluindo valor 0
+- ✅ `rebuildFromPda()` - recria TODAS as linhas sem filtro de valor
+- ✅ `getFDA()` - query sem WHERE clause por amount
+- ✅ `FDALedgerTable.tsx` - renderiza todas as linhas sem filtro
+
+**Comentários adicionados:**
+- Linha 103: "IMPORTANT: Include ALL items, even those with value 0"
+- Linha 249: "IMPORTANT: Include ALL items, even those with value 0"
+
+### Componentes/Serviços Alterados
+1. `src/pages/FDADetail.tsx` - Botões Save Draft
+2. `src/hooks/useFDA.ts` - Documentação (lógica já estava correta)
+
+**Build:** ✅ OK  
+**TypeCheck:** ✅ Esperado passar
 
