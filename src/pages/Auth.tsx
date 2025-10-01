@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { z } from "zod";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,7 +25,6 @@ const AuthPage: React.FC = () => {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [form, setForm] = useState<FormState>({ email: "", password: "" });
   const [pending, setPending] = useState(false);
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { resetAdminPassword, loading: resetLoading } = useResetAdminPassword();
@@ -33,11 +32,6 @@ const AuthPage: React.FC = () => {
   // Platform admin configuration
   const PLATFORM_ADMIN_EMAIL = 'contact@vesselopsportal.com';
 
-  const redirectTo = useMemo(() => {
-    const callback = searchParams.get("callback");
-    const from = searchParams.get("from");
-    return callback ? decodeURIComponent(callback) : decodeURIComponent(from || "/dashboard");
-  }, [searchParams]);
 
   useEffect(() => {
     document.title = mode === "login" ? "Entrar • Zyon" : "Cadastrar • Zyon";
@@ -103,7 +97,7 @@ const AuthPage: React.FC = () => {
         }
         
         toast({ title: "Bem-vindo", description: "Login efetuado com sucesso" });
-        navigate(redirectTo, { replace: true });
+        navigate("/dashboard", { replace: true });
       } else {
         // Normalize email for signup
         const normalizedEmail = form.email.toLowerCase().trim();
@@ -191,7 +185,7 @@ const AuthPage: React.FC = () => {
                   Não tem conta?{" "}
                   <button 
                     className="underline text-primary hover:text-primary/80" 
-                    onClick={() => navigate(`/auth/signup?returnUrl=${encodeURIComponent(redirectTo)}`)}
+                    onClick={() => navigate('/auth/signup')}
                   >
                     Criar Conta Corporativa
                   </button>
