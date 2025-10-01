@@ -481,51 +481,16 @@ export default function FDANew() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>
-                      <div className="flex items-center gap-2">
-                        Side
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-sm">
-                              <div className="space-y-2">
-                                <p className="font-semibold">AP (Accounts Payable / A Pagar):</p>
-                                <p className="text-sm">Despesas da agência com fornecedores (ex.: praticagem, rebocador, lancha).</p>
-                                <p className="font-semibold mt-2">AR (Accounts Receivable / A Receber):</p>
-                                <p className="text-sm">Cobranças do cliente (ex.: agency fee, supervision fee, reembolsos).</p>
-                              </div>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
-                    </TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>Amount (USD)</TableHead>
                     <TableHead>Amount (BRL)</TableHead>
-                    <TableHead>Status</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {ledgerLines.map((line) => (
                     <TableRow key={line.id}>
-                      <TableCell>
-                        <Select
-                          value={line.side}
-                          onValueChange={(value) => updateLedgerLine(line.id, "side", value)}
-                        >
-                          <SelectTrigger className="w-20">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="AP">AP</SelectItem>
-                            <SelectItem value="AR">AR</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
                       <TableCell>
                         <Input
                           value={line.category}
@@ -555,9 +520,6 @@ export default function FDANew() {
                         <span className="text-sm text-muted-foreground">
                           {calculateAmountLocal(line.amount_usd)}
                         </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{line.status}</Badge>
                       </TableCell>
                       <TableCell>
                         <Button
