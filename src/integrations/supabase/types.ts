@@ -151,6 +151,7 @@ export type Database = {
           markup_pct: number | null
           notes: string | null
           origin: string | null
+          paid_to_supplier_usd: number | null
           payment_terms: string | null
           pda_field: string | null
           settled_at: string | null
@@ -187,6 +188,7 @@ export type Database = {
           markup_pct?: number | null
           notes?: string | null
           origin?: string | null
+          paid_to_supplier_usd?: number | null
           payment_terms?: string | null
           pda_field?: string | null
           settled_at?: string | null
@@ -223,6 +225,7 @@ export type Database = {
           markup_pct?: number | null
           notes?: string | null
           origin?: string | null
+          paid_to_supplier_usd?: number | null
           payment_terms?: string | null
           pda_field?: string | null
           settled_at?: string | null

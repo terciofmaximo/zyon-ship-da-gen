@@ -45,10 +45,7 @@ interface LedgerLine {
   details?: any;
   voyage_fixture?: string;
   cost_center?: string;
-  gl_account?: string;
-  billing_class?: string;
-  markup_pct?: number;
-  is_billable?: boolean;
+  paid_to_supplier_usd?: number;
   settled_at?: string;
   tenant_id: string;
 }
@@ -142,6 +139,11 @@ export default function FDALineDetail() {
         // Auto-fill client_po from FDA client_name if not set
         if (!lineData.client_po && fdaHeaderData.client_name) {
           lineData.client_po = fdaHeaderData.client_name;
+        }
+        
+        // Auto-fill cost_center with org name if not set
+        if (!lineData.cost_center && activeOrg?.name) {
+          lineData.cost_center = activeOrg.name;
         }
       }
       
@@ -343,7 +345,7 @@ export default function FDALineDetail() {
   const effectiveFx = line.use_custom_fx ? (line.custom_fx_rate || fdaExchangeRate) : fdaExchangeRate;
   const computedBRL = (line.amount_usd || 0) * effectiveFx;
   const totalPaidUSD = payments.reduce((sum, p) => sum + p.amount_usd, 0);
-  const markupAmount = (line.amount_usd || 0) * (line.markup_pct || 0) / 100;
+  const agencyMargin = (line.amount_usd || 0) - (line.paid_to_supplier_usd || 0);
 
   return (
     <div className="space-y-6 p-6">
@@ -631,12 +633,13 @@ export default function FDALineDetail() {
           <CardTitle>Allocation & Accounting</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Voyage / Fixture / Job</Label>
+              <Label>FDA Code</Label>
               <Input
-                value={line.voyage_fixture || ''}
-                onChange={(e) => saveField('voyage_fixture', e.target.value)}
+                value={fdaId || ''}
+                disabled
+                className="bg-muted"
               />
             </div>
             <div>
@@ -644,57 +647,39 @@ export default function FDALineDetail() {
               <Input
                 value={line.cost_center || ''}
                 onChange={(e) => saveField('cost_center', e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>GL Account</Label>
-              <Input
-                value={line.gl_account || ''}
-                onChange={(e) => saveField('gl_account', e.target.value)}
+                placeholder={activeOrg?.name || 'Organization name'}
               />
             </div>
           </div>
+          
+          <Separator />
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Billing Class</Label>
-              <Select
-                value={line.billing_class || ''}
-                onValueChange={(v) => saveField('billing_class', v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select class" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Pass-through">Pass-through</SelectItem>
-                  <SelectItem value="Markup">Markup</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Amount Billed to Client (USD)</Label>
+              <Input
+                value={fmtUSD(line.amount_usd || 0)}
+                disabled
+                className="bg-muted font-medium"
+              />
             </div>
             <div>
-              <Label>Markup %</Label>
+              <Label>Amount Paid to Supplier (USD)</Label>
               <Input
                 type="number"
-                value={line.markup_pct || ''}
-                onChange={(e) => saveField('markup_pct', parseFloat(e.target.value))}
-                disabled={line.billing_class !== 'Markup'}
+                value={line.paid_to_supplier_usd || ''}
+                onChange={(e) => saveField('paid_to_supplier_usd', parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
               />
             </div>
           </div>
           
-          {line.billing_class === 'Markup' && (
-            <div className="p-4 bg-muted rounded-lg">
-              <div className="text-sm text-muted-foreground">Computed Markup Amount</div>
-              <div className="text-lg font-medium">{fmtUSD(markupAmount)}</div>
+          <div className="p-4 bg-muted rounded-lg">
+            <div className="text-sm text-muted-foreground">Agency Margin (USD)</div>
+            <div className="text-2xl font-bold">{fmtUSD(agencyMargin)}</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              Billed to Client − Paid to Supplier
             </div>
-          )}
-          
-          <div className="flex items-center gap-2">
-            <Switch
-              checked={line.is_billable !== false}
-              onCheckedChange={(checked) => saveField('is_billable', checked)}
-            />
-            <Label>Billable?</Label>
           </div>
         </CardContent>
       </Card>
