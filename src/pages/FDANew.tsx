@@ -28,6 +28,23 @@ interface LedgerLine {
   status: "Open" | "Settled" | "Partially Settled";
 }
 
+// Fixed 13 cost items matching PDA Cost Entry
+const INITIAL_LEDGER_LINES: Omit<LedgerLine, "id">[] = [
+  { side: "AP", category: "Pilot IN/OUT", description: "Pilot IN/OUT", amount_usd: 0, counterparty: "Vendor — to assign", status: "Open" },
+  { side: "AP", category: "Towage IN/OUT", description: "Towage IN/OUT", amount_usd: 0, counterparty: "Vendor — to assign", status: "Open" },
+  { side: "AP", category: "Light dues", description: "Light dues", amount_usd: 0, counterparty: "Vendor — to assign", status: "Open" },
+  { side: "AP", category: "Dockage (Wharfage)", description: "Dockage (Wharfage)", amount_usd: 0, counterparty: "Vendor — to assign", status: "Open" },
+  { side: "AP", category: "Linesman (mooring/unmooring)", description: "Linesman (mooring/unmooring)", amount_usd: 0, counterparty: "Vendor — to assign", status: "Open" },
+  { side: "AP", category: "Launch boat (mooring/unmooring)", description: "Launch boat (mooring/unmooring)", amount_usd: 0, counterparty: "Vendor — to assign", status: "Open" },
+  { side: "AP", category: "Immigration tax (Funapol)", description: "Immigration tax (Funapol)", amount_usd: 0, counterparty: "Vendor — to assign", status: "Open" },
+  { side: "AP", category: "Free pratique tax", description: "Free pratique tax", amount_usd: 0, counterparty: "Vendor — to assign", status: "Open" },
+  { side: "AP", category: "Shipping association", description: "Shipping association", amount_usd: 0, counterparty: "Vendor — to assign", status: "Open" },
+  { side: "AP", category: "Clearance", description: "Clearance", amount_usd: 0, counterparty: "Vendor — to assign", status: "Open" },
+  { side: "AP", category: "Paperless Port System", description: "Paperless Port System", amount_usd: 0, counterparty: "Vendor — to assign", status: "Open" },
+  { side: "AR", category: "Agency fee", description: "Agency fee", amount_usd: 0, counterparty: "Client", status: "Open" },
+  { side: "AP", category: "Waterway channel (Table I)", description: "Waterway channel (Table I)", amount_usd: 0, counterparty: "Vendor — to assign", status: "Open" },
+];
+
 export default function FDANew() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -49,7 +66,12 @@ export default function FDANew() {
     imo: "",
   });
 
-  const [ledgerLines, setLedgerLines] = useState<LedgerLine[]>([]);
+  const [ledgerLines, setLedgerLines] = useState<LedgerLine[]>(() => 
+    INITIAL_LEDGER_LINES.map((line, index) => ({
+      ...line,
+      id: `initial_${index}`
+    }))
+  );
 
   const addLedgerLine = () => {
     const newLine: LedgerLine = {
