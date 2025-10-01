@@ -74,7 +74,7 @@ const App = () => (
                 <Route path="/no-organization" element={<RequireAuth><NoOrganization /></RequireAuth>} />
                 <Route path="/settings" element={<RequireAuth><DashboardLayout><OrganizationSettings /></DashboardLayout></RequireAuth>} />
                 <Route path="/organization/settings" element={<Navigate to="/settings" replace />} />
-                <Route path="/platform-admin" element={<RequireAuth><PlatformAdmin /></RequireAuth>} />
+                <Route path="/platform-admin" element={<RequireAuth><DashboardLayout><PlatformAdmin /></DashboardLayout></RequireAuth>} />
                 <Route path="/pda/:id/review" element={<RequireAuth><DashboardLayout><PDAReview /></DashboardLayout></RequireAuth>} />
                 <Route path="/fda" element={<RequireAuth><DashboardLayout><FDAList /></DashboardLayout></RequireAuth>} />
                 <Route path="/fda/new" element={<RequireAuth><DashboardLayout><FDANew /></DashboardLayout></RequireAuth>} />
