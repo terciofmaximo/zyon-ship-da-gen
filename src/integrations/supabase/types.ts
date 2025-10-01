@@ -46,11 +46,15 @@ export type Database = {
           assigned_user_id: string | null
           client_id: string | null
           client_name: string | null
+          client_paid_usd: number | null
           client_share_pct: number | null
           created_at: string
           created_by: string | null
           currency_base: string
           currency_local: string
+          eta: string | null
+          etb: string | null
+          ets: string | null
           exchange_rate: number | null
           fx_source: string | null
           id: string
@@ -69,11 +73,15 @@ export type Database = {
           assigned_user_id?: string | null
           client_id?: string | null
           client_name?: string | null
+          client_paid_usd?: number | null
           client_share_pct?: number | null
           created_at?: string
           created_by?: string | null
           currency_base?: string
           currency_local?: string
+          eta?: string | null
+          etb?: string | null
+          ets?: string | null
           exchange_rate?: number | null
           fx_source?: string | null
           id?: string
@@ -92,11 +100,15 @@ export type Database = {
           assigned_user_id?: string | null
           client_id?: string | null
           client_name?: string | null
+          client_paid_usd?: number | null
           client_share_pct?: number | null
           created_at?: string
           created_by?: string | null
           currency_base?: string
           currency_local?: string
+          eta?: string | null
+          etb?: string | null
+          ets?: string | null
           exchange_rate?: number | null
           fx_source?: string | null
           id?: string

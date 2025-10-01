@@ -17,6 +17,10 @@ export interface FDA {
   meta?: any;
   remarks?: string;
   tenant_id: string;
+  client_paid_usd?: number;
+  eta?: string;
+  etb?: string;
+  ets?: string;
 }
 
 export interface FDALedger {

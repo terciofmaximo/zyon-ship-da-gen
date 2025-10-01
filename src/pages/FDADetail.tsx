@@ -12,6 +12,7 @@ import { useFDA } from "@/hooks/useFDA";
 import { useToast } from "@/hooks/use-toast";
 import { FDAWithLedger, FDATotals } from "@/types/fda";
 import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
 const statusVariants = {
   Draft: "secondary",
@@ -41,7 +42,10 @@ export default function FDADetail() {
     client_id: "",
     exchange_rate: "",
     fx_source: "",
-    client_share_pct: 0,
+    client_paid_usd: 0,
+    eta: null as Date | null,
+    etb: null as Date | null,
+    ets: null as Date | null,
   });
 
   // Warn on browser close/refresh when there are unsaved changes
@@ -90,7 +94,10 @@ export default function FDADetail() {
         editForm.client_id !== (fda.client_id || "") ||
         editForm.exchange_rate !== (fda.exchange_rate?.toString() || "") ||
         editForm.fx_source !== ((fda.meta as any)?.fx_source || "") ||
-        editForm.client_share_pct !== ((fda.meta as any)?.client_share_pct || 0);
+        editForm.client_paid_usd !== (fda.client_paid_usd || 0) ||
+        (editForm.eta?.toISOString() || null) !== (fda.eta || null) ||
+        (editForm.etb?.toISOString() || null) !== (fda.etb || null) ||
+        (editForm.ets?.toISOString() || null) !== (fda.ets || null);
       
       setIsDirty(hasChanges);
     }
@@ -111,9 +118,12 @@ export default function FDADetail() {
           terminal: fdaData.terminal || "",
           client_name: fdaData.client_name || "",
           client_id: fdaData.client_id || "",
-          exchange_rate: fdaData.exchange_rate?.toString() || "",
+          exchange_rate: fdaData.exchange_rate?.toFixed(4) || "",
           fx_source: (fdaData.meta as any)?.fx_source || "",
-          client_share_pct: (fdaData.meta as any)?.client_share_pct || 0,
+          client_paid_usd: fdaData.client_paid_usd || 0,
+          eta: fdaData.eta ? new Date(fdaData.eta) : null,
+          etb: fdaData.etb ? new Date(fdaData.etb) : null,
+          ets: fdaData.ets ? new Date(fdaData.ets) : null,
         });
         setIsDirty(false);
         setLastSavedAt(fdaData.updated_at);
@@ -171,10 +181,13 @@ export default function FDADetail() {
           client_id: editForm.client_id,
           exchange_rate: parseFloat(editForm.exchange_rate) || 0,
           fx_source: editForm.fx_source,
+          client_paid_usd: editForm.client_paid_usd,
+          eta: editForm.eta?.toISOString() || null,
+          etb: editForm.etb?.toISOString() || null,
+          ets: editForm.ets?.toISOString() || null,
           meta: {
             ...(fda.meta as any || {}),
             fx_source: editForm.fx_source,
-            client_share_pct: editForm.client_share_pct,
           }
         })
         .eq("id", id);
@@ -229,9 +242,12 @@ export default function FDADetail() {
         terminal: fda.terminal || "",
         client_name: fda.client_name || "",
         client_id: fda.client_id || "",
-        exchange_rate: fda.exchange_rate?.toString() || "",
+        exchange_rate: fda.exchange_rate?.toFixed(4) || "",
         fx_source: (fda.meta as any)?.fx_source || "",
-        client_share_pct: (fda.meta as any)?.client_share_pct || 0,
+        client_paid_usd: fda.client_paid_usd || 0,
+        eta: fda.eta ? new Date(fda.eta) : null,
+        etb: fda.etb ? new Date(fda.etb) : null,
+        ets: fda.ets ? new Date(fda.ets) : null,
       });
     }
     setIsEditing(false);
@@ -297,8 +313,8 @@ export default function FDADetail() {
 
   const totals = calculateFDATotals(fda.ledger);
 
-  const clientSharePct = (fda.meta as any)?.client_share_pct || 0;
-  const dueFromClientUSD = totals.totalAP_USD * (clientSharePct / 100);
+  const clientPaidUSD = fda.client_paid_usd || 0;
+  const dueFromClientUSD = totals.totalAP_USD - clientPaidUSD;
   const dueFromClientBRL = dueFromClientUSD * (parseFloat(fda.exchange_rate?.toString() || "0") || 0);
 
   return (
@@ -494,7 +510,9 @@ export default function FDADetail() {
                       placeholder="Enter exchange rate"
                     />
                   ) : (
-                    <div className="text-sm mt-1">{fda.exchange_rate || "—"}</div>
+                    <div className="text-sm mt-1">
+                      {fda.exchange_rate ? parseFloat(fda.exchange_rate.toString()).toFixed(4) : "—"}
+                    </div>
                   )}
                 </div>
                 <div>
@@ -513,6 +531,58 @@ export default function FDADetail() {
                     </div>
                   ) : (
                     <div className="text-sm mt-1">{(fda.meta as any)?.fx_source || "—"}</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Vessel Schedule */}
+            <div className="space-y-4 md:col-span-3 border-t pt-4 mt-4">
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase">Vessel Schedule</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="eta">ETA (Estimated Time of Arrival)</Label>
+                  {isEditing ? (
+                    <Input
+                      id="eta"
+                      type="datetime-local"
+                      value={editForm.eta ? format(editForm.eta, "yyyy-MM-dd'T'HH:mm") : ""}
+                      onChange={(e) => setEditForm({ ...editForm, eta: e.target.value ? new Date(e.target.value) : null })}
+                    />
+                  ) : (
+                    <div className="text-sm mt-1">
+                      {fda.eta ? format(new Date(fda.eta), "MMM dd, yyyy HH:mm") : "—"}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <Label htmlFor="etb">ETB (Estimated Time of Berthing)</Label>
+                  {isEditing ? (
+                    <Input
+                      id="etb"
+                      type="datetime-local"
+                      value={editForm.etb ? format(editForm.etb, "yyyy-MM-dd'T'HH:mm") : ""}
+                      onChange={(e) => setEditForm({ ...editForm, etb: e.target.value ? new Date(e.target.value) : null })}
+                    />
+                  ) : (
+                    <div className="text-sm mt-1">
+                      {fda.etb ? format(new Date(fda.etb), "MMM dd, yyyy HH:mm") : "—"}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <Label htmlFor="ets">ETS (Estimated Time of Sailing)</Label>
+                  {isEditing ? (
+                    <Input
+                      id="ets"
+                      type="datetime-local"
+                      value={editForm.ets ? format(editForm.ets, "yyyy-MM-dd'T'HH:mm") : ""}
+                      onChange={(e) => setEditForm({ ...editForm, ets: e.target.value ? new Date(e.target.value) : null })}
+                    />
+                  ) : (
+                    <div className="text-sm mt-1">
+                      {fda.ets ? format(new Date(fda.ets), "MMM dd, yyyy HH:mm") : "—"}
+                    </div>
                   )}
                 </div>
               </div>
@@ -546,34 +616,30 @@ export default function FDADetail() {
               <div className="text-sm text-muted-foreground">{fmtBRL(dueFromClientBRL)}</div>
               <div className="text-xs font-semibold mt-3">Due from Client</div>
               <div className="mt-4 space-y-2">
-                <Label htmlFor="client_share_pct" className="text-xs">Client share (%) of Total Payables</Label>
+                <Label htmlFor="client_paid_usd" className="text-xs">Client Paid (USD)</Label>
                 <Input
-                  id="client_share_pct"
+                  id="client_paid_usd"
                   type="number"
                   step="0.01"
                   min="0"
-                  max="100"
-                  value={editForm.client_share_pct}
+                  value={editForm.client_paid_usd}
                   onChange={(e) => {
                     const val = parseFloat(e.target.value) || 0;
-                    setEditForm({ ...editForm, client_share_pct: val });
+                    setEditForm({ ...editForm, client_paid_usd: val });
                   }}
                   onBlur={async () => {
                     if (!id) return;
                     await supabase
                       .from("fda")
                       .update({
-                        meta: {
-                          ...(fda.meta as any || {}),
-                          client_share_pct: editForm.client_share_pct,
-                        }
+                        client_paid_usd: editForm.client_paid_usd,
                       })
                       .eq("id", id);
                     await fetchFDA();
                   }}
                   className="h-8 text-center"
                 />
-                <p className="text-xs text-muted-foreground">Calculated from Total Payables (AP)</p>
+                <p className="text-xs text-muted-foreground">Amount already paid by client</p>
               </div>
             </div>
           </div>

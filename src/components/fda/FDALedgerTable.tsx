@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Calendar, ArrowUpDown, ExternalLink } from 'lucide-react';
+import { Calendar, ArrowUpDown, ExternalLink, Plus } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format } from 'date-fns';
@@ -46,6 +46,60 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
   useEffect(() => {
     setFullLedger(ledger);
   }, [ledger]);
+
+  const handleAddLine = useCallback(async () => {
+    if (!activeOrg) {
+      toast({
+        title: "Error",
+        description: "No active organization",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Get max line_no
+      const maxLineNo = fullLedger.reduce((max, line) => Math.max(max, line.line_no), 0);
+      const newLineNo = maxLineNo + 1;
+
+      // Create new line in DB
+      const { data, error } = await supabase
+        .from('fda_ledger')
+        .insert({
+          fda_id: fdaId,
+          line_no: newLineNo,
+          side: 'AP',
+          category: 'New Item',
+          description: 'New line item',
+          counterparty: 'Vendor — to assign',
+          amount_usd: 0,
+          amount_local: 0,
+          status: 'Open',
+          tenant_id: activeOrg.id,
+          origin: 'MANUAL',
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newLedger = [...fullLedger, data as FDALedger];
+      setFullLedger(newLedger);
+      onLedgerUpdate(newLedger);
+
+      toast({
+        title: "Line added",
+        description: "New line item created successfully",
+      });
+    } catch (error) {
+      console.error('Failed to add line:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add line item",
+        variant: "destructive",
+      });
+    }
+  }, [fdaId, fullLedger, activeOrg, onLedgerUpdate, toast]);
 
   const saveLineChange = useCallback(async (lineId: string, field: string, value: any) => {
     try {
@@ -331,8 +385,12 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Ledger Details</CardTitle>
+        <Button onClick={handleAddLine} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Line
+        </Button>
       </CardHeader>
       <CardContent>
         {/* Column Headers */}
