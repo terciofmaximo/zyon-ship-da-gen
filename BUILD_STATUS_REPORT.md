@@ -1,7 +1,7 @@
 # Build Status Report
 
 **Data:** 2025-10-01  
-**Status:** ✅ Estável - Nenhuma ação necessária
+**Status:** ✅ Estável - Padronização tenant_id verificada e confirmada
 
 ## Verificações Realizadas
 
@@ -51,3 +51,26 @@ src/
 ```
 
 Todos os imports estão apontando para os caminhos corretos nesta estrutura.
+
+## Auditoria tenant_id (2025-10-01)
+
+### Objetivo
+Verificar padronização do uso de `tenant_id` em PDAs e FDAs para garantir que sempre use `activeOrg.id` e nunca `user.id`.
+
+### Resultado
+✅ **100% padronizado e correto**
+
+- Helper `getActiveTenantId()` já existe e funcional em `src/lib/utils.ts`
+- 27 ocorrências de `tenant_id` auditadas, todas corretas
+- 0 usos incorretos de `user.id` como `tenant_id`
+- Separação clara entre `created_by: user.id` (audit) e `tenant_id: activeOrg.id` (multi-tenancy)
+
+### Arquivos Verificados
+- ✅ src/hooks/useFDA.ts - usa `getActiveTenantId(activeOrg)`
+- ✅ src/hooks/usePDA.ts - usa `getActiveTenantId(activeOrg)`
+- ✅ src/pages/FDANew.tsx - usa `activeOrg.id`
+- ✅ src/components/fda/FDALedgerTable.tsx - usa `activeOrg.id`
+- ✅ Todas as queries - filtram por `activeOrg.id`
+
+**Detalhes completos:** Ver `TENANT_ID_AUDIT_REPORT.md`
+
