@@ -16,6 +16,7 @@ import { VESSEL_TYPES } from "@/lib/vesselData";
 import { SHIP_TYPE_RANGES, getShipTypeFromName, calculateMeanValue, isValueInRange, formatRange as formatShipRange } from "@/lib/shipTypeRanges";
 import { usePortDirectory } from "@/hooks/usePortDirectory";
 import { pdaStep1Schema, type PDAStep1Data } from "@/schemas/pdaSchema";
+import { useUsdBrlToday } from "@/hooks/useExchangeRate";
 
 const clients = [
   { value: "vale-sa", label: "Vale S.A." },
@@ -89,6 +90,7 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
   const exchangeRateTimestamp = watch("exchangeRateTimestamp");
 
   const portState = usePortDirectory();
+  const { data: ptaxData, loading: ptaxLoading, error: ptaxError, refresh: refreshPtax } = useUsdBrlToday(true);
 
   const fillShipParticulars = (shipType: string, skipDialog = false) => {
     const ranges = SHIP_TYPE_RANGES[shipType];
@@ -175,15 +177,22 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Simulate fetching exchange rate from BCB PTAX
+  // Auto-fill exchange rate if empty when PTAX data is available
+  useEffect(() => {
+    if (ptaxData && !exchangeRate) {
+      setValue("exchangeRate", ptaxData.rate.toFixed(4));
+      setValue("exchangeRateSource", ptaxData.source as any);
+      setValue("exchangeRateTimestamp", ptaxData.ts);
+    }
+  }, [ptaxData, exchangeRate, setValue]);
+
   const fetchExchangeRate = async () => {
-    // Simulate API call
-    const mockRate = "5.42";
-    const timestamp = new Date().toISOString();
-    
-    setValue("exchangeRate", mockRate);
-    setValue("exchangeRateSource", "BCB_PTAX_D1");
-    setValue("exchangeRateTimestamp", timestamp);
+    await refreshPtax();
+    if (ptaxData) {
+      setValue("exchangeRate", ptaxData.rate.toFixed(4));
+      setValue("exchangeRateSource", ptaxData.source as any);
+      setValue("exchangeRateTimestamp", ptaxData.ts);
+    }
   };
 
   const handleExchangeRateChange = (value: string) => {
@@ -320,23 +329,33 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                           size="sm"
                           className="h-auto p-0 text-xs"
                           onClick={fetchExchangeRate}
+                          disabled={ptaxLoading}
                         >
-                          Fetch Latest
+                          {ptaxLoading ? "Buscando..." : "Usar taxa de hoje"}
                         </Button>
                       </FormLabel>
                       <div className="space-y-2">
                         <FormControl>
                           <Input
                             type="number"
-                            step="0.01"
+                            step="0.0001"
                             value={field.value}
                             onChange={(e) => handleExchangeRateChange(e.target.value)}
+                            placeholder="Ex.: 5.4321"
                           />
                         </FormControl>
-                        <ExchangeRateBadge
-                          source={exchangeRateSource}
-                          timestamp={exchangeRateTimestamp}
-                        />
+                        {ptaxError ? (
+                          <p className="text-xs text-destructive">Falha ao buscar PTAX</p>
+                        ) : ptaxData ? (
+                          <p className="text-xs text-muted-foreground">
+                            PTAX (compra) • {new Date(ptaxData.ts).toLocaleString('pt-BR')} • Fonte: BCB
+                          </p>
+                        ) : (
+                          <ExchangeRateBadge
+                            source={exchangeRateSource}
+                            timestamp={exchangeRateTimestamp}
+                          />
+                        )}
                       </div>
                       <FormMessage />
                     </FormItem>

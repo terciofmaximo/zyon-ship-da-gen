@@ -34,6 +34,7 @@ import { usePortDirectory } from "@/hooks/usePortDirectory";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useUsdBrlToday } from "@/hooks/useExchangeRate";
 
 interface LedgerLine {
   id: string;
@@ -78,6 +79,7 @@ export default function FDANew() {
   const { isPlatformAdmin } = useUserRole();
   const [loading, setLoading] = useState(false);
   const portState = usePortDirectory();
+  const { data: ptaxData, loading: ptaxLoading, error: ptaxError, refresh: refreshPtax } = useUsdBrlToday(true);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -103,6 +105,13 @@ export default function FDANew() {
       id: `initial_${index}`
     }))
   );
+
+  // Auto-fill exchange rate when PTAX data is available
+  useEffect(() => {
+    if (ptaxData && !formData.exchange_rate) {
+      setFormData(prev => ({ ...prev, exchange_rate: ptaxData.rate.toFixed(4) }));
+    }
+  }, [ptaxData]);
 
   const addLedgerLine = () => {
     const newLine: LedgerLine = {
@@ -410,14 +419,39 @@ export default function FDANew() {
               />
             </div>
             <div>
-              <Label htmlFor="exchange_rate">Exchange Rate (USD/BRL)</Label>
+              <Label htmlFor="exchange_rate" className="flex items-center gap-2">
+                Exchange Rate (USD/BRL)
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0 text-xs"
+                  onClick={async () => {
+                    await refreshPtax();
+                    if (ptaxData) {
+                      setFormData(prev => ({ ...prev, exchange_rate: ptaxData.rate.toFixed(4) }));
+                    }
+                  }}
+                  disabled={ptaxLoading}
+                >
+                  {ptaxLoading ? "Buscando..." : "Usar taxa de hoje"}
+                </Button>
+              </Label>
               <Input
                 id="exchange_rate"
                 type="number"
-                step="0.000001"
+                step="0.0001"
                 value={formData.exchange_rate}
                 onChange={(e) => setFormData(prev => ({ ...prev, exchange_rate: e.target.value }))}
+                placeholder="Ex.: 5.4321"
               />
+              {ptaxError ? (
+                <p className="text-xs text-destructive mt-1">Falha ao buscar PTAX</p>
+              ) : ptaxData ? (
+                <p className="text-xs text-muted-foreground mt-1">
+                  PTAX (compra) • {new Date(ptaxData.ts).toLocaleString('pt-BR')} • Fonte: BCB
+                </p>
+              ) : null}
             </div>
           </CardContent>
         </Card>

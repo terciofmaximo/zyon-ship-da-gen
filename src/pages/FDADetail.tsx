@@ -28,6 +28,7 @@ import { FDAWithLedger, FDATotals } from "@/types/fda";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { formatCurrency, formatNumber } from "@/lib/utils";
+import { useUsdBrlToday } from "@/hooks/useExchangeRate";
 
 const statusVariants = {
   Draft: "secondary",
@@ -40,6 +41,7 @@ export default function FDADetail() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { getFDA, updateFDAStatus, calculateFDATotals, resyncFromPda, loading } = useFDA();
+  const { data: ptaxData, loading: ptaxLoading, error: ptaxError, refresh: refreshPtax } = useUsdBrlToday(false);
   const [fda, setFda] = useState<FDAWithLedger | null>(null);
   const [loadingPage, setLoadingPage] = useState(true);
   const [confirmPost, setConfirmPost] = useState(false);
@@ -564,24 +566,47 @@ export default function FDADetail() {
                      </div>
                    )}
                  </div>
-                <div>
-                  <Label htmlFor="fx_source">FX Source</Label>
-                  {isEditing ? (
-                    <div className="space-y-2">
-                      <Input
-                        id="fx_source"
-                        value={editForm.fx_source}
-                        onChange={(e) => setEditForm({ ...editForm, fx_source: e.target.value })}
-                        placeholder="e.g., BCB PTAX (D-1)"
-                      />
-                      <Button variant="outline" size="sm" className="w-full">
-                        Fetch Latest
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="text-sm mt-1">{(fda.meta as any)?.fx_source || "—"}</div>
-                  )}
-                </div>
+                 <div>
+                   <Label htmlFor="fx_source">FX Source</Label>
+                   {isEditing ? (
+                     <div className="space-y-2">
+                       <Input
+                         id="fx_source"
+                         value={editForm.fx_source}
+                         onChange={(e) => setEditForm({ ...editForm, fx_source: e.target.value })}
+                         placeholder="e.g., BCB PTAX (D-1)"
+                       />
+                       <Button 
+                         variant="outline" 
+                         size="sm" 
+                         className="w-full"
+                         onClick={async () => {
+                           await refreshPtax();
+                           if (ptaxData) {
+                             setEditForm({ 
+                               ...editForm, 
+                               exchange_rate: ptaxData.rate.toFixed(4),
+                               fx_source: "BCB PTAX (D-1)"
+                             });
+                             setIsDirty(true);
+                           }
+                         }}
+                         disabled={ptaxLoading}
+                       >
+                         {ptaxLoading ? "Buscando..." : "Usar taxa PTAX de hoje"}
+                       </Button>
+                       {ptaxError ? (
+                         <p className="text-xs text-destructive">Falha ao buscar PTAX</p>
+                       ) : ptaxData ? (
+                         <p className="text-xs text-muted-foreground">
+                           PTAX (compra) • {new Date(ptaxData.ts).toLocaleString('pt-BR')} • BCB
+                         </p>
+                       ) : null}
+                     </div>
+                   ) : (
+                     <div className="text-sm mt-1">{(fda.meta as any)?.fx_source || "—"}</div>
+                   )}
+                 </div>
               </div>
             </div>
 
