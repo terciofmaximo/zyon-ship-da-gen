@@ -1,3 +1,18 @@
+/*
+ * @ai-context
+ * Role: FDA Ledger table component - editable grid for AP/AR line items with inline editing,
+ *       date pickers, sorting, and filtering by side (AP/AR).
+ * DoD:
+ * - All ledger entries (including zero-value) must be displayed.
+ * - Always use activeOrg.id as tenant_id when creating new lines.
+ * - Preserve debounced save logic (400ms delay).
+ * - Maintain AP (red) vs AR (green) color coding.
+ * Constraints:
+ * - If adding columns, update grid layout (grid-cols-X).
+ * - Preserve amount_usd → amount_local recalculation on FX change.
+ * - Keep date picker in Portal to avoid z-index issues.
+ * - Maintain side filter tabs (All, AR, AP).
+ */
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,6 +64,7 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
     setFullLedger(ledger);
   }, [ledger]);
 
+  // @ai-editable:start(handleAddLine)
   const handleAddLine = useCallback(async () => {
     if (!activeOrg) {
       toast({
@@ -64,6 +80,7 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
       const maxLineNo = fullLedger.reduce((max, line) => Math.max(max, line.line_no), 0);
       const newLineNo = maxLineNo + 1;
 
+      // @ai-guard:start - tenant_id must use activeOrg
       // Create new line in DB
       const { data, error } = await supabase
         .from('fda_ledger')
@@ -82,6 +99,7 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
         })
         .select()
         .single();
+      // @ai-guard:end
 
       if (error) throw error;
 
@@ -102,6 +120,7 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
       });
     }
   }, [fdaId, fullLedger, activeOrg, onLedgerUpdate, toast]);
+  // @ai-editable:end
 
   const saveLineChange = useCallback(async (lineId: string, field: string, value: any) => {
     try {

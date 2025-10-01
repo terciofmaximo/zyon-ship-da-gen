@@ -1,3 +1,15 @@
+/*
+ * @ai-context
+ * Role: FDA list page - displays all FDAs with filtering, sorting, and quick actions.
+ * DoD:
+ * - Always filter by activeOrg.id unless user is platformAdmin.
+ * - Calculate totals (AP, AR, Net) for each FDA from ledger entries.
+ * - Preserve PDA number lookup for linked FDAs.
+ * Constraints:
+ * - Maintain RLS policy - regular users only see their org's FDAs.
+ * - If adding filters/sorts, update query builder logic.
+ * - Keep financial display consistent (USD/BRL formatting).
+ */
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Eye, Download } from "lucide-react";
@@ -66,6 +78,7 @@ export default function FDAList() {
     }
   }, [sortBy, activeOrg, isPlatformAdmin]);
 
+  // @ai-editable:start(fetchFDAs)
   const fetchFDAs = async () => {
     setLoading(true);
     try {
@@ -76,10 +89,12 @@ export default function FDAList() {
           fda_ledger(amount_usd, side)
         `);
 
+      // @ai-guard:start - RLS tenant filter
       // platformAdmin sees all orgs, regular users only see their active org
       if (!isPlatformAdmin && activeOrg) {
         query = query.eq("tenant_id", activeOrg.id);
       }
+      // @ai-guard:end
 
       // Apply sorting
       switch (sortBy) {
@@ -146,6 +161,7 @@ export default function FDAList() {
       setLoading(false);
     }
   };
+  // @ai-editable:end
 
   const filteredFDAs = useMemo(() => {
     return fdas.filter((fda) => {

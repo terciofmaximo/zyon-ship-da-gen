@@ -1,3 +1,19 @@
+/*
+ * @ai-context
+ * Role: Hook for PDA (Pro Forma Disbursement Account) operations - handles creation, updates,
+ *       schema validation, rate limiting, and port validation.
+ * DoD:
+ * - Never alter database schema directly - use migrations.
+ * - Always use tenant_id from activeOrg (via getActiveTenantId()) for multi-tenancy.
+ * - Preserve RLS policy checks and rate limit validations.
+ * - Maintain structured error handling with PDA_ERROR_CODES.
+ * - Support both authenticated (user-based) and public (session-based) PDA creation.
+ * Constraints:
+ * - If altering validation rules, sync with pdaValidation.ts and schemas.
+ * - Do not remove rate limit checks for public PDA creation.
+ * - Preserve retry logic for network errors.
+ * - Maintain audit trail (created_by, session_id).
+ */
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +38,7 @@ export function usePDA(sessionId?: string) {
   const { toast } = useToast();
   const { activeOrg } = useOrg();
 
+  // @ai-editable:start(savePDA)
   const savePDA = async (data: PDAData, pdaId?: string, retryCount = 0) => {
     const MAX_RETRIES = 1;
     const RETRY_DELAYS = [300, 800]; // ms
@@ -29,6 +46,7 @@ export function usePDA(sessionId?: string) {
     setLoading(true);
     
     try {
+      // @ai-guard:start - tenant_id and auth logic
       // Step 1: Authentication (optional for public PDA creation)
       // Step 1a: Get user (optional for public mode)
       let user = null;
@@ -72,6 +90,7 @@ export function usePDA(sessionId?: string) {
           }
         }
       }
+      // @ai-guard:end
       
       // Step 2: Transform and validate input data
       const inputData = {
@@ -300,6 +319,7 @@ export function usePDA(sessionId?: string) {
       setLoading(false);
     }
   };
+  // @ai-editable:end
 
   const getPDA = async (id: string) => {
     try {

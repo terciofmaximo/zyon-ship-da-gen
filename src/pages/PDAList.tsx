@@ -1,3 +1,16 @@
+/*
+ * @ai-context
+ * Role: PDA list page - displays all PDAs with filtering, sorting, pagination, and status management.
+ * DoD:
+ * - Always filter by activeOrg.id unless user is platformAdmin.
+ * - Preserve highlighting logic for newly created PDAs (URL param).
+ * - Support status updates and PDA→FDA conversion.
+ * Constraints:
+ * - Maintain RLS policy - regular users only see their org's PDAs.
+ * - If adding filters/sorts, update query builder and Tabs.
+ * - Preserve pagination logic (start/end range).
+ * - Keep status enum mapping (statusLabels, statusVariants).
+ */
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Search, Plus, MoreHorizontal, Eye, Check, Download, RefreshCw } from "lucide-react";

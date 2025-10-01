@@ -1,3 +1,16 @@
+/*
+ * @ai-context
+ * Role: PDA review/detail page - displays PDA details, cost breakdown, and actions (send, approve, convert to FDA).
+ * DoD:
+ * - Display all cost items (13 items) with USD/BRL totals.
+ * - Support PDF generation via generatePDAHTML().
+ * - Enable status transitions (CREATED → SENT → APPROVED → FDA).
+ * Constraints:
+ * - Maintain status flow logic (only allow valid transitions).
+ * - If adding cost items, sync with COST_ITEM_MAPPING in useFDA.ts.
+ * - Preserve PDF generation logic (opens in new window).
+ * - Keep financial formatting consistent.
+ */
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

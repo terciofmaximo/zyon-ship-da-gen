@@ -1,3 +1,17 @@
+/*
+ * @ai-context
+ * Role: FDA detail/edit page - comprehensive view and editing of FDA header, ledger, and financial summary.
+ * DoD:
+ * - Preserve concurrency checks (updated_at timestamp validation).
+ * - Save draft functionality must remain always enabled (no validation blocking).
+ * - Maintain exchange rate recalculation logic when FX changes.
+ * - Keep audit trail (last saved by/at display).
+ * Constraints:
+ * - If adding fields, ensure they're saved in handleSaveDraft().
+ * - Do not disable "Save Draft" button with validation logic.
+ * - Preserve unsaved changes warning (isDirty state).
+ * - Maintain keyboard shortcut (Ctrl/Cmd + S).
+ */
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -141,6 +155,7 @@ export default function FDADetail() {
     }
   };
 
+  // @ai-editable:start(handleSaveDraft)
   const handleSaveDraft = async (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
@@ -154,6 +169,7 @@ export default function FDADetail() {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       
+      // @ai-guard:start - concurrency check
       // Check for concurrent updates
       const { data: currentFda, error: checkError } = await supabase
         .from("fda")
@@ -176,6 +192,7 @@ export default function FDADetail() {
         });
         return;
       }
+      // @ai-guard:end
 
       // Update FDA header
       const { error } = await supabase
@@ -239,6 +256,7 @@ export default function FDADetail() {
       setIsSaving(false);
     }
   };
+  // @ai-editable:end
 
 
   const handleCancel = () => {

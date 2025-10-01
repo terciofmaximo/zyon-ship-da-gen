@@ -1,3 +1,18 @@
+/*
+ * @ai-context
+ * Role: Hook for FDA (Final Disbursement Account) business logic - handles PDA→FDA conversion, 
+ *       ledger management, status updates, and financial calculations.
+ * DoD:
+ * - Never alter database schema directly - use migrations.
+ * - Always use tenant_id from activeOrg (via getActiveTenantId()) for multi-tenancy.
+ * - Preserve RLS policy checks - never bypass tenant_id filters.
+ * - Include ALL PDA cost items in ledger, even zero-value lines.
+ * - Maintain audit trail (created_by, updated_at).
+ * Constraints:
+ * - If altering route structure, sync with app router config.
+ * - Do not remove RLS/permission checks in queries.
+ * - Preserve financial calculation precision (use Decimal.js).
+ */
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -28,6 +43,7 @@ export const useFDA = () => {
   const [loading, setLoading] = useState(false);
   const { activeOrg } = useOrg();
 
+  // @ai-editable:start(convertPdaToFda)
   const convertPdaToFda = async (pdaId: string): Promise<string | null> => {
     setLoading(true);
     try {
@@ -62,11 +78,13 @@ export const useFDA = () => {
         return existingFda.id;
       }
 
+      // @ai-guard:start - tenant_id must always use activeOrg
       // Create FDA header - always use activeOrg.id as tenant_id
       const tenantId = getActiveTenantId(activeOrg);
       if (!tenantId) {
         throw new Error("Active organization required to create FDA");
       }
+      // @ai-guard:end
 
       const fdaData = {
         pda_id: pdaId,
@@ -163,6 +181,7 @@ export const useFDA = () => {
       setLoading(false);
     }
   };
+  // @ai-editable:end
 
   const getFDA = async (id: string): Promise<FDAWithLedger | null> => {
     try {
@@ -209,14 +228,17 @@ export const useFDA = () => {
     }
   };
 
+  // @ai-editable:start(rebuildFromPda)
   const rebuildFromPda = async (fdaId: string): Promise<boolean> => {
     setLoading(true);
     try {
+      // @ai-guard:start - tenant_id validation
       // Always use activeOrg.id as tenant_id
       const tenantId = getActiveTenantId(activeOrg);
       if (!tenantId) {
         throw new Error("Active organization required to rebuild FDA");
       }
+      // @ai-guard:end
 
       // Get FDA and its linked PDA
       const { data: fda, error: fdaError } = await supabase
@@ -311,6 +333,7 @@ export const useFDA = () => {
       setLoading(false);
     }
   };
+  // @ai-editable:end
 
   const updateFDAStatus = async (fdaId: string, status: FDA["status"]): Promise<boolean> => {
     try {
