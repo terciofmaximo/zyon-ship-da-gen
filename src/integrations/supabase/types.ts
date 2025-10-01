@@ -288,6 +288,33 @@ export type Database = {
           },
         ]
       }
+      fda_ledger_comments: {
+        Row: {
+          comment: string
+          created_at: string
+          created_by: string
+          id: string
+          ledger_id: string
+          tenant_id: string
+        }
+        Insert: {
+          comment: string
+          created_at?: string
+          created_by: string
+          id?: string
+          ledger_id: string
+          tenant_id: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          ledger_id?: string
+          tenant_id?: string
+        }
+        Relationships: []
+      }
       fda_ledger_payments: {
         Row: {
           amount_local: number

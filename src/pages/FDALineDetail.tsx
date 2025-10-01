@@ -73,6 +73,13 @@ interface Attachment {
   };
 }
 
+interface Comment {
+  id: string;
+  comment: string;
+  created_by: string;
+  created_at: string;
+}
+
 export default function FDALineDetail() {
   const { fdaId, lineId } = useParams();
   const navigate = useNavigate();
@@ -88,6 +95,8 @@ export default function FDALineDetail() {
   const [permalinkCopied, setPermalinkCopied] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState('');
   
   // New payment form
   const [newPayment, setNewPayment] = useState({
@@ -131,6 +140,9 @@ export default function FDALineDetail() {
       
       // Load attachments from storage
       await loadAttachments();
+      
+      // Load comments
+      await loadComments();
       
       // Auto-fill line details from FDA if not already set
       if (lineData) {
@@ -329,6 +341,93 @@ export default function FDALineDetail() {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  };
+
+  const loadComments = async () => {
+    if (!lineId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('fda_ledger_comments')
+        .select('*')
+        .eq('ledger_id', lineId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setComments(data || []);
+    } catch (error: any) {
+      console.error('Error loading comments:', error);
+    }
+  };
+
+  const postComment = async () => {
+    if (!newComment.trim() || !line) return;
+    
+    const tenantId = line.tenant_id || fdaData?.tenant_id;
+    if (!tenantId) {
+      toast({
+        title: "Error",
+        description: "Missing tenant information",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+      
+      const { error } = await supabase
+        .from('fda_ledger_comments')
+        .insert({
+          ledger_id: lineId,
+          comment: newComment.trim(),
+          created_by: user.id,
+          tenant_id: tenantId
+        });
+      
+      if (error) throw error;
+      
+      setNewComment('');
+      await loadComments();
+      
+      toast({
+        title: "Success",
+        description: "Comment posted",
+      });
+    } catch (error: any) {
+      console.error('Error posting comment:', error);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteComment = async (commentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('fda_ledger_comments')
+        .delete()
+        .eq('id', commentId);
+      
+      if (error) throw error;
+      
+      await loadComments();
+      
+      toast({
+        title: "Success",
+        description: "Comment deleted",
+      });
+    } catch (error: any) {
+      console.error('Error deleting comment:', error);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const saveField = async (field: string, value: any) => {
@@ -929,9 +1028,45 @@ export default function FDALineDetail() {
             <Textarea
               placeholder="Add a comment (use @mentions)..."
               rows={3}
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
             />
-            <Button className="mt-2">Post Comment</Button>
+            <Button 
+              className="mt-2"
+              onClick={postComment}
+              disabled={!newComment.trim()}
+            >
+              Post Comment
+            </Button>
           </div>
+          
+          {comments.length > 0 && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <div className="text-sm font-medium">Comments ({comments.length})</div>
+                {comments.map((comment) => (
+                  <div key={comment.id} className="p-3 bg-muted rounded-lg">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm whitespace-pre-wrap break-words">{comment.comment}</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {format(new Date(comment.created_at), 'PPp')}
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteComment(comment.id)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
           
           <Separator />
           
