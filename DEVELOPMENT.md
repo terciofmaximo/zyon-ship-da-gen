@@ -1,81 +1,36 @@
 # Development Guide
 
-## Code Quality Tools
+## Code Quality Setup
 
-### ESLint Configuration
+### Step 1: Install Prettier (Required)
 
-The project uses ESLint with TypeScript support. Key rules:
+Since Lovable doesn't manage `package.json` automatically, you need to install Prettier manually:
 
-- `@typescript-eslint/no-unused-vars`: **warn** - Catches unused variables (can use `_` prefix to ignore)
-- `@typescript-eslint/no-explicit-any`: **warn** - Discourages use of `any` type
-- `no-console`: **warn** - Allows only `console.warn` and `console.error`
+```bash
+npm install --save-dev prettier eslint-config-prettier eslint-plugin-prettier
+```
 
-### Recommended npm Scripts
+### Step 2: Add Scripts to package.json
 
-Since `package.json` is managed by Lovable, you can run these commands manually or add them locally:
+Manually add these scripts to your `package.json`:
 
 ```json
 {
   "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
     "lint": "eslint src --max-warnings=0",
     "lint:fix": "eslint src --fix",
-    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\""
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   }
 }
 ```
 
-### Running Linting
+### Step 3: Create Prettier Configuration
 
-**Manual commands (without package.json scripts):**
-
-```bash
-# Lint all files in src
-npx eslint src --max-warnings=0
-
-# Auto-fix linting issues
-npx eslint src --fix
-
-# Format with Prettier
-npx prettier --write "src/**/*.{ts,tsx,js,jsx,json,css,md}"
-
-# Check formatting
-npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,css,md}"
-```
-
-### Import Aliases
-
-The project uses TypeScript path aliases:
-
-- `@/*` → `src/*`
-
-Example:
-```typescript
-import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-```
-
-Configuration is in `tsconfig.json`:
-```json
-{
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
-  }
-}
-```
-
-## Prettier Configuration
-
-If you want to add Prettier, install it:
-
-```bash
-npm install --save-dev prettier
-```
-
-Then create `.prettierrc`:
+Create `.prettierrc` in the project root:
 
 ```json
 {
@@ -84,17 +39,69 @@ Then create `.prettierrc`:
   "singleQuote": false,
   "printWidth": 100,
   "tabWidth": 2,
-  "useTabs": false
+  "useTabs": false,
+  "arrowParens": "always"
 }
 ```
 
-And `.prettierignore`:
+Create `.prettierignore`:
 
 ```
 dist
 node_modules
 *.min.js
 *.min.css
+.lovable
+public/data
+```
+
+## ESLint Configuration
+
+Current ESLint rules (configured in `eslint.config.js`):
+
+- ✅ `@typescript-eslint/no-unused-vars`: **warn** - Catches unused variables
+  - Variables/args starting with `_` are ignored
+- ⚠️ `@typescript-eslint/no-explicit-any`: **warn** - Discourages `any` type
+- ⚠️ `no-console`: **warn** - Only allows `console.warn` and `console.error`
+
+## Running Quality Checks
+
+Once you've completed the setup above:
+
+```bash
+# Run linter (fail on warnings)
+npm run lint
+
+# Auto-fix linting issues
+npm run lint:fix
+
+# Format all files with Prettier
+npm run format
+
+# Check if files are formatted
+npm run format:check
+```
+
+**Manual commands (if scripts aren't added):**
+
+```bash
+npx eslint src --max-warnings=0
+npx eslint src --fix
+npx prettier --write .
+```
+
+## Import Aliases
+
+The project uses TypeScript path aliases configured in `tsconfig.json`:
+
+- `@/*` → `src/*`
+
+**Examples:**
+```typescript
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useOrg } from "@/context/OrgProvider";
+import { getActiveTenantId } from "@/lib/utils";
 ```
 
 ## Pre-commit Hooks (Optional)
@@ -116,7 +123,54 @@ Add to `package.json`:
 }
 ```
 
-Update `.husky/pre-commit`:
+Create `.husky/pre-commit`:
 ```bash
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
 npx lint-staged
+```
+
+## VS Code Configuration (Recommended)
+
+Create `.vscode/settings.json`:
+
+```json
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true
+}
+```
+
+Install recommended extensions:
+- ESLint (dbaeumer.vscode-eslint)
+- Prettier (esbenp.prettier-vscode)
+
+## Troubleshooting
+
+### "Cannot find module '@/...'"
+
+Ensure `tsconfig.json` has:
+```json
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}
+```
+
+### ESLint/Prettier Conflicts
+
+The project uses `eslint-config-prettier` to disable conflicting ESLint rules. If you see formatting issues, run:
+
+```bash
+npm run lint:fix && npm run format
 ```

@@ -4,6 +4,10 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
+// Note: To integrate Prettier, install:
+// npm install --save-dev prettier eslint-config-prettier eslint-plugin-prettier
+// Then add 'prettier' to the extends array below
+
 export default tseslint.config(
   { ignores: ["dist"] },
   {
