@@ -208,11 +208,11 @@ export default function FDAList() {
   const getStatusClassName = (status: string) => {
     switch (status) {
       case "Draft":
-        return "bg-blue-900 text-white border-blue-900 hover:bg-blue-800";
+        return "bg-secondary text-secondary-foreground border-0 hover:bg-secondary/90";
       case "Posted":
-        return "bg-yellow-900 text-white border-yellow-900 hover:bg-yellow-800";
+        return "bg-warning text-warning-foreground border-0 hover:bg-warning/90";
       case "Closed":
-        return "bg-red-900 text-white border-red-900 hover:bg-red-800";
+        return "bg-destructive text-destructive-foreground border-0 hover:bg-destructive/90";
       default:
         return "";
     }
