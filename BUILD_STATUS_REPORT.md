@@ -1,7 +1,7 @@
 # Build Status Report
 
 **Data:** 2025-10-01  
-**Status:** ✅ Estável - UX do FDA aprimorada
+**Status:** ✅ Estável - tenant_id padronizado
 
 ## Verificações Realizadas
 
@@ -55,24 +55,37 @@ Todos os imports estão apontando para os caminhos corretos nesta estrutura.
 ## Auditoria tenant_id (2025-10-01)
 
 ### Objetivo
-Verificar padronização do uso de `tenant_id` em PDAs e FDAs para garantir que sempre use `activeOrg.id` e nunca `user.id`.
+Padronizar uso de `tenant_id` em PDAs e FDAs para garantir que sempre use `getActiveTenantId(activeOrg)` ao invés de `activeOrg.id` direto.
 
 ### Resultado
-✅ **100% padronizado e correto**
+✅ **100% padronizado**
 
-- Helper `getActiveTenantId()` já existe e funcional em `src/lib/utils.ts`
-- 27 ocorrências de `tenant_id` auditadas, todas corretas
-- 0 usos incorretos de `user.id` como `tenant_id`
-- Separação clara entre `created_by: user.id` (audit) e `tenant_id: activeOrg.id` (multi-tenancy)
+- Helper `getActiveTenantId()` já existia em `src/lib/utils.ts`
+- 6 arquivos atualizados para usar o helper consistentemente
+- 0 usos incorretos de `user.id` como `tenant_id` (já estava correto)
+- Todas as queries/inserts agora usam `getActiveTenantId(activeOrg)`
 
-### Arquivos Verificados
-- ✅ src/hooks/useFDA.ts - usa `getActiveTenantId(activeOrg)`
-- ✅ src/hooks/usePDA.ts - usa `getActiveTenantId(activeOrg)`
-- ✅ src/pages/FDANew.tsx - usa `activeOrg.id`
-- ✅ src/components/fda/FDALedgerTable.tsx - usa `activeOrg.id`
-- ✅ Todas as queries - filtram por `activeOrg.id`
+### Arquivos Modificados
+1. ✅ src/components/fda/FDALedgerTable.tsx - imports + 2 instâncias
+2. ✅ src/pages/FDAList.tsx - imports + query filter
+3. ✅ src/pages/FDANew.tsx - imports + 2 instâncias
+4. ✅ src/pages/PDAList.tsx - imports + query filter
+5. ✅ src/pages/PublicPDAList.tsx - imports + query + validation
+6. ✅ src/pages/PublicPDAView.tsx - imports + query + validation
 
-**Detalhes completos:** Ver `TENANT_ID_AUDIT_REPORT.md`
+### Arquivos Já Conformes
+- ✅ src/hooks/useFDA.ts - já usava `getActiveTenantId()`
+- ✅ src/hooks/usePDA.ts - já usava `getActiveTenantId()`
+- ✅ src/hooks/useDashboardKpis.ts - usa `activeOrgId` como parâmetro (correto)
+- ✅ src/hooks/useRecentActivity.ts - usa `activeOrgId` como parâmetro (correto)
+
+### Benefícios
+1. Lógica centralizada - single source of truth
+2. Null safety embutido
+3. Manutenibilidade melhorada
+4. Conformidade RLS garantida
+
+**Detalhes completos:** Ver `TENANT_ID_STANDARDIZATION_REPORT.md`
 
 ## Melhorias de UX do FDA (2025-10-01)
 

@@ -14,6 +14,7 @@ import { useFDA } from "@/hooks/useFDA";
 import { usePDA } from "@/hooks/usePDA";
 import Decimal from "decimal.js";
 import { useOrg } from "@/context/OrgProvider";
+import { getActiveTenantId } from "@/lib/utils";
 import { Combobox } from "@/components/ui/combobox";
 import { usePortDirectory } from "@/hooks/usePortDirectory";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -202,7 +203,7 @@ export default function FDANew() {
         currency_local: formData.currency_local,
         exchange_rate: parseFloat(formData.exchange_rate),
         created_by: user.id,
-        tenant_id: activeOrg.id,
+        tenant_id: getActiveTenantId(activeOrg),
         meta: {
           received_from_client_usd: receivedFromClient || 0,
         },
@@ -230,7 +231,7 @@ export default function FDANew() {
           invoice_no: line.invoice_no || null,
           due_date: line.due_date || null,
           status: line.status,
-          tenant_id: activeOrg.id,
+          tenant_id: getActiveTenantId(activeOrg),
         }));
 
         const { error: ledgerError } = await supabase

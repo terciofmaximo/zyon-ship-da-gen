@@ -31,6 +31,7 @@ import { FDALedger } from '@/types/fda';
 import Decimal from 'decimal.js';
 import * as Portal from '@radix-ui/react-portal';
 import { useOrg } from '@/context/OrgProvider';
+import { getActiveTenantId } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils';
 
 interface FDALedgerTableProps {
@@ -94,7 +95,7 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
           amount_usd: 0,
           amount_local: 0,
           status: 'Open',
-          tenant_id: activeOrg.id,
+          tenant_id: getActiveTenantId(activeOrg),
           origin: 'MANUAL',
         })
         .select()
@@ -160,7 +161,7 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
             invoice_no: updatedLine.invoice_no,
             due_date: updatedLine.due_date,
             status: updatedLine.status,
-            tenant_id: activeOrg.id,
+            tenant_id: getActiveTenantId(activeOrg),
           })
           .select()
           .single();

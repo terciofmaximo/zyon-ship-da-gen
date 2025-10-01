@@ -60,6 +60,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { useOrg } from "@/context/OrgProvider";
+import { getActiveTenantId } from "@/lib/utils";
 import { useUserRole } from "@/hooks/useUserRole";
 
 interface PDA {
@@ -164,7 +165,10 @@ export default function PDAList() {
 
       // platformAdmin sees all orgs, regular users only see their active org
       if (!isPlatformAdmin && activeOrg) {
-        query = query.eq("tenant_id", activeOrg.id);
+        const tenantId = getActiveTenantId(activeOrg);
+        if (tenantId) {
+          query = query.eq("tenant_id", tenantId);
+        }
       }
 
       // Apply sorting

@@ -44,6 +44,7 @@ import { useToast } from "@/hooks/use-toast";
 import { FDA } from "@/types/fda";
 import { useFDA } from "@/hooks/useFDA";
 import { useOrg } from "@/context/OrgProvider";
+import { getActiveTenantId } from "@/lib/utils";
 import { useUserRole } from "@/hooks/useUserRole";
 
 const statusVariants = {
@@ -92,7 +93,10 @@ export default function FDAList() {
       // @ai-guard:start - RLS tenant filter
       // platformAdmin sees all orgs, regular users only see their active org
       if (!isPlatformAdmin && activeOrg) {
-        query = query.eq("tenant_id", activeOrg.id);
+        const tenantId = getActiveTenantId(activeOrg);
+        if (tenantId) {
+          query = query.eq("tenant_id", tenantId);
+        }
       }
       // @ai-guard:end
 

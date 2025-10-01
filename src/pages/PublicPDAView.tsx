@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthProvider";
 import { useOrg } from "@/context/OrgProvider";
+import { getActiveTenantId } from "@/lib/utils";
 
 type PDADetail = {
   id: string;
@@ -61,11 +62,16 @@ export default function PublicPDAView() {
     
     try {
       // Fetch PDA with org validation
+      const tenantId = getActiveTenantId(activeOrg);
+      if (!tenantId) {
+        throw new Error("Active organization required");
+      }
+      
       const { data, error } = await supabase
         .from("pdas")
         .select("*")
         .eq("tracking_id", trackingId.toUpperCase())
-        .eq("tenant_id", activeOrg.id)
+        .eq("tenant_id", tenantId)
         .maybeSingle();
 
       if (error) throw error;

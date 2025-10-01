@@ -9,6 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useOrg } from "@/context/OrgProvider";
+import { getActiveTenantId } from "@/lib/utils";
 
 type PDA = {
   id: string;
@@ -37,10 +38,15 @@ export default function PublicPDAList() {
 
     setLoading(true);
     try {
+      const tenantId = getActiveTenantId(activeOrg);
+      if (!tenantId) {
+        throw new Error("Active organization required");
+      }
+      
       const { data, error } = await supabase
         .from("pdas")
         .select("*")
-        .eq("tenant_id", activeOrg.id)
+        .eq("tenant_id", tenantId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
