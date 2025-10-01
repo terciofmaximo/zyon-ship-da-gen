@@ -14,6 +14,15 @@ export interface FDAScheduleItem {
   side: "AP" | "AR";
 }
 
+export interface FDAMilestone {
+  id: string;
+  vessel_name: string | null;
+  port: string | null;
+  eta: string | null;
+  etb: string | null;
+  ets: string | null;
+}
+
 interface UseFDAScheduleParams {
   monthStart: Date;
   monthEnd: Date;
@@ -31,7 +40,8 @@ export const useFDASchedule = ({ monthStart, monthEnd, tenantId }: UseFDASchedul
       const startStr = format(monthStart, "yyyy-MM-dd");
       const endStr = format(monthEnd, "yyyy-MM-dd");
 
-      const { data, error } = await supabase
+      // Fetch financial dues
+      const { data: items, error: itemsError } = await supabase
         .from("fda_ledger")
         .select("id, fda_id, description, category, amount_usd, amount_local, due_date, status, side")
         .eq("tenant_id", tenantId)
@@ -40,9 +50,23 @@ export const useFDASchedule = ({ monthStart, monthEnd, tenantId }: UseFDASchedul
         .not("due_date", "is", null)
         .order("due_date", { ascending: true });
 
-      if (error) throw error;
+      if (itemsError) throw itemsError;
 
-      return (data || []) as FDAScheduleItem[];
+      // Fetch FDA milestones (ETA, ETB, ETS)
+      const { data: fdas, error: fdasError } = await supabase
+        .from("fda")
+        .select("id, vessel_name, port, eta, etb, ets")
+        .eq("tenant_id", tenantId)
+        .or(`eta.gte.${startStr},etb.gte.${startStr},ets.gte.${startStr}`)
+        .or(`eta.lte.${endStr},etb.lte.${endStr},ets.lte.${endStr}`)
+        .order("eta", { ascending: true, nullsFirst: false });
+
+      if (fdasError) throw fdasError;
+
+      return {
+        items: (items || []) as FDAScheduleItem[],
+        fdas: (fdas || []) as FDAMilestone[],
+      };
     },
     enabled: !!tenantId,
   });
