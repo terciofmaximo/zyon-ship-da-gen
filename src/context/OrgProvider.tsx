@@ -66,7 +66,33 @@ export const OrgProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }));
 
       setOrganizations(orgs);
-      setActiveOrgState(null); // Default to "All Tenants" view
+
+      // Check localStorage first (highest precedence)
+      const savedOrgId = localStorage.getItem("active_org_id");
+      const savedOrg = orgs.find(o => o.id === savedOrgId);
+      
+      if (savedOrg) {
+        setActiveOrgState(savedOrg);
+      } else {
+        // Try to get default tenant from user_profiles
+        const { data: profileData } = await supabase
+          .from("user_profiles")
+          .select("tenant_id")
+          .eq("user_id", user!.id)
+          .maybeSingle();
+
+        if (profileData?.tenant_id) {
+          const defaultOrg = orgs.find(o => o.id === profileData.tenant_id);
+          if (defaultOrg) {
+            setActiveOrgState(defaultOrg);
+            localStorage.setItem("active_org_id", defaultOrg.id);
+          } else {
+            setActiveOrgState(null); // Default to "All Tenants" view
+          }
+        } else {
+          setActiveOrgState(null); // Default to "All Tenants" view
+        }
+      }
     } catch (error) {
       console.error("Error fetching organizations:", error);
     } finally {
