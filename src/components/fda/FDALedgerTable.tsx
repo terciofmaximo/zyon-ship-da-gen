@@ -35,6 +35,20 @@ import { getActiveTenantId } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils';
 import { useFDALedgerService } from '@/hooks/useFDALedgerService';
 
+// Type-safe field update value
+type FDALedgerFieldValue = string | number | boolean | null;
+
+// Editable fields from FDALedger
+type EditableFDALedgerField = 
+  | 'description'
+  | 'amount_usd'
+  | 'invoice_no'
+  | 'due_date'
+  | 'counterparty'
+  | 'category'
+  | 'side'
+  | 'status';
+
 interface FDALedgerTableProps {
   fdaId: string;
   ledger: FDALedger[];
@@ -52,8 +66,8 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
   onLedgerUpdate
 }) => {
   const [fullLedger, setFullLedger] = useState<FDALedger[]>([]);
-  const [editingCell, setEditingCell] = useState<{ id: string; field: string } | null>(null);
-  const [editValues, setEditValues] = useState<Record<string, any>>({});
+  const [editingCell, setEditingCell] = useState<{ id: string; field: EditableFDALedgerField } | null>(null);
+  const [editValues, setEditValues] = useState<Record<string, FDALedgerFieldValue>>({});
   const [sortField, setSortField] = useState<string>('line_no');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [openDatePickers, setOpenDatePickers] = useState<Record<string, boolean>>({});
@@ -94,7 +108,14 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
   }, [fdaId, fullLedger, activeOrg, onLedgerUpdate, ledgerService, toast]);
   // @ai-editable:end
 
-  const saveLineChange = useCallback(async (lineId: string, field: string, value: any) => {
+  // Helper: safe numeric parse (empty string -> 0, invalid -> 0)
+  const safeParseNumber = (value: FDALedgerFieldValue): number => {
+    if (value === null || value === '' || value === undefined) return 0;
+    const num = typeof value === 'number' ? value : parseFloat(String(value));
+    return isNaN(num) ? 0 : num;
+  };
+
+  const saveLineChange = useCallback(async (lineId: string, field: EditableFDALedgerField, value: FDALedgerFieldValue) => {
     const lineIndex = fullLedger.findIndex(l => l.id === lineId);
     if (lineIndex === -1) return;
 
@@ -102,15 +123,16 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
     
     // Handle special fields locally
     if (field === 'amount_usd') {
-      updatedLine.amount_usd = parseFloat(value) || 0;
+      updatedLine.amount_usd = safeParseNumber(value);
       updatedLine.amount_local = new Decimal(updatedLine.amount_usd).mul(exchangeRate).toNumber();
-    } else if (field === 'paid') {
-      updatedLine.status = value ? 'Settled' : 'Open';
-      if (value) {
-        updatedLine.settled_at = new Date().toISOString();
-      }
-    } else {
-      (updatedLine as any)[field] = value;
+    } else if (field === 'side') {
+      updatedLine.side = value as 'AP' | 'AR';
+    } else if (field === 'status') {
+      updatedLine.status = value as 'Open' | 'Settled' | 'Partially Settled';
+    } else if (field === 'description' || field === 'invoice_no' || field === 'counterparty' || field === 'category') {
+      updatedLine[field] = value === null ? undefined : String(value);
+    } else if (field === 'due_date') {
+      updatedLine.due_date = value === null ? undefined : String(value);
     }
 
     // Use service to save (handles both insert for new lines and update for existing)
@@ -127,12 +149,12 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
       setFullLedger(newFullLedger);
       onLedgerUpdate(newFullLedger);
     }
-  }, [fullLedger, exchangeRate, onLedgerUpdate, ledgerService]);
+  }, [fullLedger, exchangeRate, onLedgerUpdate, ledgerService, safeParseNumber]);
 
   // Debounced save for date picker
   const [saveTimeouts, setSaveTimeouts] = useState<Record<string, NodeJS.Timeout>>({});
   
-  const debouncedSave = useCallback((lineId: string, field: string, value: any) => {
+  const debouncedSave = useCallback((lineId: string, field: EditableFDALedgerField, value: FDALedgerFieldValue) => {
     // Clear existing timeout for this field
     const key = `${lineId}-${field}`;
     if (saveTimeouts[key]) {
@@ -166,7 +188,7 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
     }
   }, [editValues, editingCell, saveLineChange]);
 
-  const handleCellEdit = (lineId: string, field: string, value: any) => {
+  const handleCellEdit = (lineId: string, field: EditableFDALedgerField, value: FDALedgerFieldValue) => {
     setEditValues(prev => ({ ...prev, [`${lineId}-${field}`]: value }));
     setEditingCell({ id: lineId, field });
   };
@@ -308,7 +330,7 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
             <div className="flex items-center justify-center">
               <Checkbox
                 checked={line.status === 'Settled'}
-                onCheckedChange={(checked) => handleCellEdit(line.id, 'paid', checked)}
+                onCheckedChange={(checked) => saveLineChange(line.id, 'status', checked ? 'Settled' : 'Open')}
               />
             </div>
 

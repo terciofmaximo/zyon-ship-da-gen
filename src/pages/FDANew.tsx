@@ -47,6 +47,12 @@ interface LedgerLine {
   status: "Open" | "Settled" | "Partially Settled";
 }
 
+// Type-safe field update value for LedgerLine
+type LedgerLineFieldValue = string | number;
+
+// Editable fields from LedgerLine
+type EditableLedgerLineField = keyof LedgerLine;
+
 // Fixed 13 cost items matching PDA Cost Entry
 const INITIAL_LEDGER_LINES: Omit<LedgerLine, "id">[] = [
   { side: "AP", category: "Pilot IN/OUT", description: "Pilot IN/OUT", amount_usd: 0, counterparty: "Vendor — to assign", status: "Open" },
@@ -109,11 +115,31 @@ export default function FDANew() {
     setLedgerLines([...ledgerLines, newLine]);
   };
 
-  const updateLedgerLine = (id: string, field: string, value: any) => {
+  // Helper: safe numeric parse (empty string -> 0, invalid -> 0)
+  const safeParseNumber = (value: LedgerLineFieldValue): number => {
+    if (value === '' || value === null || value === undefined) return 0;
+    const num = typeof value === 'number' ? value : parseFloat(String(value));
+    return isNaN(num) ? 0 : num;
+  };
+
+  const updateLedgerLine = (id: string, field: EditableLedgerLineField, value: LedgerLineFieldValue) => {
     setLedgerLines(lines =>
-      lines.map(line =>
-        line.id === id ? { ...line, [field]: value } : line
-      )
+      lines.map(line => {
+        if (line.id !== id) return line;
+        
+        // Type-safe field updates
+        if (field === 'amount_usd') {
+          return { ...line, amount_usd: safeParseNumber(value) };
+        } else if (field === 'side') {
+          return { ...line, side: value as 'AP' | 'AR' };
+        } else if (field === 'status') {
+          return { ...line, status: value as 'Open' | 'Settled' | 'Partially Settled' };
+        } else if (field === 'category' || field === 'description' || field === 'counterparty' || field === 'invoice_no' || field === 'due_date') {
+          return { ...line, [field]: String(value) };
+        }
+        
+        return line;
+      })
     );
   };
 

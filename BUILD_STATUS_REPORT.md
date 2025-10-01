@@ -441,6 +441,72 @@ Implementar padrões consistentes de UX: ErrorBoundary, componentes de loading p
 
 ---
 
+## Type Safety Enhancement - FDA Components (2025-10-01)
+
+### Objetivo
+Aumentar segurança de tipos em componentes FDA sem grandes refactors, eliminando `any` e garantindo parse numérico seguro.
+
+### ✅ Arquivos Refatorados
+
+**1. src/components/fda/FDALedgerTable.tsx**
+
+**Tipos criados:**
+```typescript
+type FDALedgerFieldValue = string | number | boolean | null;
+type EditableFDALedgerField = 
+  | 'description' | 'amount_usd' | 'invoice_no' | 'due_date'
+  | 'counterparty' | 'category' | 'side' | 'status';
+```
+
+**Mudanças:**
+- ❌ `value: any` → ✅ `value: FDALedgerFieldValue`
+- ❌ `field: string` → ✅ `field: EditableFDALedgerField`
+- ✅ Função `safeParseNumber()` - nunca retorna NaN
+- ✅ Type narrowing explícito em `saveLineChange()`
+- ✅ Correção do Checkbox (status em vez de 'paid')
+
+**2. src/pages/FDANew.tsx**
+
+**Tipos criados:**
+```typescript
+type LedgerLineFieldValue = string | number;
+type EditableLedgerLineField = keyof LedgerLine;
+```
+
+**Mudanças:**
+- ❌ `value: any` → ✅ `value: LedgerLineFieldValue`
+- ❌ `field: string` → ✅ `field: EditableLedgerLineField`
+- ✅ Função `safeParseNumber()` para parse seguro
+- ✅ Type-safe field updates com switches explícitos
+
+### 📊 Métricas
+
+**Type Safety:**
+- **0 usos de `any`** em funções críticas (antes: 5)
+- **100% type checking** em field updates
+- **Parse numérico seguro**: strings vazias → 0 (nunca NaN)
+
+**Funções refatoradas:**
+- `saveLineChange` (FDALedgerTable.tsx)
+- `debouncedSave` (FDALedgerTable.tsx)
+- `handleCellEdit` (FDALedgerTable.tsx)
+- `updateLedgerLine` (FDANew.tsx)
+
+### 🎯 Benefícios
+
+1. **Eliminação de `any`**: Type checking estrito
+2. **Parse seguro**: Nunca retorna NaN em operações numéricas
+3. **IntelliSense**: Autocomplete de fields válidos
+4. **Runtime safety**: Type narrowing previne erros
+5. **Nullability**: Tratamento explícito de null/undefined
+
+**Detalhes completos:** Ver `TYPE_SAFETY_FDA_REPORT.md`
+
+**Build:** ✅ OK  
+**TypeCheck:** ✅ Pass
+
+---
+
 ## Code Hygiene Analysis (2025-10-01)
 
 ### Objetivo
