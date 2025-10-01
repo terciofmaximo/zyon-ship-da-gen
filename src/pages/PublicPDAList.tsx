@@ -36,7 +36,7 @@ export default function PublicPDAList() {
 
     setLoading(true);
     try {
-      // Use secure RPC function to fetch PDAs by session
+      // Use secure function to fetch PDAs by session
       const { data, error } = await supabase
         .rpc("get_pdas_by_session", {
           p_session_id: sessionId

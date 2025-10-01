@@ -55,19 +55,18 @@ export default function PublicPDAView() {
     setError(null);
     
     try {
-      // Use secure RPC function to fetch PDA by tracking_id
+      // Use secure function to fetch PDA by tracking_id
       const { data, error } = await supabase
         .rpc("get_pda_by_tracking_id", {
           p_tracking_id: trackingId.toUpperCase()
-        })
-        .maybeSingle();
+        });
 
       if (error) throw error;
       
-      if (!data) {
+      if (!data || data.length === 0) {
         setError("PDA not found");
       } else {
-        setPda(data);
+        setPda(data[0]);
       }
     } catch (error: any) {
       setError("Failed to load PDA");
