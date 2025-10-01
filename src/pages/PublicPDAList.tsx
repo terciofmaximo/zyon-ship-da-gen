@@ -9,7 +9,6 @@ import { getSessionId } from "@/utils/sessionTracking";
 import { toast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { PublicHeader } from "@/components/layout/PublicHeader";
 
 type PDA = {
   id: string;
@@ -69,10 +68,7 @@ export default function PublicPDAList() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <PublicHeader />
-
-      <main className="container mx-auto px-4 py-8 space-y-6">
+    <div className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Search by Tracking ID</CardTitle>
@@ -155,7 +151,6 @@ export default function PublicPDAList() {
             )}
           </CardContent>
         </Card>
-      </main>
     </div>
   );
 }

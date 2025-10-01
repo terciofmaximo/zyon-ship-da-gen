@@ -2,16 +2,13 @@ import { useState } from "react";
 import { NewPDAWizard } from "@/components/forms/NewPDAWizard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getOrCreateSessionId } from "@/utils/sessionTracking";
-import { PublicHeader } from "@/components/layout/PublicHeader";
 
 export default function PublicPDANew() {
   const [sessionId] = useState(getOrCreateSessionId());
 
   return (
-    <div className="min-h-screen bg-background">
-      <PublicHeader />
-      
-      <main className="container mx-auto px-4 py-8">
+    <div className="space-y-6">
+      <div className="container mx-auto">
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Pre-Departure Approval Form</CardTitle>
@@ -22,7 +19,7 @@ export default function PublicPDANew() {
         </Card>
         
         <NewPDAWizard isPublic sessionId={sessionId} />
-      </main>
+      </div>
     </div>
   );
 }

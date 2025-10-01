@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthProvider";
-import { PublicHeader } from "@/components/layout/PublicHeader";
 
 type PDADetail = {
   id: string;
@@ -131,20 +130,15 @@ export default function PublicPDAView() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <PublicHeader />
-        <main className="container mx-auto px-4 py-8">
-          <Skeleton className="h-64 w-full" />
-        </main>
+      <div className="space-y-6">
+        <Skeleton className="h-64 w-full" />
       </div>
     );
   }
 
   if (error || !pda) {
     return (
-      <div className="min-h-screen bg-background">
-        <PublicHeader />
-        <main className="container mx-auto px-4 py-8">
+      <div className="space-y-6">
           <Card>
             <CardContent className="pt-6 text-center space-y-4">
               <p className="text-muted-foreground">{error || "PDA not found"}</p>
@@ -154,16 +148,12 @@ export default function PublicPDAView() {
               </Button>
             </CardContent>
           </Card>
-        </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <PublicHeader />
-
-      <main className="container mx-auto px-4 py-8 space-y-6">
+    <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">PDA {pda.tracking_id}</h1>
@@ -289,7 +279,6 @@ export default function PublicPDAView() {
             </div>
           </DialogContent>
         </Dialog>
-      </main>
     </div>
   );
 }

@@ -50,11 +50,8 @@ const App = () => (
               <Toaster />
               <Sonner />
               <Routes>
-                {/* Public PDA routes - no auth required */}
+                {/* Root redirect */}
                 <Route path="/" element={<RootRedirect />} />
-                <Route path="/pda/new" element={<PublicPDANew />} />
-                <Route path="/pda" element={<PublicPDAList />} />
-                <Route path="/pda/:trackingId" element={<PublicPDAView />} />
                 
                 {/* Disabled invite routes */}
                 <Route path="/invite/*" element={<InviteDisabled />} />
@@ -75,6 +72,9 @@ const App = () => (
                 <Route path="/settings" element={<RequireAuth><DashboardLayout><OrganizationSettings /></DashboardLayout></RequireAuth>} />
                 <Route path="/organization/settings" element={<Navigate to="/settings" replace />} />
                 <Route path="/platform-admin" element={<RequireAuth><DashboardLayout><PlatformAdmin /></DashboardLayout></RequireAuth>} />
+                <Route path="/pda" element={<RequireAuth><DashboardLayout><PublicPDAList /></DashboardLayout></RequireAuth>} />
+                <Route path="/pda/new" element={<RequireAuth><DashboardLayout><PublicPDANew /></DashboardLayout></RequireAuth>} />
+                <Route path="/pda/:trackingId" element={<RequireAuth><DashboardLayout><PublicPDAView /></DashboardLayout></RequireAuth>} />
                 <Route path="/pda/:id/review" element={<RequireAuth><DashboardLayout><PDAReview /></DashboardLayout></RequireAuth>} />
                 <Route path="/fda" element={<RequireAuth><DashboardLayout><FDAList /></DashboardLayout></RequireAuth>} />
                 <Route path="/fda/new" element={<RequireAuth><DashboardLayout><FDANew /></DashboardLayout></RequireAuth>} />
