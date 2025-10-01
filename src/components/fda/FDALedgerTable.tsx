@@ -5,7 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Calendar, ArrowUpDown, ExternalLink, Plus } from 'lucide-react';
+import { Calendar, ArrowUpDown, ExternalLink, Plus, HelpCircle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format } from 'date-fns';
@@ -387,7 +388,12 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Ledger Details</CardTitle>
+        <div className="space-y-1">
+          <CardTitle>Ledger Details</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Legenda: AP = A pagar (fornecedores) · AR = A receber (cliente)
+          </p>
+        </div>
         <Button onClick={handleAddLine} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Add Line
@@ -421,11 +427,30 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
         </div>
 
         <Tabs defaultValue="all" className="w-full">
-          <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="ar">Receivables (AR)</TabsTrigger>
-            <TabsTrigger value="ap">Payables (AP)</TabsTrigger>
-          </TabsList>
+          <div className="flex items-center gap-2 mb-2">
+            <TabsList>
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="ar">Receivables (AR)</TabsTrigger>
+              <TabsTrigger value="ap">Payables (AP)</TabsTrigger>
+            </TabsList>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-sm">
+                  <div className="space-y-2">
+                    <p className="font-semibold">AP (Accounts Payable / A Pagar):</p>
+                    <p className="text-sm">Despesas da agência com fornecedores (ex.: praticagem, rebocador, lancha).</p>
+                    <p className="font-semibold mt-2">AR (Accounts Receivable / A Receber):</p>
+                    <p className="text-sm">Cobranças do cliente (ex.: agency fee, supervision fee, reembolsos).</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <TabsContent value="all">
             <LedgerRows data={filterLedger()} />
           </TabsContent>
