@@ -12,7 +12,7 @@
  */
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Eye, Download, Check, Lock } from "lucide-react";
+import { Search, Eye, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -55,11 +55,7 @@ import { useOrg } from "@/context/OrgProvider";
 import { getActiveTenantId } from "@/lib/utils";
 import { useUserRole } from "@/hooks/useUserRole";
 
-const statusVariants = {
-  Draft: "secondary",
-  Posted: "default", 
-  Closed: "outline",
-} as const;
+const fdaStatuses = ["Draft", "Posted", "Closed"] as const;
 
 interface FDAWithTotals extends FDA {
   total_ap_usd: number;
@@ -207,6 +203,17 @@ export default function FDAList() {
   const handleExportPDF = (fda: FDAWithTotals) => {
     // Navigate to FDA detail page which has PDF export functionality
     navigate(`/fda/${fda.id}`);
+  };
+
+  const handleStatusSelect = (fdaId: string, currentStatus: string, newStatus: string) => {
+    if (currentStatus === newStatus) return;
+    
+    setStatusChangeDialog({
+      open: true,
+      fdaId,
+      newStatus: newStatus as "Posted" | "Closed",
+      currentStatus
+    });
   };
 
   const handleStatusChange = async () => {
@@ -361,9 +368,21 @@ export default function FDAList() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={statusVariants[fda.status]}>
-                        {fda.status}
-                      </Badge>
+                      <Select
+                        value={fda.status}
+                        onValueChange={(value) => handleStatusSelect(fda.id, fda.status, value)}
+                      >
+                        <SelectTrigger className="w-[130px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {fdaStatuses.map((status) => (
+                            <SelectItem key={status} value={status}>
+                              {status}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell>{formatDate(fda.created_at)}</TableCell>
                     <TableCell>
@@ -383,32 +402,6 @@ export default function FDAList() {
                             <Download className="mr-2 h-4 w-4" />
                             Export PDF
                           </DropdownMenuItem>
-                          {fda.status === "Draft" && (
-                            <DropdownMenuItem 
-                              onClick={() => setStatusChangeDialog({
-                                open: true,
-                                fdaId: fda.id,
-                                newStatus: "Posted",
-                                currentStatus: fda.status
-                              })}
-                            >
-                              <Check className="mr-2 h-4 w-4" />
-                              Post FDA
-                            </DropdownMenuItem>
-                          )}
-                          {fda.status === "Posted" && (
-                            <DropdownMenuItem 
-                              onClick={() => setStatusChangeDialog({
-                                open: true,
-                                fdaId: fda.id,
-                                newStatus: "Closed",
-                                currentStatus: fda.status
-                              })}
-                            >
-                              <Lock className="mr-2 h-4 w-4" />
-                              Close FDA
-                            </DropdownMenuItem>
-                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
