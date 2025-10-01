@@ -43,6 +43,7 @@ export default function FDADetail() {
   const [fda, setFda] = useState<FDAWithLedger | null>(null);
   const [loadingPage, setLoadingPage] = useState(true);
   const [confirmPost, setConfirmPost] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
@@ -83,12 +84,12 @@ export default function FDADetail() {
     }
   }, [id]);
 
-  // Keyboard shortcut for Save draft (Ctrl/Cmd + S)
+  // Keyboard shortcut for Save (Ctrl/Cmd + S)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
-        if (isDirty && fda?.status === "Draft") {
+        if (isDirty && (fda?.status === "Draft" || fda?.status === "Posted")) {
           handleSaveDraft();
         }
       }
@@ -303,6 +304,22 @@ export default function FDADetail() {
       setIsDirty(false);
     }
     setConfirmPost(false);
+  };
+
+  const handleClose = async () => {
+    if (!id) return;
+    
+    // Auto-save pending changes before closing
+    if (isDirty) {
+      await handleSaveDraft();
+    }
+    
+    const success = await updateFDAStatus(id, "Closed");
+    if (success) {
+      setFda(prev => prev ? { ...prev, status: "Closed" } : null);
+      setIsDirty(false);
+    }
+    setConfirmClose(false);
   };
 
 
@@ -767,6 +784,32 @@ export default function FDADetail() {
                 </Button>
               </>
             )}
+            {fda.status === "Posted" && (
+              <>
+                <Button 
+                  type="button"
+                  onClick={(e) => handleSaveDraft(e)}
+                  size="lg"
+                >
+                  {isSaving ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  {isSaving ? "Saving..." : "Save"}
+                </Button>
+                <Button 
+                  onClick={() => setConfirmClose(true)}
+                  disabled={loading}
+                  variant="secondary"
+                  size="lg"
+                  className="bg-muted hover:bg-muted/90"
+                >
+                  <Check className="mr-2 h-4 w-4" />
+                  Close FDA
+                </Button>
+              </>
+            )}
             {isDirty && (
               <p className="text-sm text-muted-foreground flex items-center">
                 You have unsaved changes. Press Ctrl/Cmd + S to save.
@@ -792,6 +835,27 @@ export default function FDADetail() {
             </Button>
             <Button onClick={handlePost} disabled={loading}>
               {loading ? "Posting..." : "Post FDA"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Close Confirmation Dialog */}
+      <Dialog open={confirmClose} onOpenChange={setConfirmClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Close FDA</DialogTitle>
+            <DialogDescription>
+              Closing the FDA will finalize all transactions. No further edits will be allowed after closing.
+              Are you sure you want to close this FDA?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmClose(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleClose} disabled={loading}>
+              {loading ? "Closing..." : "Close FDA"}
             </Button>
           </DialogFooter>
         </DialogContent>
