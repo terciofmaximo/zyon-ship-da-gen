@@ -13,6 +13,6 @@ export function RootRedirect() {
     );
   }
 
-  // Redirect authenticated users to dashboard, others to public PDA form
-  return <Navigate to={user ? "/dashboard" : "/pda/new"} replace />;
+  // Redirect authenticated users to dashboard, others to login
+  return <Navigate to={user ? "/dashboard" : "/auth"} replace />;
 }

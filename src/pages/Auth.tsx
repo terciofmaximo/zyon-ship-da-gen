@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useResetAdminPassword } from "@/hooks/useResetAdminPassword";
+import zyonLogo from "@/assets/zyon-logo-main.png";
 
 
 const schema = z.object({
@@ -145,10 +146,13 @@ const AuthPage: React.FC = () => {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-6">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-xl">
+    <main className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-background to-muted">
+      <Card className="w-full max-w-md shadow-lg">
+        <CardHeader className="space-y-4">
+          <div className="flex justify-center mb-2">
+            <img src={zyonLogo} alt="Zyon Logo" className="h-16 w-auto" />
+          </div>
+          <CardTitle className="text-xl text-center">
             {mode === "login" ? "Entrar" : "Criar conta"}
           </CardTitle>
           <CardDescription>
