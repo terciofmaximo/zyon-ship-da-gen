@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { FDAWithLedger, FDATotals } from "@/types/fda";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { formatCurrency, formatNumber } from "@/lib/utils";
 
 const statusVariants = {
   Draft: "secondary",
@@ -33,6 +34,7 @@ export default function FDADetail() {
   const [isDirty, setIsDirty] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [lastSavedBy, setLastSavedBy] = useState<string | null>(null);
+  const [tempClientPaid, setTempClientPaid] = useState<string>("");
   const [editForm, setEditForm] = useState({
     vessel_name: "",
     imo: "",
@@ -125,6 +127,7 @@ export default function FDADetail() {
           etb: fdaData.etb ? new Date(fdaData.etb) : null,
           ets: fdaData.ets ? new Date(fdaData.ets) : null,
         });
+        setTempClientPaid((fdaData.client_paid_usd || 0).toString());
         setIsDirty(false);
         setLastSavedAt(fdaData.updated_at);
       } else {
@@ -138,7 +141,12 @@ export default function FDADetail() {
     }
   };
 
-  const handleSaveDraft = async () => {
+  const handleSaveDraft = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     if (!fda || !id || isSaving) return;
 
     setIsSaving(true);
@@ -284,8 +292,8 @@ export default function FDADetail() {
     });
   };
 
-  const fmtUSD = (n: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n ?? 0);
-  const fmtBRL = (n: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n ?? 0);
+  const fmtUSD = (n: number) => formatCurrency(n, 'USD');
+  const fmtBRL = (n: number) => formatCurrency(n, 'BRL');
 
   if (loadingPage) {
     return (
@@ -498,23 +506,23 @@ export default function FDADetail() {
                   <Label>Local</Label>
                   <div className="text-sm mt-1">{fda.currency_local}</div>
                 </div>
-                <div>
-                  <Label htmlFor="exchange_rate">Exchange Rate (USD/BRL)</Label>
-                  {isEditing ? (
-                    <Input
-                      id="exchange_rate"
-                      type="number"
-                      step="0.0001"
-                      value={editForm.exchange_rate}
-                      onChange={(e) => setEditForm({ ...editForm, exchange_rate: e.target.value })}
-                      placeholder="Enter exchange rate"
-                    />
-                  ) : (
-                    <div className="text-sm mt-1">
-                      {fda.exchange_rate ? parseFloat(fda.exchange_rate.toString()).toFixed(4) : "—"}
-                    </div>
-                  )}
-                </div>
+                 <div>
+                   <Label htmlFor="exchange_rate">Exchange Rate (USD/BRL)</Label>
+                   {isEditing ? (
+                     <Input
+                       id="exchange_rate"
+                       type="number"
+                       step="0.0001"
+                       value={editForm.exchange_rate}
+                       onChange={(e) => setEditForm({ ...editForm, exchange_rate: e.target.value })}
+                       placeholder="Enter exchange rate"
+                     />
+                   ) : (
+                     <div className="text-sm mt-1">
+                       {fda.exchange_rate ? formatNumber(parseFloat(fda.exchange_rate.toString()), 4) : "—"}
+                     </div>
+                   )}
+                 </div>
                 <div>
                   <Label htmlFor="fx_source">FX Source</Label>
                   {isEditing ? (
@@ -617,28 +625,33 @@ export default function FDADetail() {
               <div className="text-xs font-semibold mt-3">Due from Client</div>
               <div className="mt-4 space-y-2">
                 <Label htmlFor="client_paid_usd" className="text-xs">Client Paid (USD)</Label>
-                <Input
-                  id="client_paid_usd"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={editForm.client_paid_usd}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value) || 0;
-                    setEditForm({ ...editForm, client_paid_usd: val });
-                  }}
-                  onBlur={async () => {
-                    if (!id) return;
-                    await supabase
-                      .from("fda")
-                      .update({
-                        client_paid_usd: editForm.client_paid_usd,
-                      })
-                      .eq("id", id);
-                    await fetchFDA();
-                  }}
-                  className="h-8 text-center"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="client_paid_usd"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={tempClientPaid}
+                    onChange={(e) => setTempClientPaid(e.target.value)}
+                    className="h-8 text-center"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const val = parseFloat(tempClientPaid) || 0;
+                      setEditForm({ ...editForm, client_paid_usd: val });
+                      setIsDirty(true);
+                      toast({
+                        title: "Value Updated",
+                        description: "Click 'Save Draft' to persist changes.",
+                      });
+                    }}
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                </div>
                 <p className="text-xs text-muted-foreground">Amount already paid by client</p>
               </div>
             </div>
@@ -703,7 +716,8 @@ export default function FDADetail() {
             {fda.status === "Draft" && (
               <>
                 <Button 
-                  onClick={handleSaveDraft}
+                  type="button"
+                  onClick={(e) => handleSaveDraft(e)}
                   disabled={isSaving || !isDirty}
                   size="lg"
                 >

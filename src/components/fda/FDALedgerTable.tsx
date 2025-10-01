@@ -15,6 +15,7 @@ import { FDALedger } from '@/types/fda';
 import Decimal from 'decimal.js';
 import * as Portal from '@radix-ui/react-portal';
 import { useOrg } from '@/context/OrgProvider';
+import { formatCurrency } from '@/lib/utils';
 
 interface FDALedgerTableProps {
   fdaId: string;
@@ -23,8 +24,8 @@ interface FDALedgerTableProps {
   onLedgerUpdate: (updatedLedger: FDALedger[]) => void;
 }
 
-const fmtUSD = (n: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n ?? 0);
-const fmtBRL = (n: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n ?? 0);
+const fmtUSD = (n: number) => formatCurrency(n, 'USD');
+const fmtBRL = (n: number) => formatCurrency(n, 'BRL');
 
 export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
   fdaId,

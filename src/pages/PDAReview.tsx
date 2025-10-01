@@ -11,6 +11,7 @@ import { useFDA } from "@/hooks/useFDA";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { generatePDAHTML } from "@/components/pdf/PDADocument";
+import { formatCurrency, formatNumber } from "@/lib/utils";
 
 interface PDADetail {
   id: string;
@@ -371,17 +372,17 @@ export default function PDAReview() {
                 <div>Date: {pda.date_field}</div>
               </div>
             </div>
-            <div className="space-y-2">
+              <div className="space-y-2">
               <h4 className="font-semibold text-sm text-muted-foreground">FINANCIAL</h4>
               <div className="space-y-1">
                 <div className="text-lg font-bold text-primary">
-                  ${totalUSD.toFixed(2)}
+                  {formatCurrency(totalUSD, 'USD')}
                 </div>
                 <div className="text-lg font-bold text-accent">
-                  R$ {totalBRL.toFixed(2)}
+                  {formatCurrency(totalBRL, 'BRL')}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Rate: {pda.exchange_rate}
+                  Rate: {formatNumber(parseFloat(pda.exchange_rate || "0"), 4)}
                 </div>
               </div>
             </div>
@@ -407,20 +408,20 @@ export default function PDAReview() {
                 <TableRow key={index}>
                   <TableCell className="font-medium">{item.label}</TableCell>
                   <TableCell className="text-right">
-                    ${(item.value || 0).toFixed(2)}
+                    {formatCurrency(item.value || 0, 'USD')}
                   </TableCell>
                   <TableCell className="text-right">
-                    R$ {((item.value || 0) * parseFloat(pda.exchange_rate || "5.25")).toFixed(2)}
+                    {formatCurrency((item.value || 0) * parseFloat(pda.exchange_rate || "5.25"), 'BRL')}
                   </TableCell>
                 </TableRow>
               ))}
               <TableRow className="border-t-2 border-primary font-bold">
                 <TableCell>TOTAL</TableCell>
                 <TableCell className="text-right text-primary">
-                  ${totalUSD.toFixed(2)}
+                  {formatCurrency(totalUSD, 'USD')}
                 </TableCell>
                 <TableCell className="text-right text-accent">
-                  R$ {totalBRL.toFixed(2)}
+                  {formatCurrency(totalBRL, 'BRL')}
                 </TableCell>
               </TableRow>
             </TableBody>
