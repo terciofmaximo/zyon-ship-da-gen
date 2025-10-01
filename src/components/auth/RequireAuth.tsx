@@ -9,10 +9,20 @@ import { Button } from "@/components/ui/button";
 export const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
 
+  // Show skeleton while checking auth - prevents flash of private content
   if (loading) {
-    return <div className="p-6"><Skeleton className="h-10 w-48" /><div className="mt-4 space-y-2"><Skeleton className="h-6 w-full" /><Skeleton className="h-6 w-5/6" /><Skeleton className="h-6 w-2/3" /></div></div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="space-y-4 w-full max-w-md p-6">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+      </div>
+    );
   }
 
+  // Redirect to login if not authenticated
   if (!user) {
     return <Navigate to="/auth" replace />;
   }

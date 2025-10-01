@@ -52,7 +52,33 @@ src/
 
 Todos os imports estão apontando para os caminhos corretos nesta estrutura.
 
-## Route Guard Centralizado (2025-10-01) - Última Atualização
+### Prevenção de Flash (2025-10-01) - Última Atualização
+
+**Objetivo**: Evitar flash de conteúdo privado antes do redirecionamento.
+
+**Resultado**: ✅ **Implementado**
+
+#### Melhorias em RouteGuard
+- ✅ Skeleton mostrado durante `loading=true`
+- ✅ Skeleton também mostrado quando `!user && !isPublic` (durante redirect)
+- ✅ Background `bg-background` adicionado para consistência
+- ✅ Nunca renderiza `children` se não autenticado em rota privada
+
+#### Melhorias em RequireAuth
+- ✅ Skeleton fullscreen durante `loading=true`
+- ✅ Layout centralizado consistente com RouteGuard
+- ✅ Background `bg-background` para evitar flash branco
+
+#### Fluxo de Proteção
+1. **Carregando**: Mostra skeleton (loading=true)
+2. **Não autenticado em rota privada**: Mostra skeleton + redireciona
+3. **Autenticado**: Renderiza conteúdo
+
+**Garantia**: Zero frames de conteúdo privado visível para usuários não autenticados.
+
+---
+
+## Route Guard Centralizado (2025-10-01)
 
 ### Objetivo
 Garantir que apenas rotas de autenticação (/auth, /signup, /forgot-password, /reset-password) sejam públicas.

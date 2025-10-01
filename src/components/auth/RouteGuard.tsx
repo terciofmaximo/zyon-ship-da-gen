@@ -17,24 +17,23 @@ export function RouteGuard({ children }: RouteGuardProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
+  const isPublic = isPublicRoute(currentPath);
 
   useEffect(() => {
     // Wait for auth to load
     if (loading) return;
-
-    const isPublic = isPublicRoute(currentPath);
 
     // If route is not public and user is not authenticated, redirect to login
     if (!isPublic && !user) {
       console.log(`RouteGuard: Redirecting to /auth from ${currentPath} (not authenticated)`);
       navigate("/auth", { state: { from: currentPath }, replace: true });
     }
-  }, [user, loading, currentPath, navigate]);
+  }, [user, loading, currentPath, isPublic, navigate]);
 
   // Show loading skeleton while checking auth
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="space-y-4 w-full max-w-md p-6">
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-32 w-full" />
@@ -44,9 +43,18 @@ export function RouteGuard({ children }: RouteGuardProps) {
     );
   }
 
-  // If not public and not authenticated, don't render (redirect will happen)
-  if (!isPublicRoute(currentPath) && !user) {
-    return null;
+  // CRITICAL: If not public and not authenticated, show nothing (redirect will happen)
+  // This prevents flash of private content before redirect
+  if (!isPublic && !user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="space-y-4 w-full max-w-md p-6">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+      </div>
+    );
   }
 
   return <>{children}</>;
