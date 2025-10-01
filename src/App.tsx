@@ -37,20 +37,22 @@ import { CompanyProvider } from "@/context/CompanyProvider";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { RootRedirect } from "@/components/routing/RootRedirect";
 import { RouteGuard } from "@/components/auth/RouteGuard";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
-      <AuthProvider>
-        <RouteGuard>
-          <CompanyProvider>
-            <OrgProvider>
-              <TenantProvider>
-                <TooltipProvider>
-                <Toaster />
-                <Sonner />
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <AuthProvider>
+          <RouteGuard>
+            <CompanyProvider>
+              <OrgProvider>
+                <TenantProvider>
+                  <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
                 <Routes>
                 {/* Root redirect */}
                 <Route path="/" element={<RootRedirect />} />
@@ -98,6 +100,7 @@ const App = () => (
       </AuthProvider>
     </BrowserRouter>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

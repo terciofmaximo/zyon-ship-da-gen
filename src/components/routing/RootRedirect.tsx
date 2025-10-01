@@ -1,16 +1,12 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthProvider";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Loading } from "@/components/ui/loading";
 
 export function RootRedirect() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Skeleton className="h-10 w-48" />
-      </div>
-    );
+    return <Loading variant="default" />;
   }
 
   // Redirect authenticated users to dashboard, others to login

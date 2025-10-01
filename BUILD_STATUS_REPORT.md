@@ -377,3 +377,65 @@ export function useXXXService() {
 **Build:** ✅ OK  
 **TypeCheck:** ✅ Pass
 
+---
+
+## UX Consistency (2025-10-01)
+
+### Objetivo
+Implementar padrões consistentes de UX: ErrorBoundary, componentes de loading padronizados e mensagens de erro claras.
+
+### ✅ Componentes Criados
+
+**1. ErrorBoundary** (`src/components/ui/error-boundary.tsx`)
+- Class component que captura erros não tratados
+- Fallback UI amigável em português
+- Botão "Tentar novamente" que redireciona para home
+- Detalhes técnicos expansíveis
+- Design usando Card + Button do design system
+
+**2. Loading** (`src/components/ui/loading.tsx`)
+- 4 variantes: default, page, card, table
+- Usa Skeleton internamente
+- Consistente em toda a aplicação
+
+### ✅ Integrações
+
+**App.tsx**
+- `<ErrorBoundary>` envolvendo toda a aplicação
+- Captura todos os erros de runtime
+
+**RouteGuard.tsx**
+- Substituído Skeleton por `<Loading variant="default" />`
+- Loading durante verificação de auth
+
+**RequireAuth.tsx**
+- Substituído Skeleton por `<Loading variant="default" />`
+- Mantido fallback de email não verificado
+
+**RootRedirect.tsx**
+- Substituído Skeleton por `<Loading variant="default" />`
+- Loading durante redirect
+
+### 📊 Padrões de Mensagens
+
+**ErrorBoundary:**
+- Título: "Algo deu errado"
+- Descrição: "Ocorreu um erro inesperado. Por favor, tente novamente."
+- Ação: Botão "Tentar novamente"
+
+**Email Não Verificado:**
+- Mensagem clara em português
+- Botões: "Reenviar Email" + "Fazer Logout"
+
+### 🎯 Definition of Done
+
+- ✅ Layout tem ErrorBoundary no App.tsx
+- ✅ Telas principais com Loading padronizado
+- ✅ Mensagens de erro consistentes em português
+- ✅ Botões de ação claros em estados de erro
+
+**Detalhes:** Ver `UX_CONSISTENCY_REPORT.md`
+
+**Build:** ✅ OK  
+**TypeCheck:** ✅ Pass
+

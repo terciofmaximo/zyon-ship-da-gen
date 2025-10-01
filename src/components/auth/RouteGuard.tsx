@@ -2,7 +2,7 @@ import { ReactNode, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthProvider";
 import { isPublicRoute } from "@/config/publicRoutes";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Loading } from "@/components/ui/loading";
 
 interface RouteGuardProps {
   children: ReactNode;
@@ -30,31 +30,15 @@ export function RouteGuard({ children }: RouteGuardProps) {
     }
   }, [user, loading, currentPath, isPublic, navigate]);
 
-  // Show loading skeleton while checking auth
+  // Show loading while checking auth
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="space-y-4 w-full max-w-md p-6">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-12 w-full" />
-        </div>
-      </div>
-    );
+    return <Loading variant="default" />;
   }
 
-  // CRITICAL: If not public and not authenticated, show nothing (redirect will happen)
+  // CRITICAL: If not public and not authenticated, show loading (redirect will happen)
   // This prevents flash of private content before redirect
   if (!isPublic && !user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="space-y-4 w-full max-w-md p-6">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-12 w-full" />
-        </div>
-      </div>
-    );
+    return <Loading variant="default" />;
   }
 
   return <>{children}</>;
