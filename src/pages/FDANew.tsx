@@ -14,6 +14,7 @@ import { useFDA } from "@/hooks/useFDA";
 import Decimal from "decimal.js";
 import { useOrg } from "@/context/OrgProvider";
 import { Combobox } from "@/components/ui/combobox";
+import { usePortDirectory } from "@/hooks/usePortDirectory";
 
 interface LedgerLine {
   id: string;
@@ -33,14 +34,14 @@ export default function FDANew() {
   const { calculateFDATotals } = useFDA();
   const { activeOrg } = useOrg();
   const [loading, setLoading] = useState(false);
-  const [pdas, setPdas] = useState<any[]>([]);
-  const [selectedPdaId, setSelectedPdaId] = useState<string>("");
+  const portState = usePortDirectory();
 
   // Form state
   const [formData, setFormData] = useState({
     client_name: "",
     port: "",
     terminal: "",
+    berth: "",
     currency_base: "USD",
     currency_local: "BRL",
     exchange_rate: "5.25",
@@ -49,113 +50,6 @@ export default function FDANew() {
   });
 
   const [ledgerLines, setLedgerLines] = useState<LedgerLine[]>([]);
-
-  // Load PDAs on mount
-  useEffect(() => {
-    const loadPdas = async () => {
-      if (!activeOrg) return;
-      
-      const { data, error } = await supabase
-        .from("pdas")
-        .select("id, pda_number, vessel_name, port_name, created_at")
-        .eq("tenant_id", activeOrg.id)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("Error loading PDAs:", error);
-        return;
-      }
-
-      setPdas(data || []);
-    };
-
-    loadPdas();
-  }, [activeOrg]);
-
-  // Load PDA data when selected
-  useEffect(() => {
-    const loadPdaData = async () => {
-      if (!selectedPdaId) return;
-
-      setLoading(true);
-      try {
-        const { data: pda, error } = await supabase
-          .from("pdas")
-          .select("*")
-          .eq("id", selectedPdaId)
-          .single();
-
-        if (error) throw error;
-
-        // Populate form with PDA data
-        setFormData({
-          client_name: pda.to_display_name || "",
-          port: pda.port_name || "",
-          terminal: pda.terminal || "",
-          currency_base: "USD",
-          currency_local: "BRL",
-          exchange_rate: pda.exchange_rate || "5.25",
-          vessel_name: pda.vessel_name || "",
-          imo: pda.imo_number || "",
-        });
-
-        // Create ledger lines from PDA
-        const lines: LedgerLine[] = [];
-        let lineNumber = 1;
-
-        // Cost mapping - same as in useFDA.ts
-        const costMapping = [
-          { field: "pilotage_in", category: "Pilot IN/OUT", side: "AP" as const },
-          { field: "towage_in", category: "Towage IN/OUT", side: "AP" as const },
-          { field: "light_dues", category: "Light dues", side: "AP" as const },
-          { field: "dockage", category: "Dockage (Wharfage)", side: "AP" as const },
-          { field: "linesman", category: "Linesman (mooring/unmooring)", side: "AP" as const },
-          { field: "launch_boat", category: "Launch boat (mooring/unmooring)", side: "AP" as const },
-          { field: "immigration", category: "Immigration tax (Funapol)", side: "AP" as const },
-          { field: "free_pratique", category: "Free pratique tax", side: "AP" as const },
-          { field: "shipping_association", category: "Shipping association", side: "AP" as const },
-          { field: "clearance", category: "Clearance", side: "AP" as const },
-          { field: "paperless_port", category: "Paperless Port System", side: "AP" as const },
-          { field: "waterway", category: "Waterway channel (Table I)", side: "AP" as const },
-          { field: "agency_fee", category: "Agency fee", side: "AR" as const },
-        ];
-
-        costMapping.forEach(({ field, category, side }) => {
-          const amount = parseFloat(pda[field]) || 0;
-          if (amount > 0) {
-            lines.push({
-              id: `pda_${field}`,
-              side,
-              category,
-              description: category,
-              amount_usd: amount,
-              counterparty: side === "AR" ? (pda.to_display_name || "Client") : "Vendor — to assign",
-              status: "Open",
-            });
-            lineNumber++;
-          }
-        });
-
-        setLedgerLines(lines);
-
-        toast({
-          title: "PDA Loaded",
-          description: `Loaded ${lines.length} ledger entries from PDA`,
-        });
-      } catch (error) {
-        console.error("Error loading PDA:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load PDA data",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadPdaData();
-  }, [selectedPdaId, toast]);
 
   const addLedgerLine = () => {
     const newLine: LedgerLine = {
@@ -200,15 +94,6 @@ export default function FDANew() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedPdaId) {
-      toast({
-        title: "Validation Error",
-        description: "Please select a PDA",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     if (!formData.client_name.trim() || !formData.port.trim()) {
       toast({
         title: "Validation Error",
@@ -234,7 +119,7 @@ export default function FDANew() {
 
       // Create FDA header
       const fdaData = {
-        pda_id: selectedPdaId,
+        pda_id: null,
         status: "Draft" as const,
         client_name: formData.client_name,
         vessel_name: formData.vessel_name || null,
@@ -313,38 +198,6 @@ export default function FDANew() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* PDA Selection */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Select PDA</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div>
-              <Label htmlFor="pda-select">PDA *</Label>
-              <Select
-                value={selectedPdaId}
-                onValueChange={setSelectedPdaId}
-              >
-                <SelectTrigger id="pda-select">
-                  <SelectValue placeholder="Select a PDA to create FDA from" />
-                </SelectTrigger>
-                <SelectContent>
-                  {pdas.map((pda) => (
-                    <SelectItem key={pda.id} value={pda.id}>
-                      {pda.pda_number} - {pda.vessel_name || "No vessel"} - {pda.port_name || "No port"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {!selectedPdaId && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  Please select a PDA to automatically populate FDA data
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Header Information */}
         <Card>
           <CardHeader>
@@ -362,20 +215,50 @@ export default function FDANew() {
             </div>
             <div>
               <Label htmlFor="port">Port *</Label>
-              <Input
-                id="port"
+              <Combobox
+                options={portState.portOptions}
                 value={formData.port}
-                onChange={(e) => setFormData(prev => ({ ...prev, port: e.target.value }))}
-                required
+                onValueChange={(value) => {
+                  setFormData(prev => ({ ...prev, port: value, terminal: "", berth: "" }));
+                  portState.updatePortSelection(value);
+                }}
+                placeholder="Select port..."
+                searchPlaceholder="Search ports..."
               />
             </div>
             <div>
               <Label htmlFor="terminal">Terminal</Label>
-              <Input
-                id="terminal"
+              <Combobox
+                options={portState.terminalOptions}
                 value={formData.terminal}
-                onChange={(e) => setFormData(prev => ({ ...prev, terminal: e.target.value }))}
+                onValueChange={(value) => {
+                  setFormData(prev => ({ ...prev, terminal: value, berth: "" }));
+                  portState.updateTerminalSelection(value);
+                }}
+                placeholder="Select terminal..."
+                searchPlaceholder="Search terminals..."
+                disabled={portState.terminalDisabled}
               />
+              {portState.terminalHint && (
+                <p className="text-sm text-muted-foreground mt-1">{portState.terminalHint}</p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="berth">Berth</Label>
+              <Combobox
+                options={portState.berthOptions}
+                value={formData.berth}
+                onValueChange={(value) => {
+                  setFormData(prev => ({ ...prev, berth: value }));
+                  portState.updateBerthSelection(value);
+                }}
+                placeholder="Select berth..."
+                searchPlaceholder="Search berths..."
+                disabled={portState.berthDisabled}
+              />
+              {portState.berthHint && (
+                <p className="text-sm text-muted-foreground mt-1">{portState.berthHint}</p>
+              )}
             </div>
             <div>
               <Label htmlFor="vessel_name">Vessel Name</Label>
