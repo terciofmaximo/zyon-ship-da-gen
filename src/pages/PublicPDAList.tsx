@@ -36,11 +36,11 @@ export default function PublicPDAList() {
 
     setLoading(true);
     try {
+      // Use secure RPC function to fetch PDAs by session
       const { data, error } = await supabase
-        .from("pdas")
-        .select("id, tracking_id, vessel_name, port_name, status, created_at")
-        .eq("created_by_session_id", sessionId)
-        .order("created_at", { ascending: false });
+        .rpc("get_pdas_by_session", {
+          p_session_id: sessionId
+        });
 
       if (error) throw error;
       setSessionPDAs(data || []);

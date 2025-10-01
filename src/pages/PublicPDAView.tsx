@@ -55,10 +55,11 @@ export default function PublicPDAView() {
     setError(null);
     
     try {
+      // Use secure RPC function to fetch PDA by tracking_id
       const { data, error } = await supabase
-        .from("pdas")
-        .select("*")
-        .eq("tracking_id", trackingId.toUpperCase())
+        .rpc("get_pda_by_tracking_id", {
+          p_tracking_id: trackingId.toUpperCase()
+        })
         .maybeSingle();
 
       if (error) throw error;
