@@ -18,6 +18,7 @@ import FDALineDetail from "@/pages/FDALineDetail";
 import InviteAccept from "@/pages/InviteAccept";
 import AcceptInvite from "@/pages/AcceptInvite";
 import ResetPassword from "@/pages/ResetPassword";
+import ForgotPassword from "@/pages/ForgotPassword";
 import NoOrganization from "@/pages/NoOrganization";
 import OrganizationSettings from "@/pages/OrganizationSettings";
 import PlatformAdmin from "@/pages/PlatformAdmin";
@@ -64,6 +65,7 @@ const App = () => (
                 <Route path="/auth/signup" element={<Signup />} />
                 <Route path="/auth/verify-email" element={<VerifyEmail />} />
                 <Route path="/auth/confirmed" element={<EmailConfirmed />} />
+                <Route path="/auth/forgot-password" element={<ForgotPassword />} />
                 <Route path="/auth/reset-password" element={<ResetPassword />} />
                 <Route path="/seed-admin" element={<SeedAdmin />} />
                 
@@ -83,6 +85,7 @@ const App = () => (
                 <Route path="/t/:slug" element={<RequireAuth><DashboardLayout><Index /></DashboardLayout></RequireAuth>} />
                 <Route path="/t/:slug/auth" element={<AuthPage />} />
                 <Route path="/t/:slug/auth/accept-invite" element={<InviteDisabled />} />
+                <Route path="/t/:slug/auth/forgot-password" element={<ForgotPassword />} />
                 <Route path="/t/:slug/auth/reset-password" element={<ResetPassword />} />
                 <Route path="/t/:slug/settings" element={<RequireAuth><DashboardLayout><OrganizationSettings /></DashboardLayout></RequireAuth>} />
                 <Route path="/t/:slug/pda" element={<PublicPDAList />} />

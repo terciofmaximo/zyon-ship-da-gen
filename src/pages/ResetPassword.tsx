@@ -8,12 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { z } from "zod";
+import zyonLogo from "@/assets/zyon-logo-main.png";
 
 const passwordSchema = z.string()
-  .min(8, "Password must be at least 8 characters")
-  .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-  .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-  .regex(/[0-9]/, "Password must contain at least one number");
+  .min(8, "A senha deve ter pelo menos 8 caracteres")
+  .regex(/[A-Z]/, "A senha deve conter pelo menos uma letra maiúscula")
+  .regex(/[a-z]/, "A senha deve conter pelo menos uma letra minúscula")
+  .regex(/[0-9]/, "A senha deve conter pelo menos um número");
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -38,7 +39,7 @@ export default function ResetPassword() {
     }
 
     if (password !== confirmPassword) {
-      setErrors({ confirmPassword: "Passwords do not match" });
+      setErrors({ confirmPassword: "As senhas não coincidem" });
       return;
     }
 
@@ -63,16 +64,16 @@ export default function ResetPassword() {
       }
 
       toast({
-        title: "Password updated",
-        description: "Your password has been changed successfully",
+        title: "Senha atualizada",
+        description: "Sua senha foi alterada com sucesso",
       });
 
       navigate('/');
     } catch (error: any) {
       console.error('Error resetting password:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to reset password",
+        title: "Erro",
+        description: error.message || "Falha ao redefinir senha",
         variant: "destructive",
       });
     } finally {
@@ -84,41 +85,44 @@ export default function ResetPassword() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Reset Your Password</CardTitle>
-          <CardDescription>
+          <div className="flex justify-center mb-4">
+            <img src={zyonLogo} alt="Zyon Logo" className="h-16 w-auto" />
+          </div>
+          <CardTitle className="text-xl text-center">Redefinir Senha</CardTitle>
+          <CardDescription className="text-center">
             {isForced 
-              ? "You are required to change your password before continuing."
-              : "Enter a new password for your account."}
+              ? "Você precisa alterar sua senha antes de continuar."
+              : "Digite uma nova senha para sua conta."}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="password">New Password</Label>
+              <Label htmlFor="password">Nova Senha</Label>
               <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your new password"
+                placeholder="Digite sua nova senha"
                 required
               />
               {errors.password && (
                 <p className="text-sm text-destructive">{errors.password}</p>
               )}
               <p className="text-xs text-muted-foreground">
-                Password must be at least 8 characters with uppercase, lowercase, and number
+                A senha deve ter pelo menos 8 caracteres com maiúscula, minúscula e número
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">Confirmar Senha</Label>
               <Input
                 id="confirmPassword"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm your new password"
+                placeholder="Confirme sua nova senha"
                 required
               />
               {errors.confirmPassword && (
@@ -134,10 +138,10 @@ export default function ResetPassword() {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Updating password...
+                  Atualizando senha...
                 </>
               ) : (
-                "Update Password"
+                "Atualizar Senha"
               )}
             </Button>
           </form>

@@ -170,6 +170,18 @@ const AuthPage: React.FC = () => {
               <Input id="password" name="password" type="password" value={form.password} onChange={onChange} required />
             </div>
             <Button type="submit" disabled={pending} className="w-full">{pending ? "Aguarde..." : (mode === "login" ? "Entrar" : "Cadastrar")}</Button>
+            
+            {mode === "login" && (
+              <div className="text-center">
+                <button 
+                  type="button"
+                  className="text-sm text-muted-foreground hover:text-foreground underline"
+                  onClick={() => navigate('/auth/forgot-password')}
+                >
+                  Esqueci minha senha
+                </button>
+              </div>
+            )}
           </form>
           <Separator className="my-6" />
           <div className="space-y-3">
