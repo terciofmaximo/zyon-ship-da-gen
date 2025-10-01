@@ -59,6 +59,17 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
+- Supabase (external project integration)
+
+## How can I change Supabase configuration?
+
+If you need to rotate keys or connect to a different Supabase project:
+
+1. Open `src/config/supabase.ts`
+2. Update `SUPABASE_URL` with your project URL
+3. Update `SUPABASE_PUBLISHABLE_KEY` with your anon/public key
+
+**Note:** The publishable key (anon key) is safe to expose in client-side code. It is protected by Row Level Security (RLS) policies on the database. The service role key (private) should only be stored in Supabase Secrets for edge functions.
 
 ## How can I deploy this project?
 
