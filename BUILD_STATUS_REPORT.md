@@ -439,3 +439,53 @@ Implementar padrões consistentes de UX: ErrorBoundary, componentes de loading p
 **Build:** ✅ OK  
 **TypeCheck:** ✅ Pass
 
+---
+
+## Code Hygiene Analysis (2025-10-01)
+
+### Objetivo
+Relatório de higiene de código sem alterações - identificar problemas potenciais.
+
+### ✅ Análise Completa
+
+**Categorias analisadas:**
+1. TODO/FIXME/BUG comments → 1 encontrado
+2. Chamadas Supabase diretas em componentes → 0 (excelente!)
+3. Uso de `any` → 57 em 31 arquivos
+4. Imports relativos profundos → 0 (excelente!)
+5. Async sem tratamento de erro → 2 casos críticos
+
+### 🔴 Problemas Críticos Identificados
+
+**1. Index.tsx - handleLogout sem try/catch**
+- Linha 24-38
+- Risco: Crash se signOut() falhar
+- Solução: Adicionar try/catch wrapper
+
+**2. NoOrganization.tsx - 2 handlers sem try/catch**
+- Linhas 60-72
+- handleRequestAccess e handleLogout sem tratamento
+- Risco: Crash em falhas de auth
+
+### 🟠 Type Safety Issues
+
+**57 usos de `any` em 31 arquivos:**
+- Handlers: FDALedgerTable.tsx (3x), FDANew.tsx (1x)
+- Error catches: 31 arquivos com `catch (error: any)`
+- Metadata: fda.ts types (meta, source)
+
+**Sugestões:**
+- Criar tipos `CellValue`, `AppError`, `FDAMeta`, `FDASource`
+- Substituir `any` por union types específicos
+
+### ✅ Pontos Fortes
+
+- **Componentes puros**: 0 chamadas diretas ao Supabase
+- **Imports limpos**: 0 imports relativos profundos (todos com @/)
+- **TODOs controlados**: Apenas 1 pendência (remove member)
+
+**Detalhes completos:** Ver `CODE_HYGIENE_REPORT.md`
+
+**Build:** ✅ OK  
+**TypeCheck:** ✅ Pass
+
