@@ -282,9 +282,6 @@ export default function FDAList() {
                   <TableHead>Port</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Created On</TableHead>
-                  <TableHead className="text-right">Total AP (USD)</TableHead>
-                  <TableHead className="text-right">Total AR (USD)</TableHead>
-                  <TableHead className="text-right">Net (USD)</TableHead>
                   <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -322,18 +319,6 @@ export default function FDAList() {
                       </Badge>
                     </TableCell>
                     <TableCell>{formatDate(fda.created_at)}</TableCell>
-                    <TableCell className="text-right text-red-600">
-                      ${fda.total_ap_usd.toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-right text-green-600">
-                      ${fda.total_ar_usd.toFixed(2)}
-                    </TableCell>
-                    <TableCell className={`text-right font-medium ${
-                      fda.net_usd >= 0 ? "text-blue-600" : "text-orange-600"
-                    }`}>
-                      ${Math.abs(fda.net_usd).toFixed(2)}
-                      {fda.net_usd < 0 && " (owe)"}
-                    </TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
