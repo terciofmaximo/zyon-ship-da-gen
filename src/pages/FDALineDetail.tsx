@@ -495,6 +495,24 @@ export default function FDALineDetail() {
     }
   };
 
+  // Helper to format date for picker (avoids timezone issues)
+  const parseDateForPicker = (dateStr: string | null | undefined): Date | undefined => {
+    if (!dateStr) return undefined;
+    // Parse as local date without timezone conversion
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  // Helper to format date from picker (avoids timezone issues)
+  const formatDateFromPicker = (date: Date | undefined): string => {
+    if (!date) return '';
+    // Format as YYYY-MM-DD in local timezone
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const addPayment = async () => {
     if (!line || !newPayment.paid_at || !newPayment.amount_usd || !newPayment.fx_at_payment) {
       toast({
@@ -724,17 +742,19 @@ export default function FDALineDetail() {
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full justify-start">
-                    {invoicingFields.due_date ? format(new Date(invoicingFields.due_date), 'PPP') : 'Pick a date'}
+                    {invoicingFields.due_date ? format(parseDateForPicker(invoicingFields.due_date)!, 'PPP') : 'Pick a date'}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
                   <Calendar
                     mode="single"
-                    selected={invoicingFields.due_date ? new Date(invoicingFields.due_date) : undefined}
+                    selected={parseDateForPicker(invoicingFields.due_date)}
                     onSelect={(date) => {
-                      const newDate = date?.toISOString().split('T')[0] || '';
+                      const newDate = formatDateFromPicker(date);
                       setInvoicingFields({ ...invoicingFields, due_date: newDate });
-                      saveField('due_date', newDate);
+                      if (newDate) {
+                        saveField('due_date', newDate);
+                      }
                     }}
                     initialFocus
                   />
