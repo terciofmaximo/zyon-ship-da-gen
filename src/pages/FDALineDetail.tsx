@@ -98,6 +98,14 @@ export default function FDALineDetail() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   
+  // Local state for invoicing fields (to avoid autosave on every keystroke)
+  const [invoicingFields, setInvoicingFields] = useState({
+    invoice_no: '',
+    due_date: '',
+    client_po: '',
+    notes: ''
+  });
+  
   // New payment form
   const [newPayment, setNewPayment] = useState({
     paid_at: '',
@@ -126,6 +134,14 @@ export default function FDALineDetail() {
       
       if (lineError) throw lineError;
       setLine(lineData);
+      
+      // Initialize local invoicing fields
+      setInvoicingFields({
+        invoice_no: lineData.invoice_no || '',
+        due_date: lineData.due_date || '',
+        client_po: lineData.client_po || '',
+        notes: lineData.notes || ''
+      });
       
       // Load FDA header for exchange rate and other data
       const { data: fdaHeaderData, error: fdaError } = await supabase
@@ -468,6 +484,17 @@ export default function FDALineDetail() {
     }
   };
 
+  const handleInvoicingBlur = async (field: keyof typeof invoicingFields) => {
+    if (!line) return;
+    const newValue = invoicingFields[field];
+    const oldValue = line[field as keyof LedgerLine];
+    
+    // Only save if value changed
+    if (newValue !== oldValue) {
+      await saveField(field, newValue);
+    }
+  };
+
   const addPayment = async () => {
     if (!line || !newPayment.paid_at || !newPayment.amount_usd || !newPayment.fx_at_payment) {
       toast({
@@ -687,8 +714,9 @@ export default function FDALineDetail() {
             <div>
               <Label>Invoice #</Label>
               <Input
-                value={line.invoice_no || ''}
-                onChange={(e) => saveField('invoice_no', e.target.value)}
+                value={invoicingFields.invoice_no}
+                onChange={(e) => setInvoicingFields({ ...invoicingFields, invoice_no: e.target.value })}
+                onBlur={() => handleInvoicingBlur('invoice_no')}
               />
             </div>
             <div>
@@ -696,14 +724,18 @@ export default function FDALineDetail() {
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full justify-start">
-                    {line.due_date ? format(new Date(line.due_date), 'PPP') : 'Pick a date'}
+                    {invoicingFields.due_date ? format(new Date(invoicingFields.due_date), 'PPP') : 'Pick a date'}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
                   <Calendar
                     mode="single"
-                    selected={line.due_date ? new Date(line.due_date) : undefined}
-                    onSelect={(date) => saveField('due_date', date?.toISOString().split('T')[0])}
+                    selected={invoicingFields.due_date ? new Date(invoicingFields.due_date) : undefined}
+                    onSelect={(date) => {
+                      const newDate = date?.toISOString().split('T')[0] || '';
+                      setInvoicingFields({ ...invoicingFields, due_date: newDate });
+                      saveField('due_date', newDate);
+                    }}
                     initialFocus
                   />
                 </PopoverContent>
@@ -714,8 +746,9 @@ export default function FDALineDetail() {
           <div>
             <Label>Client PO / Reference</Label>
             <Input
-              value={line.client_po || ''}
-              onChange={(e) => saveField('client_po', e.target.value)}
+              value={invoicingFields.client_po}
+              onChange={(e) => setInvoicingFields({ ...invoicingFields, client_po: e.target.value })}
+              onBlur={() => handleInvoicingBlur('client_po')}
               placeholder={fdaData?.client_name || 'Client reference'}
             />
           </div>
@@ -723,8 +756,9 @@ export default function FDALineDetail() {
           <div>
             <Label>Notes</Label>
             <Textarea
-              value={line.notes || ''}
-              onChange={(e) => saveField('notes', e.target.value)}
+              value={invoicingFields.notes}
+              onChange={(e) => setInvoicingFields({ ...invoicingFields, notes: e.target.value })}
+              onBlur={() => handleInvoicingBlur('notes')}
               rows={3}
             />
           </div>
