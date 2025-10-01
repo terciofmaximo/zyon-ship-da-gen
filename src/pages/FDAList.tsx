@@ -12,11 +12,19 @@
  */
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Eye, Download } from "lucide-react";
+import { Search, Eye, Download, Check, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -71,6 +79,12 @@ export default function FDAList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState("updated_desc");
+  const [statusChangeDialog, setStatusChangeDialog] = useState<{
+    open: boolean;
+    fdaId: string;
+    newStatus: "Posted" | "Closed";
+    currentStatus: string;
+  } | null>(null);
 
   useEffect(() => {
     // platformAdmin can fetch without activeOrg, regular users need activeOrg
@@ -193,6 +207,39 @@ export default function FDAList() {
   const handleExportPDF = (fda: FDAWithTotals) => {
     // Navigate to FDA detail page which has PDF export functionality
     navigate(`/fda/${fda.id}`);
+  };
+
+  const handleStatusChange = async () => {
+    if (!statusChangeDialog) return;
+
+    try {
+      const { error } = await supabase
+        .from("fda")
+        .update({ 
+          status: statusChangeDialog.newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", statusChangeDialog.fdaId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `FDA status updated to ${statusChangeDialog.newStatus}`,
+      });
+
+      // Refresh the list
+      fetchFDAs();
+    } catch (error) {
+      console.error("Error updating FDA status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update FDA status",
+        variant: "destructive",
+      });
+    } finally {
+      setStatusChangeDialog(null);
+    }
   };
 
   if (loading) {
@@ -336,6 +383,32 @@ export default function FDAList() {
                             <Download className="mr-2 h-4 w-4" />
                             Export PDF
                           </DropdownMenuItem>
+                          {fda.status === "Draft" && (
+                            <DropdownMenuItem 
+                              onClick={() => setStatusChangeDialog({
+                                open: true,
+                                fdaId: fda.id,
+                                newStatus: "Posted",
+                                currentStatus: fda.status
+                              })}
+                            >
+                              <Check className="mr-2 h-4 w-4" />
+                              Post FDA
+                            </DropdownMenuItem>
+                          )}
+                          {fda.status === "Posted" && (
+                            <DropdownMenuItem 
+                              onClick={() => setStatusChangeDialog({
+                                open: true,
+                                fdaId: fda.id,
+                                newStatus: "Closed",
+                                currentStatus: fda.status
+                              })}
+                            >
+                              <Lock className="mr-2 h-4 w-4" />
+                              Close FDA
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -346,6 +419,35 @@ export default function FDAList() {
           )}
         </CardContent>
       </Card>
+
+      {/* Status Change Confirmation Dialog */}
+      <Dialog 
+        open={statusChangeDialog?.open || false} 
+        onOpenChange={(open) => !open && setStatusChangeDialog(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {statusChangeDialog?.newStatus === "Posted" ? "Post FDA" : "Close FDA"}
+            </DialogTitle>
+            <DialogDescription>
+              {statusChangeDialog?.newStatus === "Posted" 
+                ? "Posting the FDA will lock the structure. You'll only be able to edit invoice fields and line status after posting."
+                : "Closing the FDA will finalize all transactions. No further edits will be allowed after closing."
+              }
+              {" "}Are you sure you want to continue?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStatusChangeDialog(null)}>
+              Cancel
+            </Button>
+            <Button onClick={handleStatusChange}>
+              {statusChangeDialog?.newStatus === "Posted" ? "Post FDA" : "Close FDA"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
