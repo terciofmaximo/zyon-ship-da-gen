@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/context/CompanyProvider";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useInvitationCleanup } from "@/hooks/useInvitationCleanup";
+import { useTeamService } from "@/hooks/useTeamService";
 import {
   Table,
   TableBody,
@@ -137,6 +138,7 @@ export function TeamManagement() {
   const { activeCompanyId } = useCompany();
   const { canManageTeam, activeCompany, userRole, requirePermission } = usePermissions();
   const { manualExpireInvitations } = useInvitationCleanup();
+  const teamService = useTeamService();
   const [members, setMembers] = useState<Member[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
@@ -161,57 +163,18 @@ export function TeamManagement() {
     if (!activeCompanyId) return;
 
     setLoadingMembers(true);
-    try {
-      const { data, error } = await supabase
-        .from("memberships")
-        .select(`
-          id,
-          user_id,
-          role,
-          created_at
-        `)
-        .eq("company_id", activeCompanyId)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
-      // For simplicity, just show user IDs. In production, you'd fetch user emails
-      setMembers(data || []);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to load team members",
-        variant: "destructive",
-      });
-      setMembers([]);
-    } finally {
-      setLoadingMembers(false);
-    }
+    const result = await teamService.fetchMembers(activeCompanyId);
+    setMembers(result.data);
+    setLoadingMembers(false);
   };
 
   const loadInvitations = async () => {
     if (!activeCompanyId) return;
 
     setLoadingInvitations(true);
-    try {
-      const { data, error } = await supabase
-        .from("invitations")
-        .select("*")
-        .eq("company_id", activeCompanyId)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setInvitations(data || []);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to load invitations",
-        variant: "destructive",
-      });
-      setInvitations([]);
-    } finally {
-      setLoadingInvitations(false);
-    }
+    const result = await teamService.fetchInvitations(activeCompanyId);
+    setInvitations(result.data);
+    setLoadingInvitations(false);
   };
 
   // Invitation functionality disabled - no longer supported
@@ -294,26 +257,9 @@ export function TeamManagement() {
       return;
     }
 
-    try {
-      const { error } = await supabase
-        .from("invitations")
-        .update({ status: "revoked" })
-        .eq("id", invitationId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Invitation revoked",
-      });
-
+    const result = await teamService.revokeInvitation(invitationId);
+    if (result.success) {
       await loadInvitations();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
     }
   };
 

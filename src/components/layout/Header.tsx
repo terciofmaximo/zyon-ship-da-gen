@@ -15,8 +15,7 @@ import { useCompany } from "@/context/CompanyProvider";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthProvider";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useAuthService } from "@/hooks/useAuthService";
 
 
 export function Header() {
@@ -25,7 +24,7 @@ export function Header() {
   const { companies, activeCompanyId } = useCompany();
   const { isPlatformAdmin } = useUserRole();
   const { user } = useAuth();
-  const { toast } = useToast();
+  const { signOut } = useAuthService();
   const showOrgSwitcher = organizations.length > 1 || isPlatformAdmin;
   const showCompanySwitcher = companies.length > 1;
   
@@ -33,19 +32,6 @@ export function Header() {
   const activeCompany = companies.find(c => c.id === activeCompanyId);
   const canInvite = isPlatformAdmin || (activeOrg && ['admin', 'owner'].includes(activeOrg.role)) || 
                    (activeCompany && ['admin', 'owner'].includes(activeCompany.role));
-
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      navigate("/auth");
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to sign out",
-        variant: "destructive",
-      });
-    }
-  };
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background shadow-soft">
@@ -107,7 +93,7 @@ export function Header() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleLogout}>
+              <DropdownMenuItem onClick={signOut}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </DropdownMenuItem>

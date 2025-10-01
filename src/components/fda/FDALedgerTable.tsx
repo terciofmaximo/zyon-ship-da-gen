@@ -33,6 +33,7 @@ import * as Portal from '@radix-ui/react-portal';
 import { useOrg } from '@/context/OrgProvider';
 import { getActiveTenantId } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils';
+import { useFDALedgerService } from '@/hooks/useFDALedgerService';
 
 interface FDALedgerTableProps {
   fdaId: string;
@@ -59,6 +60,7 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
   const { toast } = useToast();
   const navigate = useNavigate();
   const { activeOrg } = useOrg();
+  const ledgerService = useFDALedgerService();
 
   // Use ledger as-is, no standard categories bootstrap
   useEffect(() => {
@@ -76,133 +78,56 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
       return;
     }
 
-    try {
-      // Get max line_no
-      const maxLineNo = fullLedger.reduce((max, line) => Math.max(max, line.line_no), 0);
-      const newLineNo = maxLineNo + 1;
+    const maxLineNo = fullLedger.reduce((max, line) => Math.max(max, line.line_no), 0);
+    const result = await ledgerService.addLine({
+      fdaId,
+      lineNo: maxLineNo + 1,
+      side: 'AP',
+      tenantId: getActiveTenantId(activeOrg),
+    });
 
-      // @ai-guard:start - tenant_id must use activeOrg
-      // Create new line in DB
-      const { data, error } = await supabase
-        .from('fda_ledger')
-        .insert({
-          fda_id: fdaId,
-          line_no: newLineNo,
-          side: 'AP',
-          category: 'New Item',
-          description: 'New line item',
-          counterparty: 'Vendor — to assign',
-          amount_usd: 0,
-          amount_local: 0,
-          status: 'Open',
-          tenant_id: getActiveTenantId(activeOrg),
-          origin: 'MANUAL',
-        })
-        .select()
-        .single();
-      // @ai-guard:end
-
-      if (error) throw error;
-
-      const newLedger = [...fullLedger, data as FDALedger];
+    if (result.success && result.data) {
+      const newLedger = [...fullLedger, result.data as FDALedger];
       setFullLedger(newLedger);
       onLedgerUpdate(newLedger);
-
-      toast({
-        title: "Line added",
-        description: "New line item created successfully",
-      });
-    } catch (error) {
-      console.error('Failed to add line:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add line item",
-        variant: "destructive",
-      });
     }
-  }, [fdaId, fullLedger, activeOrg, onLedgerUpdate, toast]);
+  }, [fdaId, fullLedger, activeOrg, onLedgerUpdate, ledgerService, toast]);
   // @ai-editable:end
 
   const saveLineChange = useCallback(async (lineId: string, field: string, value: any) => {
-    try {
-      const lineIndex = fullLedger.findIndex(l => l.id === lineId);
-      if (lineIndex === -1) return;
+    const lineIndex = fullLedger.findIndex(l => l.id === lineId);
+    if (lineIndex === -1) return;
 
-      const updatedLine = { ...fullLedger[lineIndex] };
-      
-      // Handle special fields
-      if (field === 'amount_usd') {
-        updatedLine.amount_usd = parseFloat(value) || 0;
-        updatedLine.amount_local = new Decimal(updatedLine.amount_usd).mul(exchangeRate).toNumber();
-      } else if (field === 'paid') {
-        updatedLine.status = value ? 'Settled' : 'Open';
-        if (value) {
-          updatedLine.settled_at = new Date().toISOString();
-        }
-      } else {
-        (updatedLine as any)[field] = value;
+    const updatedLine = { ...fullLedger[lineIndex] };
+    
+    // Handle special fields locally
+    if (field === 'amount_usd') {
+      updatedLine.amount_usd = parseFloat(value) || 0;
+      updatedLine.amount_local = new Decimal(updatedLine.amount_usd).mul(exchangeRate).toNumber();
+    } else if (field === 'paid') {
+      updatedLine.status = value ? 'Settled' : 'Open';
+      if (value) {
+        updatedLine.settled_at = new Date().toISOString();
       }
+    } else {
+      (updatedLine as any)[field] = value;
+    }
 
-      // If this is a new standard line, insert into database
-      if (lineId.startsWith('standard-')) {
-        if (!activeOrg) throw new Error("No active organization");
-        
-        const { data, error } = await supabase
-          .from('fda_ledger')
-          .insert({
-            fda_id: fdaId,
-            line_no: updatedLine.line_no,
-            side: updatedLine.side,
-            category: updatedLine.category,
-            description: updatedLine.description,
-            counterparty: updatedLine.counterparty,
-            amount_usd: updatedLine.amount_usd,
-            amount_local: updatedLine.amount_local,
-            invoice_no: updatedLine.invoice_no,
-            due_date: updatedLine.due_date,
-            status: updatedLine.status,
-            tenant_id: getActiveTenantId(activeOrg),
-          })
-          .select()
-          .single();
+    // Use service to save (handles both insert for new lines and update for existing)
+    const result = await ledgerService.updateLineField({
+      lineId,
+      field,
+      value,
+      exchangeRate,
+    });
 
-        if (error) throw error;
-        updatedLine.id = data.id;
-      } else {
-        // Update existing line
-        const { error } = await supabase
-          .from('fda_ledger')
-          .update({
-            side: updatedLine.side,
-            category: updatedLine.category,
-            description: updatedLine.description,
-            counterparty: updatedLine.counterparty,
-            amount_usd: updatedLine.amount_usd,
-            amount_local: updatedLine.amount_local,
-            invoice_no: updatedLine.invoice_no,
-            due_date: updatedLine.due_date,
-            status: updatedLine.status,
-            settled_at: field === 'paid' ? (value ? new Date().toISOString() : null) : undefined,
-          })
-          .eq('id', lineId);
-
-        if (error) throw error;
-      }
-
+    if (result.success) {
       const newFullLedger = [...fullLedger];
       newFullLedger[lineIndex] = updatedLine;
       setFullLedger(newFullLedger);
       onLedgerUpdate(newFullLedger);
-      
-    } catch (error) {
-      console.error('Failed to save line:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save line changes",
-        variant: "destructive",
-      });
     }
-  }, [fullLedger, fdaId, exchangeRate, onLedgerUpdate, toast]);
+  }, [fullLedger, exchangeRate, onLedgerUpdate, ledgerService]);
 
   // Debounced save for date picker
   const [saveTimeouts, setSaveTimeouts] = useState<Record<string, NodeJS.Timeout>>({});

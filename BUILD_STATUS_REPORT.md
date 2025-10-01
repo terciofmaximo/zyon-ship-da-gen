@@ -1,7 +1,7 @@
 # Build Status Report
 
 **Data:** 2025-10-01  
-**Status:** ✅ Estável - route guard centralizado + validação de formulários implementada
+**Status:** ✅ Estável - route guard + validação + componentes puros implementados
 
 ## Verificações Realizadas
 
@@ -301,6 +301,78 @@ Corrigir UX conforme solicitado:
 - ✅ Tipos TypeScript gerados automaticamente
 - ✅ Normalização de entrada (números com vírgula/ponto)
 - ✅ Prevenção de dados inválidos no backend
+
+**Build:** ✅ OK  
+**TypeCheck:** ✅ Pass
+
+---
+
+## Component Purity Refactoring (2025-10-01)
+
+### ✅ Service Hooks Criados
+
+**1. useAuthService** (`src/hooks/useAuthService.ts`)
+- Operações: signOut, signIn, signUp, resetPassword, updatePassword
+- Usado em: Header.tsx
+
+**2. useFDALedgerService** (`src/hooks/useFDALedgerService.ts`)
+- Operações: addLine, updateLineField, deleteLine, recalculateAmountsLocal, fetchLines
+- Usado em: FDALedgerTable.tsx
+
+**3. useTeamService** (`src/hooks/useTeamService.ts`)
+- Operações: fetchMembers, fetchInvitations, createInvitation, revokeInvitation, updateMemberRole, removeMember
+- Usado em: TeamManagement.tsx
+
+### ✅ Componentes Refatorados
+
+**1. src/components/layout/Header.tsx**
+- ❌ Antes: `supabase.auth.signOut()` direto
+- ✅ Agora: `useAuthService()` hook
+- Benefício: Componente puro, lógica centralizada
+
+**2. src/components/fda/FDALedgerTable.tsx**
+- ❌ Antes: Múltiplas chamadas `supabase.from('fda_ledger')` diretas
+- ✅ Agora: `useFDALedgerService()` hook
+- Benefício: Lógica complexa de ledger encapsulada
+
+**3. src/components/organization/TeamManagement.tsx**
+- ❌ Antes: Queries diretas ao supabase para memberships/invitations
+- ✅ Agora: `useTeamService()` hook
+- Benefício: CRUD de equipe reutilizável
+
+### 📊 Métricas
+
+- **Hooks de serviço:** 3 criados
+- **Componentes refatorados:** 3
+- **Linhas removidas:** ~200 (código duplicado de DB)
+- **Reutilização:** Hooks podem ser usados em outros componentes
+
+### 🎯 Padrão Estabelecido
+
+Todos os hooks seguem o mesmo padrão:
+```typescript
+export function useXXXService() {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+
+  const operation = useCallback(async (params) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase...;
+      if (error) throw error;
+      toast({ title: 'Success', ... });
+      return { success: true, data };
+    } catch (error) {
+      toast({ title: 'Error', variant: 'destructive', ... });
+      return { success: false, error };
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  return { operation, loading };
+}
+```
 
 **Build:** ✅ OK  
 **TypeCheck:** ✅ Pass
