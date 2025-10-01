@@ -219,8 +219,12 @@ export default function FDANew() {
                 options={portState.portOptions}
                 value={formData.port}
                 onValueChange={(value) => {
-                  setFormData(prev => ({ ...prev, port: value, terminal: "", berth: "" }));
-                  portState.updatePortSelection(value);
+                  portState.updatePortSelection(
+                    value,
+                    (port) => setFormData(prev => ({ ...prev, port })),
+                    (terminal) => setFormData(prev => ({ ...prev, terminal })),
+                    (berth) => setFormData(prev => ({ ...prev, berth }))
+                  );
                 }}
                 placeholder="Select port..."
                 searchPlaceholder="Search ports..."
@@ -232,8 +236,11 @@ export default function FDANew() {
                 options={portState.terminalOptions}
                 value={formData.terminal}
                 onValueChange={(value) => {
-                  setFormData(prev => ({ ...prev, terminal: value, berth: "" }));
-                  portState.updateTerminalSelection(value);
+                  portState.updateTerminalSelection(
+                    value,
+                    (terminal) => setFormData(prev => ({ ...prev, terminal })),
+                    (berth) => setFormData(prev => ({ ...prev, berth }))
+                  );
                 }}
                 placeholder="Select terminal..."
                 searchPlaceholder="Search terminals..."
@@ -249,8 +256,10 @@ export default function FDANew() {
                 options={portState.berthOptions}
                 value={formData.berth}
                 onValueChange={(value) => {
-                  setFormData(prev => ({ ...prev, berth: value }));
-                  portState.updateBerthSelection(value);
+                  portState.updateBerthSelection(
+                    value,
+                    (berth) => setFormData(prev => ({ ...prev, berth }))
+                  );
                 }}
                 placeholder="Select berth..."
                 searchPlaceholder="Search berths..."
