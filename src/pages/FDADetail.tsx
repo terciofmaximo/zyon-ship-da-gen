@@ -810,11 +810,6 @@ export default function FDADetail() {
                 </Button>
               </>
             )}
-            {isDirty && (
-              <p className="text-sm text-muted-foreground flex items-center">
-                You have unsaved changes. Press Ctrl/Cmd + S to save.
-              </p>
-            )}
           </div>
         </div>
       </div>
