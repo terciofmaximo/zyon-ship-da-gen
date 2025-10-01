@@ -548,13 +548,13 @@ export default function FDANew() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <div className="text-sm text-muted-foreground">Total AP (USD)</div>
+                  <div className="text-sm text-muted-foreground">Total Payable (USD)</div>
                   <div className="text-lg font-semibold text-red-600">
                     ${totals.totalAP_USD.toFixed(2)}
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm text-muted-foreground">Total AR (USD)</div>
+                  <div className="text-sm text-muted-foreground">Total Receivable (USD)</div>
                   <div className="text-lg font-semibold text-green-600">
                     ${totals.totalAR_USD.toFixed(2)}
                   </div>
@@ -569,32 +569,32 @@ export default function FDANew() {
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm text-muted-foreground">
-                    {totals.net_USD >= 0 ? "Due from Client" : "Due to Client"}
-                  </div>
-                  <div className="text-lg font-semibold">
-                    ${Math.max(0, totals.net_USD - receivedFromClient).toFixed(2)}
-                  </div>
-                  {receivedFromClient > 0 && (
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Considerando ${receivedFromClient.toFixed(2)} já recebidos
-                    </div>
-                  )}
+                  <Label htmlFor="received_from_client" className="text-sm text-muted-foreground">
+                    Amount Received as Cash Advance (USD)
+                  </Label>
+                  <Input
+                    id="received_from_client"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={receivedFromClient}
+                    onChange={(e) => setReceivedFromClient(parseFloat(e.target.value) || 0)}
+                    className="mt-2"
+                    placeholder="0.00"
+                  />
                 </div>
               </div>
               
-              <div className="border-t pt-4">
-                <Label htmlFor="received_from_client">Pago pelo Cliente (USD)</Label>
-                <Input
-                  id="received_from_client"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={receivedFromClient}
-                  onChange={(e) => setReceivedFromClient(parseFloat(e.target.value) || 0)}
-                  className="w-48"
-                  placeholder="0.00"
-                />
+              <div className="border-t pt-4 mt-4">
+                <div className="text-sm text-muted-foreground">Amount Due from Client (USD)</div>
+                <div className="text-lg font-semibold">
+                  ${Math.max(0, totals.net_USD - receivedFromClient).toFixed(2)}
+                </div>
+                {receivedFromClient > 0 && (
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Considering ${receivedFromClient.toFixed(2)} already received
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
