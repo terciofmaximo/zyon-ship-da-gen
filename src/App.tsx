@@ -36,6 +36,7 @@ import { TenantProvider } from "@/context/TenantProvider";
 import { CompanyProvider } from "@/context/CompanyProvider";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 import { RootRedirect } from "@/components/routing/RootRedirect";
+import { RouteGuard } from "@/components/auth/RouteGuard";
 
 const queryClient = new QueryClient();
 
@@ -43,13 +44,14 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <AuthProvider>
-        <CompanyProvider>
-          <OrgProvider>
-            <TenantProvider>
-              <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <Routes>
+        <RouteGuard>
+          <CompanyProvider>
+            <OrgProvider>
+              <TenantProvider>
+                <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <Routes>
                 {/* Root redirect */}
                 <Route path="/" element={<RootRedirect />} />
                 
@@ -88,10 +90,11 @@ const App = () => (
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
-              </TooltipProvider>
-            </TenantProvider>
-          </OrgProvider>
-        </CompanyProvider>
+                </TooltipProvider>
+              </TenantProvider>
+            </OrgProvider>
+          </CompanyProvider>
+        </RouteGuard>
       </AuthProvider>
     </BrowserRouter>
   </QueryClientProvider>

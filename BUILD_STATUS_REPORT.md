@@ -1,7 +1,7 @@
 # Build Status Report
 
 **Data:** 2025-10-01  
-**Status:** ✅ Estável - comentários AI completos
+**Status:** ✅ Estável - route guard centralizado implementado
 
 ## Verificações Realizadas
 
@@ -52,7 +52,78 @@ src/
 
 Todos os imports estão apontando para os caminhos corretos nesta estrutura.
 
-## Comentários AI (2025-10-01) - Última Atualização
+## Route Guard Centralizado (2025-10-01) - Última Atualização
+
+### Objetivo
+Garantir que apenas rotas de autenticação (/auth, /signup, /forgot-password, /reset-password) sejam públicas.
+
+### Resultado
+✅ **Implementado com sucesso**
+
+#### Arquivos Criados
+1. ✅ **src/config/publicRoutes.ts** - Lista centralizada de rotas públicas
+   - 9 rotas públicas definidas (auth, signup, verify, confirmed, forgot-password, reset-password, seed-admin, invite)
+   - Função `isPublicRoute()` com suporte a wildcards
+
+2. ✅ **src/components/auth/RouteGuard.tsx** - Guard centralizado de autenticação
+   - Redireciona usuários não autenticados para `/auth`
+   - Preserva destino original para redirect pós-login
+   - Mostra loading skeleton durante verificação
+   - Console logging para debug
+
+#### Arquivos Modificados
+- ✅ **src/App.tsx** - Adicionado `<RouteGuard>` wrapper
+  - Linha 39: Import do RouteGuard
+  - Linha 47: Abertura do RouteGuard após AuthProvider
+  - Linha 97: Fechamento do RouteGuard
+
+### Estrutura de Proteção
+```
+<AuthProvider>           // Fornece estado de autenticação
+  <RouteGuard>          // Verifica e redireciona (camada externa)
+    <CompanyProvider>
+      <OrgProvider>
+        <TenantProvider>
+          <Routes>
+            <RequireAuth>  // Proteção adicional (camada interna)
+              {/* Pages */}
+            </RequireAuth>
+          </Routes>
+        </TenantProvider>
+      </OrgProvider>
+    </CompanyProvider>
+  </RouteGuard>
+</AuthProvider>
+```
+
+### Rotas Públicas (9)
+- `/auth` - Login
+- `/auth/signup` - Cadastro
+- `/auth/verify-email` - Verificação de email
+- `/auth/confirmed` - Confirmação de email
+- `/auth/forgot-password` - Recuperação de senha
+- `/auth/reset-password` - Reset de senha
+- `/seed-admin` - Setup admin plataforma
+- `/invite/*` - Rotas de convite (desabilitadas)
+- `/auth/accept-invite` - Aceitar convite (desabilitado)
+
+### Rotas Antigas "Públicas" - Agora Protegidas
+- ❌ `/pda/new` (PublicPDANew) - **Agora requer login**
+- ❌ `/pda/:trackingId` (PublicPDAView) - **Agora requer login**
+- ✅ Todas outras rotas já estavam protegidas
+
+### Benefícios
+1. **Segurança**: Nenhuma rota sensível acessível sem login
+2. **Centralizado**: Single source of truth para rotas públicas
+3. **Defesa em Profundidade**: RouteGuard + RequireAuth (2 camadas)
+4. **UX**: Preserva destino para redirect pós-login
+5. **Manutenível**: Fácil adicionar novas rotas públicas em publicRoutes.ts
+
+**Detalhes:** Ver `ROUTE_GUARD_REPORT.md`
+
+---
+
+## Comentários AI (2025-10-01)
 
 ### Objetivo
 Adicionar comentários estruturados (@ai-context, @ai-editable, @ai-guard) para reduzir quebras em edições futuras.
