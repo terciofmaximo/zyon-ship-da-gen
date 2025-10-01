@@ -60,7 +60,7 @@ export type Database = {
           id: string
           imo: string | null
           meta: Json | null
-          pda_id: string
+          pda_id: string | null
           port: string | null
           remarks: string | null
           status: Database["public"]["Enums"]["fda_status"]
@@ -87,7 +87,7 @@ export type Database = {
           id?: string
           imo?: string | null
           meta?: Json | null
-          pda_id: string
+          pda_id?: string | null
           port?: string | null
           remarks?: string | null
           status?: Database["public"]["Enums"]["fda_status"]
@@ -114,7 +114,7 @@ export type Database = {
           id?: string
           imo?: string | null
           meta?: Json | null
-          pda_id?: string
+          pda_id?: string | null
           port?: string | null
           remarks?: string | null
           status?: Database["public"]["Enums"]["fda_status"]

@@ -2,12 +2,13 @@
  * @ai-context
  * Role: FDA creation page (direct entry) - allows creating FDA with manual ledger entry without PDA.
  * DoD:
- * - Create PDA first (FDA requires pda_id), then FDA header, then ledger entries.
+ * - Create FDA directly without requiring a PDA (pda_id is nullable).
  * - Always use activeOrg.id as tenant_id for FDA and ledger entries.
  * - Initialize with 13 standard cost items from INITIAL_LEDGER_LINES.
  * - Calculate totals dynamically (AP, AR, Net).
+ * - Vessel fields (DWT, LOA, Beam) are optional.
  * Constraints:
- * - Maintain 3-step creation: PDA → FDA → Ledger entries.
+ * - Direct FDA creation: FDA header → Ledger entries (no PDA dependency).
  * - If adding ledger fields, update both state and insert mapping.
  * - Preserve exchange rate logic (USD ↔ BRL conversion).
  * - Keep financial precision (use Decimal.js for calculations).
@@ -25,7 +26,6 @@ import { Trash2, Plus, AlertCircle, HelpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useFDA } from "@/hooks/useFDA";
-import { usePDA } from "@/hooks/usePDA";
 import Decimal from "decimal.js";
 import { useOrg } from "@/context/OrgProvider";
 import { getActiveTenantId } from "@/lib/utils";
@@ -74,7 +74,6 @@ export default function FDANew() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { calculateFDATotals } = useFDA();
-  const { savePDA } = usePDA();
   const { activeOrg, organizations } = useOrg();
   const { isPlatformAdmin } = useUserRole();
   const [loading, setLoading] = useState(false);
@@ -91,6 +90,9 @@ export default function FDANew() {
     exchange_rate: "5.25",
     vessel_name: "",
     imo: "",
+    dwt: "",
+    loa: "",
+    beam: "",
   });
 
   const [receivedFromClient, setReceivedFromClient] = useState(0);
@@ -198,41 +200,9 @@ export default function FDANew() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Authentication required");
 
-      // Step 1: Create a PDA first (FDA requires a pda_id)
-      const pdaData = {
-        shipData: {
-          vesselName: formData.vessel_name,
-          imoNumber: formData.imo,
-          portName: formData.port,
-          terminal: formData.terminal,
-          to: formData.client_name,
-          exchangeRate: formData.exchange_rate,
-          date: new Date().toISOString(),
-        },
-        costData: {
-          // Map ledger lines to PDA cost fields (only AP items)
-          pilotageIn: ledgerLines.find(l => l.category === "Pilot IN/OUT")?.amount_usd || 0,
-          towageIn: ledgerLines.find(l => l.category === "Towage IN/OUT")?.amount_usd || 0,
-          lightDues: ledgerLines.find(l => l.category === "Light dues")?.amount_usd || 0,
-          dockage: ledgerLines.find(l => l.category === "Dockage (Wharfage)")?.amount_usd || 0,
-          linesman: ledgerLines.find(l => l.category === "Linesman (mooring/unmooring)")?.amount_usd || 0,
-          launchBoat: ledgerLines.find(l => l.category === "Launch boat (mooring/unmooring)")?.amount_usd || 0,
-          immigration: ledgerLines.find(l => l.category === "Immigration tax (Funapol)")?.amount_usd || 0,
-          freePratique: ledgerLines.find(l => l.category === "Free pratique tax")?.amount_usd || 0,
-          shippingAssociation: ledgerLines.find(l => l.category === "Shipping association")?.amount_usd || 0,
-          clearance: ledgerLines.find(l => l.category === "Clearance")?.amount_usd || 0,
-          paperlessPort: ledgerLines.find(l => l.category === "Paperless Port System")?.amount_usd || 0,
-          agencyFee: ledgerLines.find(l => l.category === "Agency fee")?.amount_usd || 0,
-          waterway: ledgerLines.find(l => l.category === "Waterway channel (Table I)")?.amount_usd || 0,
-        },
-      };
-
-      const createdPDA = await savePDA(pdaData);
-      if (!createdPDA?.id) throw new Error("Failed to create linked PDA");
-
-      // Step 2: Create FDA header with valid pda_id
+      // Create FDA directly without PDA
       const fdaData = {
-        pda_id: createdPDA.id,
+        pda_id: null,
         status: "Draft" as const,
         client_name: formData.client_name,
         vessel_name: formData.vessel_name || null,
@@ -410,6 +380,33 @@ export default function FDANew() {
                 id="imo"
                 value={formData.imo}
                 onChange={(e) => setFormData(prev => ({ ...prev, imo: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="dwt">DWT (Deadweight Tonnage)</Label>
+              <Input
+                id="dwt"
+                value={formData.dwt}
+                onChange={(e) => setFormData(prev => ({ ...prev, dwt: e.target.value }))}
+                placeholder="Optional"
+              />
+            </div>
+            <div>
+              <Label htmlFor="loa">LOA (Length Overall)</Label>
+              <Input
+                id="loa"
+                value={formData.loa}
+                onChange={(e) => setFormData(prev => ({ ...prev, loa: e.target.value }))}
+                placeholder="Optional"
+              />
+            </div>
+            <div>
+              <Label htmlFor="beam">Beam</Label>
+              <Input
+                id="beam"
+                value={formData.beam}
+                onChange={(e) => setFormData(prev => ({ ...prev, beam: e.target.value }))}
+                placeholder="Optional"
               />
             </div>
             <div>
