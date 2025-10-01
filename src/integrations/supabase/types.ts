@@ -841,6 +841,10 @@ export type Database = {
         Args: { p_pda_id: string }
         Returns: string
       }
+      extract_slug_from_domain: {
+        Args: { p_domain: string }
+        Returns: string
+      }
       generate_pda_number: {
         Args: { p_tenant_id: string }
         Returns: string
@@ -852,6 +856,59 @@ export type Database = {
       generate_tracking_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_pda_by_tracking_id: {
+        Args: { p_tracking_id: string }
+        Returns: {
+          agency_fee: number | null
+          beam: string | null
+          berth: string | null
+          berths: Json | null
+          cargo: string | null
+          clearance: number | null
+          comments: Json | null
+          created_at: string
+          created_by: string | null
+          created_by_session_id: string | null
+          date_field: string | null
+          days_alongside: string | null
+          dockage: number | null
+          draft: string | null
+          dwt: string | null
+          exchange_rate: string | null
+          exchange_rate_source: string | null
+          exchange_rate_source_url: string | null
+          exchange_rate_timestamp: string | null
+          free_pratique: number | null
+          from_location: string | null
+          id: string
+          immigration: number | null
+          imo_number: string | null
+          launch_boat: number | null
+          light_dues: number | null
+          linesman: number | null
+          loa: string | null
+          paperless_port: number | null
+          pda_number: string
+          pilotage_in: number | null
+          port_name: string | null
+          quantity: string | null
+          remarks: string | null
+          sent_at: string | null
+          sent_by_user_id: string | null
+          shipping_association: number | null
+          status: Database["public"]["Enums"]["pda_status"]
+          tenant_id: string | null
+          terminal: string | null
+          to_client_id: string | null
+          to_display_name: string | null
+          to_location: string | null
+          towage_in: number | null
+          tracking_id: string | null
+          updated_at: string
+          vessel_name: string | null
+          waterway: number | null
+        }[]
       }
       get_tenant_by_hostname: {
         Args: { hostname: string }
