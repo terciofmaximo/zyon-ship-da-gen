@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Upload, X, Plus } from 'lucide-react';
+import { ArrowLeft, Upload, X, Plus, Copy, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -81,6 +81,7 @@ export default function FDALineDetail() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [permalinkCopied, setPermalinkCopied] = useState(false);
   
   // New payment form
   const [newPayment, setNewPayment] = useState({
@@ -332,6 +333,25 @@ export default function FDALineDetail() {
   const undoSettlement = async () => {
     await saveField('status', 'Open');
     await saveField('settled_at', null);
+  };
+
+  const copyPermalink = async () => {
+    const permalink = `${window.location.origin}/fda/${fdaId}/line/${lineId}`;
+    try {
+      await navigator.clipboard.writeText(permalink);
+      setPermalinkCopied(true);
+      toast({
+        title: "Copied!",
+        description: "Permalink copied to clipboard",
+      });
+      setTimeout(() => setPermalinkCopied(false), 2000);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to copy permalink",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading || !line) {
@@ -737,6 +757,40 @@ export default function FDALineDetail() {
               rows={3}
             />
             <Button className="mt-2">Post Comment</Button>
+          </div>
+          
+          <Separator />
+          
+          <div>
+            <div className="text-sm font-medium mb-2">Permalink to this Line Detail</div>
+            <div className="flex items-center gap-2">
+              <Input
+                value={`${window.location.origin}/fda/${fdaId}/line/${lineId}`}
+                readOnly
+                className="font-mono text-xs bg-muted"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={copyPermalink}
+                className="flex-shrink-0"
+              >
+                {permalinkCopied ? (
+                  <>
+                    <Check className="h-4 w-4 mr-2" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy
+                  </>
+                )}
+              </Button>
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              Share this link for audit reference (requires authentication)
+            </div>
           </div>
           
           <Separator />
