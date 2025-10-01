@@ -1,7 +1,7 @@
 # Build Status Report
 
 **Data:** 2025-10-01  
-**Status:** ✅ Estável - route guard centralizado implementado
+**Status:** ✅ Estável - route guard centralizado + validação de formulários implementada
 
 ## Verificações Realizadas
 
@@ -252,4 +252,56 @@ Corrigir UX conforme solicitado:
 
 **Build:** ✅ OK  
 **TypeCheck:** ✅ Esperado passar
+
+---
+
+## Validação de Formulários (2025-10-01)
+
+### Schemas Zod Criados
+
+**Status:** ✅ Todos os schemas compilando sem erros
+
+#### 1. FDA Schemas (`src/schemas/fdaSchema.ts`)
+- `fdaHeaderSchema` - Validação de cabeçalho FDA
+- `fdaLedgerLineSchema` - Validação de linhas do ledger
+- `fdaCreationSchema` - Schema completo para criação
+- Normalização automática de números (vírgula → ponto)
+- Validação de IMO (7 dígitos)
+- Tipos exportados: `FDAHeader`, `FDALedgerLine`, `FDACreation`
+
+#### 2. Cost Schemas (`src/schemas/costSchema.ts`)
+- `costEntrySchema` - Validação dos 13 campos de custo PDA
+- `costCommentsSchema` - Validação de comentários
+- `remarksSchema` - Validação de observações
+- `fullCostEntrySchema` - Schema completo
+- Tipos exportados: `CostEntry`, `CostComments`, `FullCostEntry`
+
+#### 3. Ship Data Schema (`src/schemas/shipDataSchema.ts`)
+- `shipDataSchema` - Validação de dados da embarcação
+- Campos obrigatórios: vessel name, DWT, LOA, port, arrival date, exchange rate
+- Campos opcionais com validação: IMO, terminal, cargo type, departure date
+- Tipo exportado: `ShipData`
+
+### Próximos Passos
+
+**Fase 1:** Integração com React Hook Form
+- Adicionar `zodResolver` aos forms existentes
+- Implementar mensagens de erro em português
+- Adicionar toast de falha no submit
+
+**Formulários Alvo:**
+1. `src/components/forms/ShipDataForm.tsx`
+2. `src/components/forms/CostEntryForm.tsx`
+3. `src/pages/FDANew.tsx`
+
+### Benefícios
+
+- ✅ Validação client-side consistente
+- ✅ Mensagens de erro claras
+- ✅ Tipos TypeScript gerados automaticamente
+- ✅ Normalização de entrada (números com vírgula/ponto)
+- ✅ Prevenção de dados inválidos no backend
+
+**Build:** ✅ OK  
+**TypeCheck:** ✅ Pass
 
