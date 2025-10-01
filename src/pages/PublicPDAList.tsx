@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getSessionId } from "@/utils/sessionTracking";
 import { toast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { useOrg } from "@/context/OrgProvider";
 
 type PDA = {
   id: string;
@@ -21,28 +21,30 @@ type PDA = {
 
 export default function PublicPDAList() {
   const navigate = useNavigate();
-  const [sessionPDAs, setSessionPDAs] = useState<PDA[]>([]);
+  const { activeOrg } = useOrg();
+  const [orgPDAs, setOrgPDAs] = useState<PDA[]>([]);
   const [searchTrackingId, setSearchTrackingId] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadSessionPDAs();
-  }, []);
+    if (activeOrg) {
+      loadOrgPDAs();
+    }
+  }, [activeOrg]);
 
-  const loadSessionPDAs = async () => {
-    const sessionId = getSessionId();
-    if (!sessionId) return;
+  const loadOrgPDAs = async () => {
+    if (!activeOrg) return;
 
     setLoading(true);
     try {
-      // Use secure function to fetch PDAs by session
       const { data, error } = await supabase
-        .rpc("get_pdas_by_session", {
-          p_session_id: sessionId
-        });
+        .from("pdas")
+        .select("*")
+        .eq("tenant_id", activeOrg.id)
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setSessionPDAs(data || []);
+      setOrgPDAs(data || []);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -94,15 +96,19 @@ export default function PublicPDAList() {
 
         <Card>
           <CardHeader>
-            <CardTitle>PDAs Created in This Session</CardTitle>
+            <CardTitle>Organization PDAs</CardTitle>
             <CardDescription>
-              PDAs you've created during this browser session
+              All PDAs in your organization
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {!activeOrg ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Please select an organization to view PDAs</p>
+              </div>
+            ) : loading ? (
               <p className="text-center text-muted-foreground py-8">Loading...</p>
-            ) : sessionPDAs.length === 0 ? (
+            ) : orgPDAs.length === 0 ? (
               <div className="text-center py-8 space-y-4">
                 <p className="text-muted-foreground">No PDAs created yet</p>
                 <Button onClick={() => navigate("/pda/new")}>
@@ -122,7 +128,7 @@ export default function PublicPDAList() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sessionPDAs.map((pda) => (
+                  {orgPDAs.map((pda) => (
                     <TableRow key={pda.id}>
                       <TableCell className="font-mono font-semibold">
                         {pda.tracking_id}

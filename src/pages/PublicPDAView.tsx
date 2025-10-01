@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Share2, Copy, ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthProvider";
+import { useOrg } from "@/context/OrgProvider";
 
 type PDADetail = {
   id: string;
@@ -28,11 +28,11 @@ export default function PublicPDAView() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const { activeOrg } = useOrg();
   const [pda, setPda] = useState<PDADetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [converting, setConverting] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
 
   useEffect(() => {
     loadPDA();
@@ -50,22 +50,30 @@ export default function PublicPDAView() {
       return;
     }
 
+    if (!activeOrg) {
+      setError("No active organization");
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     
     try {
-      // Use secure function to fetch PDA by tracking_id
+      // Fetch PDA with org validation
       const { data, error } = await supabase
-        .rpc("get_pda_by_tracking_id", {
-          p_tracking_id: trackingId.toUpperCase()
-        });
+        .from("pdas")
+        .select("*")
+        .eq("tracking_id", trackingId.toUpperCase())
+        .eq("tenant_id", activeOrg.id)
+        .maybeSingle();
 
       if (error) throw error;
       
-      if (!data || data.length === 0) {
-        setError("PDA not found");
+      if (!data) {
+        setError("PDA not found or you don't have access");
       } else {
-        setPda(data[0]);
+        setPda(data);
       }
     } catch (error: any) {
       setError("Failed to load PDA");
@@ -81,8 +89,20 @@ export default function PublicPDAView() {
 
   const handleConvertToFDA = async () => {
     if (!user) {
-      // Show login modal
-      setShowLoginModal(true);
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to convert PDA to FDA",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!activeOrg) {
+      toast({
+        title: "Organization Required",
+        description: "Please select an organization to convert PDA to FDA",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -114,19 +134,6 @@ export default function PublicPDAView() {
     }
   };
 
-  const handleLoginRedirect = () => {
-    const returnUrl = `/pda/${trackingId}?action=toFDA`;
-    navigate(`/auth?returnUrl=${encodeURIComponent(returnUrl)}`);
-  };
-
-  const handleCopyLink = () => {
-    const link = window.location.href;
-    navigator.clipboard.writeText(link);
-    toast({
-      title: "Link Copied",
-      description: "Tracking link copied to clipboard",
-    });
-  };
 
   if (loading) {
     return (
@@ -165,10 +172,6 @@ export default function PublicPDAView() {
             <Button onClick={handleConvertToFDA} disabled={converting}>
               <ArrowRight className="h-4 w-4 mr-2" />
               {converting ? "Convertendo..." : "Converter para FDA"}
-            </Button>
-            <Button variant="outline" onClick={handleCopyLink}>
-              <Copy className="h-4 w-4 mr-2" />
-              Copiar Link
             </Button>
             <Button variant="outline" onClick={() => navigate("/pda")}>
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -229,56 +232,6 @@ export default function PublicPDAView() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Share2 className="h-5 w-5" />
-              Share This PDA
-            </CardTitle>
-            <CardDescription>
-              Anyone with this link can view this PDA
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={window.location.href}
-                readOnly
-                className="flex-1 px-3 py-2 border rounded-md bg-muted font-mono text-sm"
-              />
-              <Button onClick={handleCopyLink}>
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Login Necessário</DialogTitle>
-              <DialogDescription>
-                Para converter PDA em FDA, você precisa estar logado com uma conta corporativa.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 pt-4">
-              <Button onClick={handleLoginRedirect} className="w-full">
-                Fazer Login
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate(`/auth/signup?returnUrl=${encodeURIComponent(`/pda/${trackingId}?action=toFDA`)}`)}
-                className="w-full"
-              >
-                Criar Conta Corporativa
-              </Button>
-              <Button variant="ghost" onClick={() => setShowLoginModal(false)} className="w-full">
-                Cancelar
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
     </div>
   );
 }
