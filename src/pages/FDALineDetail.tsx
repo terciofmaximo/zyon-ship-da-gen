@@ -420,42 +420,23 @@ export default function FDALineDetail() {
               />
             </div>
             <div>
-              <Label>Invoice Date</Label>
+              <Label>Due Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full justify-start">
-                    {line.invoice_date ? format(new Date(line.invoice_date), 'PPP') : 'Pick a date'}
+                    {line.due_date ? format(new Date(line.due_date), 'PPP') : 'Pick a date'}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
                   <Calendar
                     mode="single"
-                    selected={line.invoice_date ? new Date(line.invoice_date) : undefined}
-                    onSelect={(date) => saveField('invoice_date', date?.toISOString().split('T')[0])}
+                    selected={line.due_date ? new Date(line.due_date) : undefined}
+                    onSelect={(date) => saveField('due_date', date?.toISOString().split('T')[0])}
                     initialFocus
                   />
                 </PopoverContent>
               </Popover>
             </div>
-          </div>
-          
-          <div>
-            <Label>Due Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-start">
-                  {line.due_date ? format(new Date(line.due_date), 'PPP') : 'Pick a date'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={line.due_date ? new Date(line.due_date) : undefined}
-                  onSelect={(date) => saveField('due_date', date?.toISOString().split('T')[0])}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
           </div>
           
           <div>
@@ -578,63 +559,7 @@ export default function FDALineDetail() {
         </CardContent>
       </Card>
 
-      {/* D) FX & Currency */}
-      <Card>
-        <CardHeader>
-          <CardTitle>FX & Currency</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-4">
-            <Switch
-              checked={line.use_custom_fx || false}
-              onCheckedChange={(checked) => saveField('use_custom_fx', checked)}
-            />
-            <Label>Use Custom FX Rate</Label>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>FX Rate (USD/BRL)</Label>
-              <Input
-                type="number"
-                value={line.use_custom_fx ? (line.custom_fx_rate || '') : fdaExchangeRate}
-                onChange={(e) => saveField('custom_fx_rate', parseFloat(e.target.value))}
-                disabled={!line.use_custom_fx}
-              />
-              <div className="text-xs text-muted-foreground mt-1">
-                {line.use_custom_fx ? 'Custom rate' : 'Using FDA header rate'}
-              </div>
-            </div>
-            <div>
-              <Label>FX Source</Label>
-              <Input
-                value={line.fx_source_url || ''}
-                onChange={(e) => saveField('fx_source_url', e.target.value)}
-                placeholder="Source URL or reference"
-              />
-            </div>
-          </div>
-          
-          <div className="p-4 bg-muted rounded-lg">
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <div className="text-sm text-muted-foreground">USD Amount</div>
-                <div className="font-medium">{fmtUSD(line.amount_usd || 0)}</div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">Effective FX</div>
-                <div className="font-medium">{effectiveFx.toFixed(4)}</div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">Computed BRL</div>
-                <div className="font-medium">{fmtBRL(computedBRL)}</div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* E) Operational Context */}
+      {/* D) Operational Context */}
       <Card>
         <CardHeader>
           <CardTitle>Operational Context</CardTitle>
@@ -700,7 +625,7 @@ export default function FDALineDetail() {
         </CardContent>
       </Card>
 
-      {/* F) Allocation & Accounting */}
+      {/* E) Allocation & Accounting */}
       <Card>
         <CardHeader>
           <CardTitle>Allocation & Accounting</CardTitle>
@@ -774,7 +699,7 @@ export default function FDALineDetail() {
         </CardContent>
       </Card>
 
-      {/* G) Attachments */}
+      {/* F) Attachments */}
       <Card>
         <CardHeader>
           <CardTitle>Attachments</CardTitle>
@@ -815,7 +740,7 @@ export default function FDALineDetail() {
         </CardContent>
       </Card>
 
-      {/* H) Comments & Audit */}
+      {/* G) Comments & Audit */}
       <Card>
         <CardHeader>
           <CardTitle>Comments & Audit Trail</CardTitle>
