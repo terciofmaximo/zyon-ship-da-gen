@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useFDA } from "@/hooks/useFDA";
@@ -15,6 +15,8 @@ import Decimal from "decimal.js";
 import { useOrg } from "@/context/OrgProvider";
 import { Combobox } from "@/components/ui/combobox";
 import { usePortDirectory } from "@/hooks/usePortDirectory";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface LedgerLine {
   id: string;
@@ -49,7 +51,8 @@ export default function FDANew() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { calculateFDATotals } = useFDA();
-  const { activeOrg } = useOrg();
+  const { activeOrg, organizations } = useOrg();
+  const { isPlatformAdmin } = useUserRole();
   const [loading, setLoading] = useState(false);
   const portState = usePortDirectory();
 
@@ -125,12 +128,22 @@ export default function FDANew() {
       return;
     }
 
+    // Check for active organization
     if (!activeOrg) {
-      toast({
-        title: "Error",
-        description: "No active organization",
-        variant: "destructive",
-      });
+      // Special handling for platform admins
+      if (isPlatformAdmin && organizations.length > 0) {
+        toast({
+          title: "Select Organization",
+          description: "Please select an organization from the switcher to create an FDA",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "No Organization",
+          description: "You need to be part of an organization to create an FDA",
+          variant: "destructive",
+        });
+      }
       return;
     }
 
@@ -209,6 +222,17 @@ export default function FDANew() {
 
   return (
     <div className="p-6 space-y-6">
+      {/* Warning if no active org */}
+      {!activeOrg && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {isPlatformAdmin 
+              ? "Please select an organization from the Organization Switcher to create an FDA"
+              : "You need to be part of an organization to create an FDA"}
+          </AlertDescription>
+        </Alert>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Create New FDA</h1>
