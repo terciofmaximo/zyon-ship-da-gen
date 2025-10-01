@@ -11,6 +11,7 @@ import { Trash2, Plus, AlertCircle, HelpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useFDA } from "@/hooks/useFDA";
+import { usePDA } from "@/hooks/usePDA";
 import Decimal from "decimal.js";
 import { useOrg } from "@/context/OrgProvider";
 import { Combobox } from "@/components/ui/combobox";
@@ -52,6 +53,7 @@ export default function FDANew() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { calculateFDATotals } = useFDA();
+  const { savePDA } = usePDA();
   const { activeOrg, organizations } = useOrg();
   const { isPlatformAdmin } = useUserRole();
   const [loading, setLoading] = useState(false);
@@ -155,9 +157,41 @@ export default function FDANew() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Authentication required");
 
-      // Create FDA header
+      // Step 1: Create a PDA first (FDA requires a pda_id)
+      const pdaData = {
+        shipData: {
+          vesselName: formData.vessel_name,
+          imoNumber: formData.imo,
+          portName: formData.port,
+          terminal: formData.terminal,
+          to: formData.client_name,
+          exchangeRate: formData.exchange_rate,
+          date: new Date().toISOString(),
+        },
+        costData: {
+          // Map ledger lines to PDA cost fields (only AP items)
+          pilotageIn: ledgerLines.find(l => l.category === "Pilot IN/OUT")?.amount_usd || 0,
+          towageIn: ledgerLines.find(l => l.category === "Towage IN/OUT")?.amount_usd || 0,
+          lightDues: ledgerLines.find(l => l.category === "Light dues")?.amount_usd || 0,
+          dockage: ledgerLines.find(l => l.category === "Dockage (Wharfage)")?.amount_usd || 0,
+          linesman: ledgerLines.find(l => l.category === "Linesman (mooring/unmooring)")?.amount_usd || 0,
+          launchBoat: ledgerLines.find(l => l.category === "Launch boat (mooring/unmooring)")?.amount_usd || 0,
+          immigration: ledgerLines.find(l => l.category === "Immigration tax (Funapol)")?.amount_usd || 0,
+          freePratique: ledgerLines.find(l => l.category === "Free pratique tax")?.amount_usd || 0,
+          shippingAssociation: ledgerLines.find(l => l.category === "Shipping association")?.amount_usd || 0,
+          clearance: ledgerLines.find(l => l.category === "Clearance")?.amount_usd || 0,
+          paperlessPort: ledgerLines.find(l => l.category === "Paperless Port System")?.amount_usd || 0,
+          agencyFee: ledgerLines.find(l => l.category === "Agency fee")?.amount_usd || 0,
+          waterway: ledgerLines.find(l => l.category === "Waterway channel (Table I)")?.amount_usd || 0,
+        },
+      };
+
+      const createdPDA = await savePDA(pdaData);
+      if (!createdPDA?.id) throw new Error("Failed to create linked PDA");
+
+      // Step 2: Create FDA header with valid pda_id
       const fdaData = {
-        pda_id: null,
+        pda_id: createdPDA.id,
         status: "Draft" as const,
         client_name: formData.client_name,
         vessel_name: formData.vessel_name || null,
