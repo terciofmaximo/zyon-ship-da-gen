@@ -205,6 +205,19 @@ export default function FDAList() {
     navigate(`/fda/${fda.id}`);
   };
 
+  const getStatusClassName = (status: string) => {
+    switch (status) {
+      case "Draft":
+        return "bg-blue-900 text-white border-blue-900";
+      case "Posted":
+        return "bg-yellow-900 text-white border-yellow-900";
+      case "Closed":
+        return "bg-red-900 text-white border-red-900";
+      default:
+        return "";
+    }
+  };
+
   const handleStatusSelect = (fdaId: string, currentStatus: string, newStatus: string) => {
     if (currentStatus === newStatus) return;
     
@@ -372,12 +385,16 @@ export default function FDAList() {
                         value={fda.status}
                         onValueChange={(value) => handleStatusSelect(fda.id, fda.status, value)}
                       >
-                        <SelectTrigger className="w-[130px]">
+                        <SelectTrigger className={`w-[130px] ${getStatusClassName(fda.status)}`}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           {fdaStatuses.map((status) => (
-                            <SelectItem key={status} value={status}>
+                            <SelectItem 
+                              key={status} 
+                              value={status}
+                              className={getStatusClassName(status)}
+                            >
                               {status}
                             </SelectItem>
                           ))}
