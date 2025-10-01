@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Upload, X, Plus, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Upload, X, Plus, Copy, Check, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -63,10 +63,14 @@ interface Payment {
 
 interface Attachment {
   id: string;
-  type: string;
-  url: string;
-  uploaded_at: string;
-  version: number;
+  name: string;
+  created_at: string;
+  updated_at: string;
+  last_accessed_at: string;
+  metadata?: {
+    size?: number;
+    mimetype?: string;
+  };
 }
 
 export default function FDALineDetail() {
@@ -82,6 +86,8 @@ export default function FDALineDetail() {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [loading, setLoading] = useState(true);
   const [permalinkCopied, setPermalinkCopied] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // New payment form
   const [newPayment, setNewPayment] = useState({
@@ -123,6 +129,9 @@ export default function FDALineDetail() {
       setFdaData(fdaHeaderData);
       setFdaExchangeRate(fdaHeaderData.exchange_rate || 1);
       
+      // Load attachments from storage
+      await loadAttachments();
+      
       // Auto-fill line details from FDA if not already set
       if (lineData) {
         const currentDetails = (lineData.details as any) || {};
@@ -158,15 +167,7 @@ export default function FDALineDetail() {
       if (paymentsError) throw paymentsError;
       setPayments(paymentsData || []);
       
-      // Load attachments
-      const { data: attachmentsData, error: attachmentsError } = await supabase
-        .from('fda_ledger_attachments')
-        .select('*')
-        .eq('ledger_id', lineId)
-        .order('uploaded_at', { ascending: false });
-      
-      if (attachmentsError) throw attachmentsError;
-      setAttachments(attachmentsData || []);
+      // Remove old attachments fetch (now using storage)
       
     } catch (error: any) {
       console.error('Error loading data:', error);
@@ -178,6 +179,156 @@ export default function FDALineDetail() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadAttachments = async () => {
+    if (!line || !fdaId || !lineId) return;
+    
+    const tenantId = line.tenant_id || fdaData?.tenant_id;
+    if (!tenantId) return;
+    
+    try {
+      const prefix = `${tenantId}/${fdaId}/${lineId}`;
+      const { data, error } = await supabase.storage
+        .from('fda-attachments')
+        .list(prefix, {
+          limit: 100,
+          sortBy: { column: 'created_at', order: 'desc' }
+        });
+      
+      if (error) throw error;
+      setAttachments(data || []);
+    } catch (error: any) {
+      console.error('Error loading attachments:', error);
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+    
+    const tenantId = line?.tenant_id || fdaData?.tenant_id;
+    if (!tenantId || !fdaId || !lineId) {
+      toast({
+        title: "Error",
+        description: "Missing required data for upload",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setUploading(true);
+    
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileExt = file.name.split('.').pop()?.toLowerCase();
+        const allowedTypes = ['pdf', 'doc', 'docx', 'txt', 'jpg', 'jpeg', 'png', 'webp'];
+        
+        if (!fileExt || !allowedTypes.includes(fileExt)) {
+          toast({
+            title: "Invalid file type",
+            description: `File ${file.name} is not an allowed type`,
+            variant: "destructive",
+          });
+          continue;
+        }
+        
+        const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const uuid = crypto.randomUUID();
+        const filePath = `${tenantId}/${fdaId}/${lineId}/${uuid}-${sanitizedFileName}`;
+        
+        const { error } = await supabase.storage
+          .from('fda-attachments')
+          .upload(filePath, file, {
+            upsert: false,
+            contentType: file.type
+          });
+        
+        if (error) throw error;
+      }
+      
+      toast({
+        title: "Success",
+        description: `${files.length} file(s) uploaded`,
+      });
+      
+      await loadAttachments();
+    } catch (error: any) {
+      console.error('Error uploading:', error);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleDownloadAttachment = async (attachment: Attachment) => {
+    try {
+      const tenantId = line?.tenant_id || fdaData?.tenant_id;
+      if (!tenantId || !fdaId || !lineId) return;
+      
+      const filePath = `${tenantId}/${fdaId}/${lineId}/${attachment.name}`;
+      
+      const { data, error } = await supabase.storage
+        .from('fda-attachments')
+        .createSignedUrl(filePath, 60);
+      
+      if (error) throw error;
+      if (!data?.signedUrl) throw new Error('No signed URL');
+      
+      window.open(data.signedUrl, '_blank');
+    } catch (error: any) {
+      console.error('Error downloading:', error);
+      toast({
+        title: "Error",
+        description: "Failed to download file",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteAttachment = async (attachment: Attachment) => {
+    try {
+      const tenantId = line?.tenant_id || fdaData?.tenant_id;
+      if (!tenantId || !fdaId || !lineId) return;
+      
+      const filePath = `${tenantId}/${fdaId}/${lineId}/${attachment.name}`;
+      
+      const { error } = await supabase.storage
+        .from('fda-attachments')
+        .remove([filePath]);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Attachment deleted",
+      });
+      
+      await loadAttachments();
+    } catch (error: any) {
+      console.error('Error deleting:', error);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
   const saveField = async (field: string, value: any) => {
@@ -710,9 +861,21 @@ export default function FDALineDetail() {
           <CardTitle>Attachments</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button variant="outline">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.webp"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+          <Button 
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
             <Upload className="h-4 w-4 mr-2" />
-            Upload Attachment
+            {uploading ? 'Uploading...' : 'Upload Attachment'}
           </Button>
           
           <div className="space-y-2">
@@ -720,21 +883,32 @@ export default function FDALineDetail() {
               <div className="text-sm text-muted-foreground">No attachments</div>
             ) : (
               attachments.map((att) => (
-                <div key={att.id} className="flex items-center justify-between p-2 bg-muted rounded">
-                  <div className="flex gap-4 text-sm">
-                    <span className="font-medium">{att.type}</span>
-                    <span className="text-muted-foreground">v{att.version}</span>
-                    <span className="text-muted-foreground">
-                      {format(new Date(att.uploaded_at), 'PP')}
-                    </span>
+                <div key={att.id} className="flex items-center justify-between p-3 bg-muted rounded border">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <button
+                      onClick={() => handleDownloadAttachment(att)}
+                      className="text-sm font-medium hover:underline text-primary truncate"
+                    >
+                      {att.name.split('-').slice(1).join('-') || att.name}
+                    </button>
+                    <div className="flex gap-2 text-xs text-muted-foreground flex-shrink-0">
+                      {att.metadata?.size && <span>{formatFileSize(att.metadata.size)}</span>}
+                      <span>{format(new Date(att.created_at), 'PP')}</span>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" asChild>
-                      <a href={att.url} target="_blank" rel="noopener noreferrer">
-                        View
-                      </a>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleDownloadAttachment(att)}
+                    >
+                      <Download className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleDeleteAttachment(att)}
+                    >
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
