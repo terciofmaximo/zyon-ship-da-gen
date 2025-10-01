@@ -292,9 +292,15 @@ export default function FDADetail() {
   const handlePost = async () => {
     if (!id) return;
     
+    // Auto-save pending changes before posting
+    if (isDirty) {
+      await handleSaveDraft();
+    }
+    
     const success = await updateFDAStatus(id, "Posted");
     if (success) {
       setFda(prev => prev ? { ...prev, status: "Posted" } : null);
+      setIsDirty(false);
     }
     setConfirmPost(false);
   };
@@ -751,7 +757,7 @@ export default function FDADetail() {
                 </Button>
                 <Button 
                   onClick={() => setConfirmPost(true)}
-                  disabled={loading || isDirty}
+                  disabled={loading}
                   variant="secondary"
                   size="lg"
                   className="bg-success hover:bg-success/90 text-success-foreground"
