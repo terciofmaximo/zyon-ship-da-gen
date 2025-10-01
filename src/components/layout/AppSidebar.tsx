@@ -27,7 +27,7 @@ import zyonLogoFinal from "@/assets/zyon-logo-final.png";
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "PDA", url: "/pda", icon: FileText },
-  { title: "Schedules", url: "/schedules", icon: Calendar },
+  { title: "Schedule", url: "/schedule", icon: Calendar },
   { title: "FDA", url: "/fda", icon: FileText },
   { title: "Financial", url: "/financial", icon: DollarSign },
   { title: "Billing", url: "/billing", icon: Receipt },

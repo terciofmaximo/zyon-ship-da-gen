@@ -23,6 +23,11 @@ import NoOrganization from "@/pages/NoOrganization";
 import OrganizationSettings from "@/pages/OrganizationSettings";
 import PlatformAdmin from "@/pages/PlatformAdmin";
 import SeedAdmin from "@/pages/SeedAdmin";
+import Financial from "@/pages/Financial";
+import Schedule from "@/pages/Schedule";
+import Billing from "@/pages/Billing";
+import Reports from "@/pages/Reports";
+import Clients from "@/pages/Clients";
 import InviteDisabled from "./pages/InviteDisabled";
 import PublicPDANew from "./pages/PublicPDANew";
 import PublicPDAList from "./pages/PublicPDAList";
@@ -84,6 +89,11 @@ const App = () => (
                 <Route path="/fda/new" element={<RequireAuth><DashboardLayout><FDANew /></DashboardLayout></RequireAuth>} />
                 <Route path="/fda/:id" element={<RequireAuth><DashboardLayout><FDADetail /></DashboardLayout></RequireAuth>} />
                 <Route path="/fda/:fdaId/line/:lineId" element={<RequireAuth><DashboardLayout><FDALineDetail /></DashboardLayout></RequireAuth>} />
+                <Route path="/financial" element={<RequireAuth><DashboardLayout><Financial /></DashboardLayout></RequireAuth>} />
+                <Route path="/schedule" element={<RequireAuth><DashboardLayout><Schedule /></DashboardLayout></RequireAuth>} />
+                <Route path="/billing" element={<RequireAuth><DashboardLayout><Billing /></DashboardLayout></RequireAuth>} />
+                <Route path="/reports" element={<RequireAuth><DashboardLayout><Reports /></DashboardLayout></RequireAuth>} />
+                <Route path="/clients" element={<RequireAuth><DashboardLayout><Clients /></DashboardLayout></RequireAuth>} />
                 
                 {/* Legacy /t/:slug routes - redirect to auth or protected routes */}
                 <Route path="/t/:slug" element={<Navigate to="/auth" replace />} />
