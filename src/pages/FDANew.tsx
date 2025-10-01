@@ -456,67 +456,6 @@ export default function FDANew() {
           </CardContent>
         </Card>
 
-        {/* Totals */}
-        {ledgerLines.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Financial Summary</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <div className="text-sm text-muted-foreground">Total AP (USD)</div>
-                  <div className="text-lg font-semibold text-red-600">
-                    ${totals.totalAP_USD.toFixed(2)}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Total AR (USD)</div>
-                  <div className="text-lg font-semibold text-green-600">
-                    ${totals.totalAR_USD.toFixed(2)}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Net (USD)</div>
-                  <div className={`text-lg font-semibold ${
-                    totals.net_USD >= 0 ? "text-blue-600" : "text-orange-600"
-                  }`}>
-                    ${Math.abs(totals.net_USD).toFixed(2)}
-                    {totals.net_USD < 0 && " (owe)"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">
-                    {totals.net_USD >= 0 ? "Due from Client" : "Due to Client"}
-                  </div>
-                  <div className="text-lg font-semibold">
-                    ${Math.max(0, totals.net_USD - receivedFromClient).toFixed(2)}
-                  </div>
-                  {receivedFromClient > 0 && (
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Considerando ${receivedFromClient.toFixed(2)} já recebidos
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div className="border-t pt-4">
-                <Label htmlFor="received_from_client">Pago pelo Cliente (USD)</Label>
-                <Input
-                  id="received_from_client"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={receivedFromClient}
-                  onChange={(e) => setReceivedFromClient(parseFloat(e.target.value) || 0)}
-                  className="w-48"
-                  placeholder="0.00"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Ledger */}
         <Card>
           <CardHeader>
@@ -637,6 +576,67 @@ export default function FDANew() {
             )}
           </CardContent>
         </Card>
+
+        {/* Totals */}
+        {ledgerLines.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Financial Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <div className="text-sm text-muted-foreground">Total AP (USD)</div>
+                  <div className="text-lg font-semibold text-red-600">
+                    ${totals.totalAP_USD.toFixed(2)}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Total AR (USD)</div>
+                  <div className="text-lg font-semibold text-green-600">
+                    ${totals.totalAR_USD.toFixed(2)}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Net (USD)</div>
+                  <div className={`text-lg font-semibold ${
+                    totals.net_USD >= 0 ? "text-blue-600" : "text-orange-600"
+                  }`}>
+                    ${Math.abs(totals.net_USD).toFixed(2)}
+                    {totals.net_USD < 0 && " (owe)"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">
+                    {totals.net_USD >= 0 ? "Due from Client" : "Due to Client"}
+                  </div>
+                  <div className="text-lg font-semibold">
+                    ${Math.max(0, totals.net_USD - receivedFromClient).toFixed(2)}
+                  </div>
+                  {receivedFromClient > 0 && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Considerando ${receivedFromClient.toFixed(2)} já recebidos
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="border-t pt-4">
+                <Label htmlFor="received_from_client">Pago pelo Cliente (USD)</Label>
+                <Input
+                  id="received_from_client"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={receivedFromClient}
+                  onChange={(e) => setReceivedFromClient(parseFloat(e.target.value) || 0)}
+                  className="w-48"
+                  placeholder="0.00"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="flex justify-end space-x-4">
           <Button
