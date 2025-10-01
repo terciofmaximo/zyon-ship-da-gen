@@ -153,21 +153,11 @@ const AuthPage: React.FC = () => {
             <img src={zyonLogo} alt="Zyon Logo" className="h-16 w-auto" />
           </div>
           <CardTitle className="text-xl text-center">
-            {mode === "login" ? "Entrar" : "Criar conta"}
+            {mode === "login" ? "Entrar no ERP Zyon Shipping" : "Criar conta"}
           </CardTitle>
-          <CardDescription>
-            {mode === "login" ? "Acesse para criar e salvar PDAs" : "Cadastre-se para começar a usar"}
+          <CardDescription className="text-center">
+            {mode === "login" ? "Sistema de gestão portuária e operações marítimas" : "Cadastre-se para começar a usar o ERP Zyon Shipping"}
           </CardDescription>
-          {mode === "login" && (
-            <div className="mt-4 p-3 bg-muted rounded-lg border">
-              <p className="text-sm font-medium text-muted-foreground mb-2">🔑 Platform Admin:</p>
-              <div className="space-y-1 text-sm">
-                <p><strong>Email:</strong> {PLATFORM_ADMIN_EMAIL}</p>
-                <p><strong>Senha:</strong> Admin123!</p>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">Full platform access</p>
-            </div>
-          )}
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -198,23 +188,6 @@ const AuthPage: React.FC = () => {
                 <button className="underline" onClick={() => setMode("login")}>Já tem conta? Entrar</button>
               )}
             </div>
-            {mode === "login" && (
-              <div className="text-center pt-2 border-t space-y-2">
-                <button 
-                  className="text-xs text-muted-foreground hover:text-foreground underline block mx-auto"
-                  onClick={() => navigate('/seed-admin')}
-                >
-                  🔧 Seed Platform Admin (Dev Tool)
-                </button>
-                <button 
-                  className="text-xs text-muted-foreground hover:text-foreground underline block mx-auto"
-                  onClick={resetAdminPassword}
-                  disabled={resetLoading}
-                >
-                  🔑 Resetar Senha Admin {resetLoading && "(...)"}
-                </button>
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>
