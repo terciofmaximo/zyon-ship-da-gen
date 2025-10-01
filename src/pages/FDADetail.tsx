@@ -44,7 +44,7 @@ export default function FDADetail() {
     client_id: "",
     exchange_rate: "",
     fx_source: "",
-    client_paid_usd: 0,
+    received_from_client_usd: 0,
     eta: null as Date | null,
     etb: null as Date | null,
     ets: null as Date | null,
@@ -96,7 +96,7 @@ export default function FDADetail() {
         editForm.client_id !== (fda.client_id || "") ||
         editForm.exchange_rate !== (fda.exchange_rate?.toString() || "") ||
         editForm.fx_source !== ((fda.meta as any)?.fx_source || "") ||
-        editForm.client_paid_usd !== (fda.client_paid_usd || 0) ||
+        editForm.received_from_client_usd !== ((fda.meta as any)?.received_from_client_usd || 0) ||
         (editForm.eta?.toISOString() || null) !== (fda.eta || null) ||
         (editForm.etb?.toISOString() || null) !== (fda.etb || null) ||
         (editForm.ets?.toISOString() || null) !== (fda.ets || null);
@@ -122,12 +122,12 @@ export default function FDADetail() {
           client_id: fdaData.client_id || "",
           exchange_rate: fdaData.exchange_rate?.toFixed(4) || "",
           fx_source: (fdaData.meta as any)?.fx_source || "",
-          client_paid_usd: fdaData.client_paid_usd || 0,
+          received_from_client_usd: (fdaData.meta as any)?.received_from_client_usd || 0,
           eta: fdaData.eta ? new Date(fdaData.eta) : null,
           etb: fdaData.etb ? new Date(fdaData.etb) : null,
           ets: fdaData.ets ? new Date(fdaData.ets) : null,
         });
-        setTempClientPaid((fdaData.client_paid_usd || 0).toString());
+        setTempClientPaid(((fdaData.meta as any)?.received_from_client_usd || 0).toString());
         setIsDirty(false);
         setLastSavedAt(fdaData.updated_at);
       } else {
@@ -189,13 +189,13 @@ export default function FDADetail() {
           client_id: editForm.client_id,
           exchange_rate: parseFloat(editForm.exchange_rate) || 0,
           fx_source: editForm.fx_source,
-          client_paid_usd: editForm.client_paid_usd,
           eta: editForm.eta?.toISOString() || null,
           etb: editForm.etb?.toISOString() || null,
           ets: editForm.ets?.toISOString() || null,
           meta: {
             ...(fda.meta as any || {}),
             fx_source: editForm.fx_source,
+            received_from_client_usd: editForm.received_from_client_usd,
           }
         })
         .eq("id", id);
@@ -252,7 +252,7 @@ export default function FDADetail() {
         client_id: fda.client_id || "",
         exchange_rate: fda.exchange_rate?.toFixed(4) || "",
         fx_source: (fda.meta as any)?.fx_source || "",
-        client_paid_usd: fda.client_paid_usd || 0,
+        received_from_client_usd: (fda.meta as any)?.received_from_client_usd || 0,
         eta: fda.eta ? new Date(fda.eta) : null,
         etb: fda.etb ? new Date(fda.etb) : null,
         ets: fda.ets ? new Date(fda.ets) : null,
@@ -321,8 +321,8 @@ export default function FDADetail() {
 
   const totals = calculateFDATotals(fda.ledger);
 
-  const clientPaidUSD = fda.client_paid_usd || 0;
-  const dueFromClientUSD = totals.totalAP_USD - clientPaidUSD;
+  const receivedFromClientUSD = (fda.meta as any)?.received_from_client_usd || 0;
+  const dueFromClientUSD = Math.max(0, totals.net_USD - receivedFromClientUSD);
   const dueFromClientBRL = dueFromClientUSD * (parseFloat(fda.exchange_rate?.toString() || "0") || 0);
 
   return (
@@ -623,8 +623,13 @@ export default function FDADetail() {
               <div className="text-3xl font-bold mb-2">{fmtUSD(dueFromClientUSD)}</div>
               <div className="text-sm text-muted-foreground">{fmtBRL(dueFromClientBRL)}</div>
               <div className="text-xs font-semibold mt-3">Due from Client</div>
+              {receivedFromClientUSD > 0 && (
+                <div className="text-xs text-muted-foreground mt-1">
+                  Considerando {fmtUSD(receivedFromClientUSD)} já recebidos
+                </div>
+              )}
               <div className="mt-4 space-y-2">
-                <Label htmlFor="client_paid_usd" className="text-xs">Client Paid (USD)</Label>
+                <Label htmlFor="client_paid_usd" className="text-xs">Pago pelo Cliente (USD)</Label>
                 <div className="flex gap-2">
                   <Input
                     id="client_paid_usd"
@@ -641,7 +646,7 @@ export default function FDADetail() {
                     variant="outline"
                     onClick={() => {
                       const val = parseFloat(tempClientPaid) || 0;
-                      setEditForm({ ...editForm, client_paid_usd: val });
+                      setEditForm({ ...editForm, received_from_client_usd: val });
                       setIsDirty(true);
                       toast({
                         title: "Value Updated",
@@ -652,7 +657,6 @@ export default function FDADetail() {
                     <Check className="h-4 w-4" />
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground">Amount already paid by client</p>
               </div>
             </div>
           </div>

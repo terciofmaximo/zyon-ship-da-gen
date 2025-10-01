@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Plus, AlertCircle } from "lucide-react";
+import { Trash2, Plus, AlertCircle, HelpCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useFDA } from "@/hooks/useFDA";
@@ -17,6 +17,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { usePortDirectory } from "@/hooks/usePortDirectory";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useUserRole } from "@/hooks/useUserRole";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface LedgerLine {
   id: string;
@@ -68,6 +69,8 @@ export default function FDANew() {
     vessel_name: "",
     imo: "",
   });
+
+  const [receivedFromClient, setReceivedFromClient] = useState(0);
 
   const [ledgerLines, setLedgerLines] = useState<LedgerLine[]>(() => 
     INITIAL_LEDGER_LINES.map((line, index) => ({
@@ -166,6 +169,9 @@ export default function FDANew() {
         exchange_rate: parseFloat(formData.exchange_rate),
         created_by: user.id,
         tenant_id: activeOrg.id,
+        meta: {
+          received_from_client_usd: receivedFromClient || 0,
+        },
       };
 
       const { data: newFda, error: fdaError } = await supabase
@@ -350,7 +356,7 @@ export default function FDANew() {
             <CardHeader>
               <CardTitle>Financial Summary</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <div className="text-sm text-muted-foreground">Total AP (USD)</div>
@@ -377,7 +383,29 @@ export default function FDANew() {
                   <div className="text-sm text-muted-foreground">
                     {totals.net_USD >= 0 ? "Due from Client" : "Due to Client"}
                   </div>
+                  <div className="text-lg font-semibold">
+                    ${Math.max(0, totals.net_USD - receivedFromClient).toFixed(2)}
+                  </div>
+                  {receivedFromClient > 0 && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Considerando ${receivedFromClient.toFixed(2)} já recebidos
+                    </div>
+                  )}
                 </div>
+              </div>
+              
+              <div className="border-t pt-4">
+                <Label htmlFor="received_from_client">Pago pelo Cliente (USD)</Label>
+                <Input
+                  id="received_from_client"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={receivedFromClient}
+                  onChange={(e) => setReceivedFromClient(parseFloat(e.target.value) || 0)}
+                  className="w-48"
+                  placeholder="0.00"
+                />
               </div>
             </CardContent>
           </Card>
@@ -387,7 +415,12 @@ export default function FDANew() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Ledger Entries</CardTitle>
+              <div className="space-y-1">
+                <CardTitle>Ledger Entries</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Legenda: AP = A pagar (fornecedores) · AR = A receber (cliente)
+                </p>
+              </div>
               <Button type="button" onClick={addLedgerLine} size="sm">
                 <Plus className="mr-2 h-4 w-4" />
                 Add Line
@@ -403,12 +436,30 @@ export default function FDANew() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Side</TableHead>
+                    <TableHead>
+                      <div className="flex items-center gap-2">
+                        Side
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-sm">
+                              <div className="space-y-2">
+                                <p className="font-semibold">AP (Accounts Payable / A Pagar):</p>
+                                <p className="text-sm">Despesas da agência com fornecedores (ex.: praticagem, rebocador, lancha).</p>
+                                <p className="font-semibold mt-2">AR (Accounts Receivable / A Receber):</p>
+                                <p className="text-sm">Cobranças do cliente (ex.: agency fee, supervision fee, reembolsos).</p>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    </TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>Amount (USD)</TableHead>
                     <TableHead>Amount (BRL)</TableHead>
-                    <TableHead>Counterparty</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -459,14 +510,6 @@ export default function FDANew() {
                         <span className="text-sm text-muted-foreground">
                           {calculateAmountLocal(line.amount_usd)}
                         </span>
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          value={line.counterparty}
-                          onChange={(e) => updateLedgerLine(line.id, "counterparty", e.target.value)}
-                          placeholder="Counterparty"
-                          className="w-32"
-                        />
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary">{line.status}</Badge>
