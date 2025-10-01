@@ -22,17 +22,26 @@ const Index = () => {
   const { data: activities, isLoading: activitiesLoading } = useRecentActivity(activeOrg?.id || null);
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        toast({
+          title: "Erro",
+          description: "Falha ao fazer logout",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Logout",
+          description: "Sessão encerrada com sucesso"
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
       toast({
         title: "Erro",
-        description: "Falha ao fazer logout",
+        description: "Algo deu errado. Tente novamente.",
         variant: "destructive"
-      });
-    } else {
-      toast({
-        title: "Logout",
-        description: "Sessão encerrada com sucesso"
       });
     }
   };

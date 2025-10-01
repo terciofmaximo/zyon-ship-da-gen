@@ -58,17 +58,31 @@ export default function NoOrganization() {
   };
 
   const handleRequestAccess = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    toast({
-      title: "Request access",
-      description: `Please contact your administrator with your email: ${user?.email}`,
-    });
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      toast({
+        title: "Request access",
+        description: `Please contact your administrator with your email: ${user?.email}`,
+      });
+    } catch (error) {
+      console.error("Erro ao solicitar acesso:", error);
+      toast({
+        title: "Erro",
+        description: "Algo deu errado. Tente novamente.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/auth");
+    try {
+      await supabase.auth.signOut();
+      navigate("/auth");
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+      navigate("/auth");
+    }
   };
 
   return (
