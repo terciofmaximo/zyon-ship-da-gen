@@ -61,6 +61,7 @@ export default function FDADetail() {
     client_id: "",
     exchange_rate: "",
     fx_source: "",
+    ptax_timestamp: "",
     received_from_client_usd: 0,
     eta: null as Date | null,
     etb: null as Date | null,
@@ -113,6 +114,7 @@ export default function FDADetail() {
         editForm.client_id !== (fda.client_id || "") ||
         editForm.exchange_rate !== (fda.exchange_rate?.toString() || "") ||
         editForm.fx_source !== ((fda.meta as any)?.fx_source || "") ||
+        editForm.ptax_timestamp !== ((fda.meta as any)?.ptax_timestamp || "") ||
         editForm.received_from_client_usd !== ((fda.meta as any)?.received_from_client_usd || 0) ||
         (editForm.eta?.toISOString() || null) !== (fda.eta || null) ||
         (editForm.etb?.toISOString() || null) !== (fda.etb || null) ||
@@ -138,7 +140,8 @@ export default function FDADetail() {
           client_name: fdaData.client_name || "",
           client_id: fdaData.client_id || "",
           exchange_rate: fdaData.exchange_rate?.toFixed(4) || "",
-          fx_source: (fdaData.meta as any)?.fx_source || "",
+          fx_source: (fdaData.meta as any)?.fx_source || "BCB PTAX (buy)",
+          ptax_timestamp: (fdaData.meta as any)?.ptax_timestamp || "",
           received_from_client_usd: (fdaData.meta as any)?.received_from_client_usd || 0,
           eta: fdaData.eta ? new Date(fdaData.eta) : null,
           etb: fdaData.etb ? new Date(fdaData.etb) : null,
@@ -215,6 +218,7 @@ export default function FDADetail() {
           meta: {
             ...(fda.meta as any || {}),
             fx_source: editForm.fx_source,
+            ptax_timestamp: editForm.ptax_timestamp,
             received_from_client_usd: editForm.received_from_client_usd,
           }
         })
@@ -272,7 +276,8 @@ export default function FDADetail() {
         client_name: fda.client_name || "",
         client_id: fda.client_id || "",
         exchange_rate: fda.exchange_rate?.toFixed(4) || "",
-        fx_source: (fda.meta as any)?.fx_source || "",
+        fx_source: (fda.meta as any)?.fx_source || "BCB PTAX (buy)",
+        ptax_timestamp: (fda.meta as any)?.ptax_timestamp || "",
         received_from_client_usd: (fda.meta as any)?.received_from_client_usd || 0,
         eta: fda.eta ? new Date(fda.eta) : null,
         etb: fda.etb ? new Date(fda.etb) : null,
@@ -552,17 +557,31 @@ export default function FDADetail() {
                  <div>
                    <Label htmlFor="exchange_rate">Exchange Rate (USD/BRL)</Label>
                    {isEditing ? (
-                     <Input
-                       id="exchange_rate"
-                       type="number"
-                       step="0.0001"
-                       value={editForm.exchange_rate}
-                       onChange={(e) => setEditForm({ ...editForm, exchange_rate: e.target.value })}
-                       placeholder="Enter exchange rate"
-                     />
+                     <>
+                       <Input
+                         id="exchange_rate"
+                         type="number"
+                         step="0.0001"
+                         value={editForm.exchange_rate}
+                         onChange={(e) => setEditForm({ ...editForm, exchange_rate: e.target.value })}
+                         placeholder="Enter exchange rate"
+                       />
+                       {editForm.ptax_timestamp && (
+                         <p className="text-xs text-muted-foreground mt-1">
+                           PTAX (buy) • {editForm.ptax_timestamp} • BCB
+                         </p>
+                       )}
+                     </>
                    ) : (
-                     <div className="text-sm mt-1">
-                       {fda.exchange_rate ? formatNumber(parseFloat(fda.exchange_rate.toString()), 4) : "—"}
+                     <div>
+                       <div className="text-sm mt-1">
+                         {fda.exchange_rate ? formatNumber(parseFloat(fda.exchange_rate.toString()), 4) : "—"}
+                       </div>
+                       {(fda.meta as any)?.ptax_timestamp && (
+                         <p className="text-xs text-muted-foreground mt-1">
+                           PTAX (buy) • {(fda.meta as any).ptax_timestamp} • BCB
+                         </p>
+                       )}
                      </div>
                    )}
                  </div>
@@ -572,9 +591,10 @@ export default function FDADetail() {
                      <div className="space-y-2">
                        <Input
                          id="fx_source"
-                         value={editForm.fx_source}
-                         onChange={(e) => setEditForm({ ...editForm, fx_source: e.target.value })}
-                         placeholder="e.g., BCB PTAX (D-1)"
+                         value="BCB PTAX (buy)"
+                         readOnly
+                         disabled
+                         className="bg-muted"
                        />
                        <Button 
                          variant="outline" 
@@ -586,7 +606,8 @@ export default function FDADetail() {
                              setEditForm({ 
                                ...editForm, 
                                exchange_rate: ptaxData.rate.toFixed(4),
-                               fx_source: "BCB PTAX (D-1)"
+                               fx_source: "BCB PTAX (buy)",
+                               ptax_timestamp: ptaxData.ts
                              });
                              setIsDirty(true);
                            }
@@ -603,10 +624,10 @@ export default function FDADetail() {
                          </p>
                        ) : null}
                      </div>
-                   ) : (
-                     <div className="text-sm mt-1">{(fda.meta as any)?.fx_source || "—"}</div>
-                   )}
-                 </div>
+                    ) : (
+                      <div className="text-sm mt-1">BCB PTAX (buy)</div>
+                    )}
+                  </div>
               </div>
             </div>
 
