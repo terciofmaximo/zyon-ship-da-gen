@@ -6,6 +6,8 @@ import { PDAInputSchema, PDAUpdateSchema, type PDAInputData } from "@/schemas/pd
 import { validatePortTerminalBerth, createPDAError, logPDAError, PDA_ERROR_CODES } from "@/lib/pdaValidation";
 import type { PDAStep1Data } from "@/schemas/pdaSchema";
 import type { CostData } from "@/types";
+import { useOrg } from "@/context/OrgProvider";
+import { getActiveTenantId } from "@/lib/utils";
 
 interface PDAData {
   shipData: Partial<PDAStep1Data> & {
@@ -18,6 +20,7 @@ interface PDAData {
 export function usePDA(sessionId?: string) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { activeOrg } = useOrg();
 
   const savePDA = async (data: PDAData, pdaId?: string, retryCount = 0) => {
     const MAX_RETRIES = 1;
@@ -29,7 +32,7 @@ export function usePDA(sessionId?: string) {
       // Step 1: Authentication (optional for public PDA creation)
       // Step 1a: Get user (optional for public mode)
       let user = null;
-      let tenantId = null;
+      let tenantId = getActiveTenantId(activeOrg);
       
       if (!sessionId) {
         // Authenticated mode - require user
@@ -39,11 +42,11 @@ export function usePDA(sessionId?: string) {
           logPDAError(authError, undefined, 'savePDA');
           throw authError;
         }
-        tenantId = user.id;
+        // Always use activeOrg.id as tenant_id
+        tenantId = getActiveTenantId(activeOrg);
       } else {
-        // Public mode - use sessionId and check rate limit
-        const orgStorage = localStorage.getItem('active_org');
-        tenantId = orgStorage ? JSON.parse(orgStorage).id : null;
+        // Public mode - use activeOrg if available
+        tenantId = getActiveTenantId(activeOrg);
         
         // Rate limit check for public PDA creation
         if (!pdaId) { // Only check on creation, not updates

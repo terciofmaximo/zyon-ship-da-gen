@@ -26,3 +26,9 @@ export function formatNumber(value: number, decimals: number = 2): string {
     maximumFractionDigits: decimals
   });
 }
+
+// Get active tenant ID from OrgProvider context
+// This ensures consistent tenant_id usage across all PDA/FDA operations
+export function getActiveTenantId(activeOrg: { id: string } | null): string | null {
+  return activeOrg?.id || null;
+}

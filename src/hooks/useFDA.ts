@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { FDA, FDALedger, FDAWithLedger, FDATotals } from "@/types/fda";
 import Decimal from "decimal.js";
+import { useOrg } from "@/context/OrgProvider";
+import { getActiveTenantId } from "@/lib/utils";
 
 // Cost item mapping for PDA to FDA conversion
 const COST_ITEM_MAPPING = {
@@ -24,6 +26,7 @@ const COST_ITEM_MAPPING = {
 export const useFDA = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const { activeOrg } = useOrg();
 
   const convertPdaToFda = async (pdaId: string): Promise<string | null> => {
     setLoading(true);
@@ -59,7 +62,12 @@ export const useFDA = () => {
         return existingFda.id;
       }
 
-      // Create FDA header
+      // Create FDA header - always use activeOrg.id as tenant_id
+      const tenantId = getActiveTenantId(activeOrg);
+      if (!tenantId) {
+        throw new Error("Active organization required to create FDA");
+      }
+
       const fdaData = {
         pda_id: pdaId,
         status: "Draft" as const,
@@ -73,7 +81,7 @@ export const useFDA = () => {
         currency_local: "BRL",
         exchange_rate: parseFloat(pda.exchange_rate || "5.25"),
         created_by: user.id,
-        tenant_id: pda.tenant_id, // Copy tenant_id from PDA
+        tenant_id: tenantId, // Always use activeOrg.id
         meta: {
           originalPdaNumber: pda.pda_number,
           conversionDate: new Date().toISOString(),
@@ -115,7 +123,7 @@ export const useFDA = () => {
           amount_usd: amountUSD.toNumber(),
           amount_local: amountLocal.toNumber(),
           status: "Open",
-          tenant_id: pda.tenant_id,
+          tenant_id: tenantId, // Use activeOrg.id
           pda_field: pdaField, // Track source PDA field
           origin: 'PDA' as const,
           source: {
@@ -203,6 +211,12 @@ export const useFDA = () => {
   const rebuildFromPda = async (fdaId: string): Promise<boolean> => {
     setLoading(true);
     try {
+      // Always use activeOrg.id as tenant_id
+      const tenantId = getActiveTenantId(activeOrg);
+      if (!tenantId) {
+        throw new Error("Active organization required to rebuild FDA");
+      }
+
       // Get FDA and its linked PDA
       const { data: fda, error: fdaError } = await supabase
         .from("fda")
@@ -257,7 +271,7 @@ export const useFDA = () => {
           amount_usd: amountUSD.toNumber(),
           amount_local: amountLocal.toNumber(),
           status: "Open",
-          tenant_id: fda.tenant_id,
+          tenant_id: tenantId, // Use activeOrg.id
           pda_field: pdaField, // Track source PDA field
           origin: 'PDA' as const,
           source: {
