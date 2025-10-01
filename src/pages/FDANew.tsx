@@ -1,3 +1,17 @@
+/*
+ * @ai-context
+ * Role: FDA creation page (direct entry) - allows creating FDA with manual ledger entry without PDA.
+ * DoD:
+ * - Create PDA first (FDA requires pda_id), then FDA header, then ledger entries.
+ * - Always use activeOrg.id as tenant_id for FDA and ledger entries.
+ * - Initialize with 13 standard cost items from INITIAL_LEDGER_LINES.
+ * - Calculate totals dynamically (AP, AR, Net).
+ * Constraints:
+ * - Maintain 3-step creation: PDA → FDA → Ledger entries.
+ * - If adding ledger fields, update both state and insert mapping.
+ * - Preserve exchange rate logic (USD ↔ BRL conversion).
+ * - Keep financial precision (use Decimal.js for calculations).
+ */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";

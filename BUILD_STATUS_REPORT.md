@@ -1,7 +1,7 @@
 # Build Status Report
 
 **Data:** 2025-10-01  
-**Status:** ✅ Estável - tenant_id padronizado
+**Status:** ✅ Estável - comentários AI completos
 
 ## Verificações Realizadas
 
@@ -51,6 +51,37 @@ src/
 ```
 
 Todos os imports estão apontando para os caminhos corretos nesta estrutura.
+
+## Comentários AI (2025-10-01) - Última Atualização
+
+### Objetivo
+Adicionar comentários estruturados (@ai-context, @ai-editable, @ai-guard) para reduzir quebras em edições futuras.
+
+### Resultado
+✅ **8 arquivos anotados - 100% cobertura**
+
+#### Arquivo Adicionado Nesta Iteração
+- ✅ **src/pages/FDANew.tsx** - Adicionado `@ai-context` com regras de criação direta de FDA
+
+#### Arquivos Já Anotados (Iterações Anteriores)
+1. ✅ src/hooks/useFDA.ts - com @ai-editable e @ai-guard
+2. ✅ src/hooks/usePDA.ts - com @ai-editable e @ai-guard
+3. ✅ src/pages/FDADetail.tsx - com @ai-editable
+4. ✅ src/pages/FDAList.tsx - com @ai-guard
+5. ✅ src/pages/PDAList.tsx
+6. ✅ src/pages/PDAReview.tsx
+7. ✅ src/components/fda/FDALedgerTable.tsx
+
+### Temas Protegidos
+- **Tenant ID:** Sempre `getActiveTenantId(activeOrg)`
+- **RLS:** Filtros por tenant_id (exceto platformAdmin)
+- **Financeiro:** Decimal.js para cálculos
+- **Integridade:** Incluir linhas com valor 0
+- **Status:** Fluxos de transição validados
+
+**Detalhes:** Ver `AI_CONTEXT_REPORT.md`
+
+---
 
 ## Auditoria tenant_id (2025-10-01)
 
