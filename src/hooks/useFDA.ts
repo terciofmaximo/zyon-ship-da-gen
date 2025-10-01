@@ -193,8 +193,8 @@ export const useFDA = () => {
 
       if (fdaError) throw fdaError;
 
-      // Ensure all PDA lines exist in the ledger for Draft FDAs
-      if ((fda as any).status === 'Draft') {
+      // Ensure all PDA lines exist in the ledger for Draft FDAs with linked PDA
+      if ((fda as any).status === 'Draft' && (fda as any).pda_id) {
         try {
           await supabase.rpc('sync_fda_from_pda', { p_fda_id: id });
         } catch (e) {
