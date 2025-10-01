@@ -208,11 +208,11 @@ export default function FDAList() {
   const getStatusClassName = (status: string) => {
     switch (status) {
       case "Draft":
-        return "bg-blue-900 text-white border-blue-900";
+        return "bg-blue-900 text-white border-blue-900 hover:bg-blue-800";
       case "Posted":
-        return "bg-yellow-900 text-white border-yellow-900";
+        return "bg-yellow-900 text-white border-yellow-900 hover:bg-yellow-800";
       case "Closed":
-        return "bg-red-900 text-white border-red-900";
+        return "bg-red-900 text-white border-red-900 hover:bg-red-800";
       default:
         return "";
     }
@@ -385,7 +385,7 @@ export default function FDAList() {
                         value={fda.status}
                         onValueChange={(value) => handleStatusSelect(fda.id, fda.status, value)}
                       >
-                        <SelectTrigger className={`w-[130px] ${getStatusClassName(fda.status)}`}>
+                        <SelectTrigger className={`w-auto px-3 py-1 rounded-full text-xs font-medium border-0 ${getStatusClassName(fda.status)}`}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -393,7 +393,7 @@ export default function FDAList() {
                             <SelectItem 
                               key={status} 
                               value={status}
-                              className={getStatusClassName(status)}
+                              className={`rounded-full my-1 ${getStatusClassName(status)}`}
                             >
                               {status}
                             </SelectItem>
