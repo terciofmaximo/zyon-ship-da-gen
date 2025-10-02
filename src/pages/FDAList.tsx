@@ -96,11 +96,7 @@ export default function FDAList() {
     try {
       let query = supabase
         .from("fda")
-        .select(`
-          *,
-          fda_ledger(amount_usd, side),
-          organizations(name)
-        `);
+        .select("*, fda_ledger(amount_usd, side), tenant_id");
 
       // @ai-guard:start - RLS tenant filter
       // platformAdmin sees all orgs, regular users only see their active org
@@ -132,6 +128,27 @@ export default function FDAList() {
 
       if (error) throw error;
 
+      // Get organization names for FDAs that have tenant_id (only for platformAdmin)
+      let orgNames: Record<string, string> = {};
+      
+      if (isPlatformAdmin && data && data.length > 0) {
+        const tenantIds = [...new Set(data.map(fda => fda.tenant_id).filter(Boolean))];
+        
+        if (tenantIds.length > 0) {
+          const { data: orgData } = await supabase
+            .from("organizations")
+            .select("id, name")
+            .in("id", tenantIds);
+          
+          if (orgData) {
+            orgNames = orgData.reduce((acc, org) => {
+              acc[org.id] = org.name;
+              return acc;
+            }, {} as Record<string, string>);
+          }
+        }
+      }
+
       // Get PDA numbers for FDAs that have pda_id
       const fdaWithPdaIds = data?.filter(fda => fda.pda_id) || [];
       let pdaNumbers: Record<string, string> = {};
@@ -162,7 +179,7 @@ export default function FDAList() {
           total_ar_usd: totals.totalAR_USD,
           net_usd: totals.net_USD,
           pda_number: fda.pda_id ? pdaNumbers[fda.pda_id] : undefined,
-          org_name: fda.organizations?.name,
+          org_name: fda.tenant_id ? orgNames[fda.tenant_id] : undefined,
         };
       });
 
