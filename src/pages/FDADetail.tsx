@@ -707,42 +707,56 @@ export default function FDADetail() {
              </div>
            </div>
 
-           <div className="mt-6 pt-6 border-t space-y-4">
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-               <div className="space-y-1">
-                 <p className="text-sm text-muted-foreground">Received from Client</p>
-                 <p className="text-lg font-semibold">
-                   {fmtUSD(receivedFromClientUSD)}
-                 </p>
-               </div>
-               <div className="space-y-1">
-                 <p className="text-sm text-muted-foreground">Due from Client</p>
-                 <p className="text-lg font-semibold text-amber-600">
-                   {fmtUSD(dueFromClientUSD)} / {fmtBRL(dueFromClientBRL)}
-                 </p>
-               </div>
-             </div>
-
-             {isEditing && (
-               <div className="mt-4">
-                 <Label htmlFor="temp_client_paid">Received from Client (USD)</Label>
-                 <Input
-                   id="temp_client_paid"
-                   type="number"
-                   step="0.01"
-                   value={tempClientPaid}
-                   onChange={(e) => {
-                     setTempClientPaid(e.target.value);
-                     setEditForm({ 
-                       ...editForm, 
-                       received_from_client_usd: parseFloat(e.target.value) || 0 
-                     });
-                   }}
-                   placeholder="0.00"
-                 />
-               </div>
-             )}
-           </div>
+            <div className="mt-6 pt-6 border-t">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  {isEditing ? (
+                    <>
+                      <Label htmlFor="temp_client_paid" className="text-sm font-medium">
+                        Received from Client (USD)
+                      </Label>
+                      <Input
+                        id="temp_client_paid"
+                        type="number"
+                        step="0.01"
+                        value={tempClientPaid}
+                        onChange={(e) => {
+                          setTempClientPaid(e.target.value);
+                          setEditForm({ 
+                            ...editForm, 
+                            received_from_client_usd: parseFloat(e.target.value) || 0 
+                          });
+                        }}
+                        placeholder="0.00"
+                        className="mt-2"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm text-muted-foreground">Received from Client</p>
+                      <p className="text-lg font-semibold">
+                        {fmtUSD(receivedFromClientUSD)}
+                      </p>
+                    </>
+                  )}
+                </div>
+                
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Due from Client 
+                    <span className="ml-1 text-xs">(Auto-calculated)</span>
+                  </p>
+                  <p className="text-2xl font-bold text-amber-600 bg-amber-50 px-4 py-3 rounded-md border border-amber-200 mt-2">
+                    {fmtUSD(dueFromClientUSD)} / {fmtBRL(dueFromClientBRL)}
+                  </p>
+                  {receivedFromClientUSD > 0 && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Net Balance ({fmtUSD(totals.net_USD)}) - Received ({fmtUSD(receivedFromClientUSD)})
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
          </CardContent>
        </Card>
 

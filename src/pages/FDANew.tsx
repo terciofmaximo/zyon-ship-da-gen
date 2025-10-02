@@ -598,7 +598,7 @@ export default function FDANew() {
               <CardTitle>Financial Summary</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
                   <div className="text-sm text-muted-foreground">Total Payable (USD)</div>
                   <div className="text-lg font-semibold text-red-600">
@@ -612,7 +612,7 @@ export default function FDANew() {
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm text-muted-foreground">Net (USD)</div>
+                  <div className="text-sm text-muted-foreground">Net Balance (USD)</div>
                   <div className={`text-lg font-semibold ${
                     totals.net_USD >= 0 ? "text-blue-600" : "text-orange-600"
                   }`}>
@@ -620,33 +620,41 @@ export default function FDANew() {
                     {totals.net_USD < 0 && " (owe)"}
                   </div>
                 </div>
-                <div>
-                  <Label htmlFor="received_from_client" className="text-sm text-muted-foreground">
-                    Received as Cash in Advance (USD)
-                  </Label>
-                  <Input
-                    id="received_from_client"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={receivedFromClient}
-                    onChange={(e) => setReceivedFromClient(parseFloat(e.target.value) || 0)}
-                    className="mt-2"
-                    placeholder="0.00"
-                  />
-                </div>
               </div>
               
               <div className="border-t pt-4 mt-4">
-                <div className="text-sm text-muted-foreground">Amount Due from Client (USD)</div>
-                <div className="text-lg font-semibold">
-                  {formatCurrency(Math.max(0, totals.net_USD - receivedFromClient), 'USD')}
-                </div>
-                {receivedFromClient > 0 && (
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Considering {formatCurrency(receivedFromClient, 'USD')} already received
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label htmlFor="received_from_client" className="text-sm font-medium">
+                      Received as Cash in Advance (USD)
+                    </Label>
+                    <Input
+                      id="received_from_client"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={receivedFromClient}
+                      onChange={(e) => setReceivedFromClient(parseFloat(e.target.value) || 0)}
+                      className="mt-2"
+                      placeholder="0.00"
+                    />
                   </div>
-                )}
+                  
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground mb-2">
+                      Amount Due from Client (USD) 
+                      <span className="ml-1 text-xs">(Auto-calculated)</span>
+                    </div>
+                    <div className="text-2xl font-bold text-amber-600 bg-amber-50 px-4 py-3 rounded-md border border-amber-200">
+                      {formatCurrency(Math.max(0, totals.net_USD - receivedFromClient), 'USD')}
+                    </div>
+                    {receivedFromClient > 0 && (
+                      <div className="text-xs text-muted-foreground mt-2">
+                        Net Balance ({formatCurrency(totals.net_USD, 'USD')}) - Received ({formatCurrency(receivedFromClient, 'USD')})
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
