@@ -13,6 +13,7 @@ import { ExchangeRateBadge } from "@/components/ui/exchange-rate-badge";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useItaquiAutoPricing } from "@/hooks/useItaquiAutoPricing";
+import { useUsdBrlToday } from "@/hooks/useExchangeRate";
 import type { CostData, CustomCostLine } from "@/types";
 import type { PDAStep1Data } from "@/schemas/pdaSchema";
 
@@ -180,7 +181,36 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
   const [remarks, setRemarks] = useState<string>(DEFAULT_REMARKS);
   const [isEditingRemarks, setIsEditingRemarks] = useState<boolean>(false);
 
-  const exchangeRate = parseFloat(shipData.exchangeRate || "5.25");
+  const [localExchangeRate, setLocalExchangeRate] = useState<string>(shipData.exchangeRate || "5.25");
+  const [exchangeRateSource, setExchangeRateSource] = useState<string>(shipData.exchangeRateSource || "MANUAL");
+  const [exchangeRateTimestamp, setExchangeRateTimestamp] = useState<string>(shipData.exchangeRateTimestamp || "");
+
+  const { data: ptaxData, loading: ptaxLoading, error: ptaxError, refresh: refreshPtax } = useUsdBrlToday(false);
+
+  const exchangeRate = parseFloat(localExchangeRate || "5.25");
+
+  const fetchExchangeRate = async () => {
+    await refreshPtax();
+    if (ptaxData) {
+      setLocalExchangeRate(ptaxData.rate.toFixed(4));
+      setExchangeRateSource(ptaxData.source);
+      setExchangeRateTimestamp(ptaxData.ts);
+    }
+  };
+
+  useEffect(() => {
+    if (ptaxData && ptaxLoading === false) {
+      setLocalExchangeRate(ptaxData.rate.toFixed(4));
+      setExchangeRateSource(ptaxData.source);
+      setExchangeRateTimestamp(ptaxData.ts);
+    }
+  }, [ptaxData, ptaxLoading]);
+
+  const handleExchangeRateChange = (value: string) => {
+    setLocalExchangeRate(value);
+    setExchangeRateSource("MANUAL");
+    setExchangeRateTimestamp("");
+  };
 
   // Auto-pricing for Itaqui
   const { autoPricingState, disableAutoPricing, getHintText } = useItaquiAutoPricing({
@@ -188,7 +218,7 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
     terminal: shipData.terminal || '',
     berths: shipData.berth ? [shipData.berth] : [],
     dwt: shipData.dwt || '',
-    exchangeRate: shipData.exchangeRate || '',
+    exchangeRate: localExchangeRate,
     onCostsUpdate: (autoCosts, meta) => {
       // Only update costs that haven't been manually edited
       setCosts(prevCosts => {
@@ -257,6 +287,12 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const costsWithCustomLines = { ...costs, customLines };
+    
+    // Update shipData with the current exchange rate
+    shipData.exchangeRate = localExchangeRate;
+    shipData.exchangeRateSource = exchangeRateSource as "BCB_PTAX_D1" | "MANUAL" | "PROVIDER_X";
+    shipData.exchangeRateTimestamp = exchangeRateTimestamp;
+    
     onNext(costsWithCustomLines, remarks, comments);
   };
 
@@ -288,36 +324,70 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
         </Alert>
       )}
 
-      {/* Exchange Rate Info Banner */}
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertDescription className="flex items-center gap-4 flex-wrap">
-          <span>
-            <strong>Exchange Rate:</strong> {formatUSD(1)} = {formatBRL(exchangeRate).replace('R$', 'R$')}
-          </span>
-          <div className="flex items-center gap-2">
-            <ExchangeRateBadge
-              source={(shipData.exchangeRateSource as "BCB_PTAX_D1" | "MANUAL" | "PROVIDER_X") || 'MANUAL'}
-              timestamp={shipData.exchangeRateTimestamp}
-            />
-            {shipData.exchangeRateTimestamp && (
-              <span className="text-sm text-muted-foreground">
-                Atualizado: {formatTimestamp(shipData.exchangeRateTimestamp)}
-              </span>
-            )}
+      {/* Exchange Rate Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <DollarSign className="h-5 w-5 text-primary" />
+            Exchange Rate (USD/BRL)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-end">
+            <div className="flex-1">
+              <Label htmlFor="exchangeRate" className="mb-2 flex items-center gap-2">
+                Exchange Rate *
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0 text-xs"
+                  onClick={fetchExchangeRate}
+                  disabled={ptaxLoading}
+                >
+                  {ptaxLoading ? "Buscando..." : "Usar taxa de hoje"}
+                </Button>
+              </Label>
+              <div className="space-y-2">
+                <Input
+                  id="exchangeRate"
+                  type="number"
+                  step="0.0001"
+                  value={localExchangeRate}
+                  onChange={(e) => handleExchangeRateChange(e.target.value)}
+                  placeholder="Ex.: 5.4321"
+                  className="max-w-xs"
+                />
+                {ptaxError ? (
+                  <p className="text-xs text-destructive">Falha ao buscar PTAX</p>
+                ) : ptaxData ? (
+                  <p className="text-xs text-muted-foreground">
+                    PTAX (compra) • {new Date(ptaxData.ts).toLocaleString('pt-BR')} • Fonte: BCB
+                  </p>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <ExchangeRateBadge
+                      source={(exchangeRateSource as "BCB_PTAX_D1" | "MANUAL" | "PROVIDER_X") || 'MANUAL'}
+                      timestamp={exchangeRateTimestamp}
+                    />
+                    {exchangeRateTimestamp && (
+                      <span className="text-xs text-muted-foreground">
+                        {formatTimestamp(exchangeRateTimestamp)}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            <Alert className="flex-1">
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Conversão:</strong> {formatUSD(1)} = {formatBRL(exchangeRate)}
+              </AlertDescription>
+            </Alert>
           </div>
-          <Button 
-            type="button" 
-            variant="outline" 
-            size="sm" 
-            onClick={onBack}
-            className="ml-auto"
-          >
-            <Edit3 className="h-3 w-3 mr-1" />
-            Alterar
-          </Button>
-        </AlertDescription>
-      </Alert>
+        </CardContent>
+      </Card>
 
       {/* Main Cost Table */}
       <Card>
