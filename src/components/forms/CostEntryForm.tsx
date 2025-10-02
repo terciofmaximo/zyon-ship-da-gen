@@ -162,9 +162,6 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
 
   // Track which fields are manually edited (to disable auto-pricing for those fields)
   const [manuallyEdited, setManuallyEdited] = useState<Record<string, boolean>>({});
-  
-  // Track currency selection for each field (USD or BRL)
-  const [currencyMode, setCurrencyMode] = useState<Record<string, 'USD' | 'BRL'>>({});
 
   const [comments, setComments] = useState<Record<string, string>>(() => {
     const defaultComments: Record<string, string> = {
@@ -256,12 +253,7 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
 
   const handleCostChange = (field: keyof Omit<CostData, 'customLines'>, value: string) => {
     const numericValue = normalizeNumber(value);
-    
-    // Convert BRL to USD if in BRL mode
-    const currency = currencyMode[field] || 'USD';
-    const usdValue = currency === 'BRL' ? numericValue / exchangeRate : numericValue;
-    
-    const newCosts = { ...costs, [field]: usdValue };
+    const newCosts = { ...costs, [field]: numericValue };
     
     // Mark this field as manually edited
     setManuallyEdited(prev => ({ ...prev, [field]: true }));
@@ -274,8 +266,20 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
     debouncedCalculation(newCosts);
   };
 
-  const handleCurrencyChange = (field: string, currency: 'USD' | 'BRL') => {
-    setCurrencyMode(prev => ({ ...prev, [field]: currency }));
+  const handleBRLChange = (field: keyof Omit<CostData, 'customLines'>, brlValue: string) => {
+    const numericBRL = normalizeNumber(brlValue);
+    const usdValue = numericBRL / exchangeRate;
+    const newCosts = { ...costs, [field]: usdValue };
+    
+    // Mark this field as manually edited
+    setManuallyEdited(prev => ({ ...prev, [field]: true }));
+    
+    // Disable auto-pricing for this specific field
+    if (['pilotageIn', 'towageIn', 'lightDues'].includes(field)) {
+      disableAutoPricing(field as 'pilotageIn' | 'towageIn' | 'lightDues');
+    }
+    
+    debouncedCalculation(newCosts);
   };
 
   const handleCommentChange = (field: string, value: string) => {
@@ -421,10 +425,8 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
               <TableRow>
                 <TableHead className="w-12">Nº</TableHead>
                 <TableHead className="min-w-[200px]">Port Expenses</TableHead>
-                <TableHead className="min-w-[80px]">Moeda</TableHead>
-                <TableHead className="min-w-[140px]">Valor</TableHead>
-                <TableHead className="min-w-[120px]">USD</TableHead>
-                <TableHead className="min-w-[120px]">BRL</TableHead>
+                <TableHead className="min-w-[140px]">Est. Costs - USD</TableHead>
+                <TableHead className="min-w-[140px]">Est. Costs - BRL</TableHead>
                 <TableHead className="min-w-[300px]">Comments</TableHead>
               </TableRow>
             </TableHeader>
@@ -438,36 +440,15 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                     {item.label}
                   </TableCell>
                   <TableCell>
-                    <select
-                      value={currencyMode[item.id] || 'USD'}
-                      onChange={(e) => handleCurrencyChange(item.id, e.target.value as 'USD' | 'BRL')}
-                      className="w-20 px-2 py-1 text-sm border rounded"
-                    >
-                      <option value="USD">USD</option>
-                      <option value="BRL">BRL</option>
-                    </select>
-                  </TableCell>
-                  <TableCell>
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-1">
-                        {currencyMode[item.id] === 'BRL' ? (
-                          <span className="text-xs text-muted-foreground">R$</span>
-                        ) : (
-                          <DollarSign className="h-3 w-3 text-muted-foreground" />
-                        )}
+                        <DollarSign className="h-3 w-3 text-muted-foreground" />
                         <Input
                           type="text"
-                          value={
-                            costs[item.id] === 0 
-                              ? '' 
-                              : currencyMode[item.id] === 'BRL'
-                                ? (costs[item.id] * exchangeRate).toFixed(2)
-                                : costs[item.id].toString()
-                          }
+                          value={costs[item.id] === 0 ? '' : costs[item.id].toString()}
                           onChange={(e) => handleCostChange(item.id, e.target.value)}
                           className="w-32"
                           placeholder="0.00"
-                          disabled={false}
                         />
                         {autoPricingState.meta[item.id as keyof typeof autoPricingState.meta]?.isAuto && !manuallyEdited[item.id] && (
                           <Badge variant="secondary" className="text-xs">auto</Badge>
@@ -480,11 +461,17 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="font-mono text-sm text-muted-foreground">
-                    {formatUSD(costs[item.id] as number)}
-                  </TableCell>
-                  <TableCell className="font-mono text-sm text-muted-foreground">
-                    {formatBRL(getBRLValue(costs[item.id] as number))}
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground">R$</span>
+                      <Input
+                        type="text"
+                        value={costs[item.id] === 0 ? '' : (costs[item.id] * exchangeRate).toFixed(2)}
+                        onChange={(e) => handleBRLChange(item.id, e.target.value)}
+                        className="w-32"
+                        placeholder="0.00"
+                      />
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Input
@@ -525,8 +512,21 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                       />
                     </div>
                   </TableCell>
-                  <TableCell className="font-mono text-sm currency-cell">
-                    {formatBRL(getBRLValue(line.costUSD))}
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground">R$</span>
+                      <Input
+                        type="text"
+                        value={line.costUSD === 0 ? '' : (line.costUSD * exchangeRate).toFixed(2)}
+                        onChange={(e) => {
+                          const brlValue = normalizeNumber(e.target.value);
+                          const usdValue = brlValue / exchangeRate;
+                          handleCustomLineChange(line.id, 'costUSD', usdValue);
+                        }}
+                        className="w-32"
+                        placeholder="0.00"
+                      />
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
