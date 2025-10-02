@@ -622,7 +622,7 @@ export default function FDADetail() {
                     ) : (
                       <div>
                         <div className="text-sm mt-1">
-                          {fda.exchange_rate ? parseFloat(fda.exchange_rate.toString()).toFixed(4) : "—"}
+                          {fda.exchange_rate ? parseFloat(fda.exchange_rate.toString()).toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : "—"}
                         </div>
                        {(fda.meta as any)?.ptax_timestamp && (
                          <p className="text-xs text-muted-foreground mt-1">
