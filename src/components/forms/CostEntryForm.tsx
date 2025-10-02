@@ -162,6 +162,10 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
 
   // Track which fields are manually edited (to disable auto-pricing for those fields)
   const [manuallyEdited, setManuallyEdited] = useState<Record<string, boolean>>({});
+  
+  // Track temporary BRL input values (for controlled input without conversion issues)
+  const [tempBRLValues, setTempBRLValues] = useState<Record<string, string>>({});
+  const [tempCustomBRLValues, setTempCustomBRLValues] = useState<Record<string, string>>({});
 
   const [comments, setComments] = useState<Record<string, string>>(() => {
     const defaultComments: Record<string, string> = {
@@ -255,6 +259,9 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
     const numericValue = normalizeNumber(value);
     const newCosts = { ...costs, [field]: numericValue };
     
+    // Clear temp BRL value when USD is edited
+    setTempBRLValues(prev => ({ ...prev, [field]: '' }));
+    
     // Mark this field as manually edited
     setManuallyEdited(prev => ({ ...prev, [field]: true }));
     
@@ -267,6 +274,9 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
   };
 
   const handleBRLChange = (field: keyof Omit<CostData, 'customLines'>, brlValue: string) => {
+    // Store the temporary BRL value for display
+    setTempBRLValues(prev => ({ ...prev, [field]: brlValue }));
+    
     const numericBRL = normalizeNumber(brlValue);
     const usdValue = numericBRL / exchangeRate;
     const newCosts = { ...costs, [field]: usdValue };
@@ -301,6 +311,11 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
   };
 
   const handleCustomLineChange = (id: string, field: keyof CustomCostLine, value: string | number) => {
+    // Clear temp BRL value when USD is edited
+    if (field === 'costUSD') {
+      setTempCustomBRLValues(prev => ({ ...prev, [id]: '' }));
+    }
+    
     setCustomLines(customLines.map(line => 
       line.id === id ? { ...line, [field]: value } : line
     ));
@@ -466,8 +481,15 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                       <span className="text-xs text-muted-foreground">R$</span>
                       <Input
                         type="text"
-                        value={costs[item.id] === 0 ? '' : (costs[item.id] * exchangeRate).toFixed(2)}
+                        value={
+                          tempBRLValues[item.id] !== undefined && tempBRLValues[item.id] !== '' 
+                            ? tempBRLValues[item.id]
+                            : costs[item.id] === 0 
+                              ? '' 
+                              : (costs[item.id] * exchangeRate).toFixed(2)
+                        }
                         onChange={(e) => handleBRLChange(item.id, e.target.value)}
+                        onBlur={() => setTempBRLValues(prev => ({ ...prev, [item.id]: '' }))}
                         className="w-32"
                         placeholder="0.00"
                       />
@@ -517,12 +539,20 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                       <span className="text-xs text-muted-foreground">R$</span>
                       <Input
                         type="text"
-                        value={line.costUSD === 0 ? '' : (line.costUSD * exchangeRate).toFixed(2)}
+                        value={
+                          tempCustomBRLValues[line.id] !== undefined && tempCustomBRLValues[line.id] !== ''
+                            ? tempCustomBRLValues[line.id]
+                            : line.costUSD === 0 
+                              ? '' 
+                              : (line.costUSD * exchangeRate).toFixed(2)
+                        }
                         onChange={(e) => {
+                          setTempCustomBRLValues(prev => ({ ...prev, [line.id]: e.target.value }));
                           const brlValue = normalizeNumber(e.target.value);
                           const usdValue = brlValue / exchangeRate;
                           handleCustomLineChange(line.id, 'costUSD', usdValue);
                         }}
+                        onBlur={() => setTempCustomBRLValues(prev => ({ ...prev, [line.id]: '' }))}
                         className="w-32"
                         placeholder="0.00"
                       />
