@@ -134,6 +134,7 @@ export function usePDA(sessionId?: string) {
           agency_fee: data.costData.agencyFee || 0,
           waterway: data.costData.waterway || 0
         },
+        customLines: data.costData.customLines || [],
         remarks: data.shipData.remarks,
         comments: data.shipData.comments
       };
@@ -213,6 +214,7 @@ export function usePDA(sessionId?: string) {
         // Additional fields
         remarks: validatedData.remarks,
         comments: validatedData.comments ? JSON.stringify(validatedData.comments) : null,
+        custom_lines: validatedData.customLines ? JSON.stringify(validatedData.customLines) : null,
       };
 
       let result;

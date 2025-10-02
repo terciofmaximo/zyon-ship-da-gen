@@ -14,6 +14,13 @@ export interface ShipData {
   exchangeRateTimestamp?: string;
 }
 
+export interface CustomCostLine {
+  id: string;
+  label: string;
+  costUSD: number;
+  comment: string;
+}
+
 export interface CostData {
   pilotageIn: number;
   towageIn: number;
@@ -28,6 +35,7 @@ export interface CostData {
   paperlessPort: number;
   agencyFee: number;
   waterway: number;
+  customLines?: CustomCostLine[];
 }
 
 export interface PDAData {

@@ -8,12 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { Calculator, Info, AlertCircle, Edit3, DollarSign, Edit, Check } from "lucide-react";
+import { Calculator, Info, AlertCircle, Edit3, DollarSign, Edit, Check, Plus, Trash2 } from "lucide-react";
 import { ExchangeRateBadge } from "@/components/ui/exchange-rate-badge";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useItaquiAutoPricing } from "@/hooks/useItaquiAutoPricing";
-import type { CostData } from "@/types";
+import type { CostData, CustomCostLine } from "@/types";
 import type { PDAStep1Data } from "@/schemas/pdaSchema";
 
 interface CostEntryFormProps {
@@ -24,7 +24,7 @@ interface CostEntryFormProps {
 }
 
 interface CostItem {
-  id: keyof CostData;
+  id: keyof Omit<CostData, 'customLines'>;
   order: number;
   label: string;
   defaultComment: string;
@@ -150,13 +150,16 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
     paperlessPort: initialData.paperlessPort || 0,
     agencyFee: initialData.agencyFee || 9804,
     waterway: initialData.waterway || 0,
+    customLines: initialData.customLines || [],
   });
+
+  const [customLines, setCustomLines] = useState<CustomCostLine[]>(initialData.customLines || []);
 
   // Track which fields are manually edited (to disable auto-pricing for those fields)
   const [manuallyEdited, setManuallyEdited] = useState<Record<string, boolean>>({});
 
-  const [comments, setComments] = useState<Record<keyof CostData, string>>(() => {
-    const defaultComments: Record<keyof CostData, string> = {
+  const [comments, setComments] = useState<Record<string, string>>(() => {
+    const defaultComments: Record<string, string> = {
       pilotageIn: "DWT range tariff +10% for draft ≥11m",
       towageIn: "DWT range tariff. For reference only",
       lightDues: "DWT range tariff. Please see details below",
@@ -192,7 +195,7 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
         const updatedCosts = { ...prevCosts };
         
         Object.entries(autoCosts).forEach(([key, value]) => {
-          const costKey = key as keyof CostData;
+          const costKey = key as keyof Omit<CostData, 'customLines'>;
           // Only auto-update if not manually edited
           if (!manuallyEdited[costKey] && meta[costKey as keyof typeof meta]?.isAuto) {
             updatedCosts[costKey] = value as number;
@@ -212,7 +215,7 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
     []
   );
 
-  const handleCostChange = (field: keyof CostData, value: string) => {
+  const handleCostChange = (field: keyof Omit<CostData, 'customLines'>, value: string) => {
     const numericValue = normalizeNumber(value);
     const newCosts = { ...costs, [field]: numericValue };
     
@@ -227,16 +230,42 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
     debouncedCalculation(newCosts);
   };
 
-  const handleCommentChange = (field: keyof CostData, value: string) => {
+  const handleCommentChange = (field: string, value: string) => {
     setComments(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleAddCustomLine = () => {
+    const newLine: CustomCostLine = {
+      id: `custom_${Date.now()}`,
+      label: '',
+      costUSD: 0,
+      comment: ''
+    };
+    setCustomLines([...customLines, newLine]);
+  };
+
+  const handleRemoveCustomLine = (id: string) => {
+    setCustomLines(customLines.filter(line => line.id !== id));
+  };
+
+  const handleCustomLineChange = (id: string, field: keyof CustomCostLine, value: string | number) => {
+    setCustomLines(customLines.map(line => 
+      line.id === id ? { ...line, [field]: value } : line
+    ));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onNext(costs, remarks, comments);
+    const costsWithCustomLines = { ...costs, customLines };
+    onNext(costsWithCustomLines, remarks, comments);
   };
 
-  const totalUSD = Object.values(costs).reduce((sum, cost) => sum + cost, 0);
+  const fixedCostsTotal = Object.entries(costs)
+    .filter(([key]) => key !== 'customLines')
+    .reduce((sum, [, cost]) => sum + (typeof cost === 'number' ? cost : 0), 0);
+  
+  const customLinesTotal = customLines.reduce((sum, line) => sum + line.costUSD, 0);
+  const totalUSD = fixedCostsTotal + customLinesTotal;
   const totalBRL = totalUSD * exchangeRate;
 
   const getBRLValue = (usdValue: number): number => {
@@ -342,12 +371,12 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                     </div>
                   </TableCell>
                   <TableCell className="font-mono text-sm currency-cell">
-                    {formatBRL(getBRLValue(costs[item.id]))}
+                    {formatBRL(getBRLValue(costs[item.id] as number))}
                   </TableCell>
                   <TableCell>
                     <Input
                       type="text"
-                      value={comments[item.id]}
+                      value={comments[item.id] || ''}
                       onChange={(e) => handleCommentChange(item.id, e.target.value)}
                       className="min-w-[250px] comment-input"
                       placeholder="Comment..."
@@ -355,8 +384,75 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                   </TableCell>
                 </TableRow>
               ))}
+              
+              {/* Custom Lines */}
+              {customLines.map((line, index) => (
+                <TableRow key={line.id} className="bg-muted/20">
+                  <TableCell className="font-medium text-center">
+                    {COST_ITEMS.length + index + 1}
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="text"
+                      value={line.label}
+                      onChange={(e) => handleCustomLineChange(line.id, 'label', e.target.value)}
+                      placeholder="Custom expense name"
+                      className="min-w-[180px]"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <DollarSign className="h-3 w-3 text-muted-foreground" />
+                      <Input
+                        type="text"
+                        value={line.costUSD === 0 ? '' : line.costUSD.toString()}
+                        onChange={(e) => handleCustomLineChange(line.id, 'costUSD', normalizeNumber(e.target.value))}
+                        className="w-32"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </TableCell>
+                  <TableCell className="font-mono text-sm currency-cell">
+                    {formatBRL(getBRLValue(line.costUSD))}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="text"
+                        value={line.comment}
+                        onChange={(e) => handleCustomLineChange(line.id, 'comment', e.target.value)}
+                        className="min-w-[250px] comment-input"
+                        placeholder="Comment..."
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveCustomLine(line.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
+
+          {/* Add Custom Line Button */}
+          <div className="mt-4">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleAddCustomLine}
+              className="w-full sm:w-auto"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Custom Line
+            </Button>
+          </div>
 
           {/* Totals */}
           <div className="mt-4 pt-4 border-t">

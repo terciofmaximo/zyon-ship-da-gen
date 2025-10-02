@@ -28,7 +28,10 @@ export function ReviewForm({ onBack, shipData, costData, pdaId, sessionId }: Rev
   const { savePDA, loading } = usePDA(sessionId);
   const [isSaving, setIsSaving] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
-  const totalUSD = Object.values(costData).reduce((sum: number, cost: number) => sum + (cost || 0), 0);
+  const totalUSD = Object.entries(costData)
+    .filter(([key]) => key !== 'customLines')
+    .reduce((sum: number, [, cost]) => sum + (typeof cost === 'number' ? cost : 0), 0) + 
+    (costData.customLines || []).reduce((sum: number, line) => sum + line.costUSD, 0);
   const totalBRL = totalUSD * parseFloat(shipData.exchangeRate || "5.25");
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [showDownloadMessage, setShowDownloadMessage] = useState(false);

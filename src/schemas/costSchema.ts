@@ -10,6 +10,14 @@ const normalizeNumber = z.preprocess((val) => {
   return Number(val) || 0;
 }, z.number());
 
+// Custom cost line schema
+export const customCostLineSchema = z.object({
+  id: z.string(),
+  label: z.string().min(1, 'Label is required').max(200, 'Label must be less than 200 characters'),
+  costUSD: normalizeNumber.refine((val) => val >= 0, 'Cost must be positive or zero'),
+  comment: z.string().max(500, 'Comment must be less than 500 characters').optional().default('')
+});
+
 // Cost Entry Schema - for PDA cost entry form
 export const costEntrySchema = z.object({
   pilotageIn: normalizeNumber.refine((val) => val >= 0, 'Pilotage cost must be positive or zero'),
@@ -25,6 +33,7 @@ export const costEntrySchema = z.object({
   paperlessPort: normalizeNumber.refine((val) => val >= 0, 'Paperless port cost must be positive or zero'),
   agencyFee: normalizeNumber.refine((val) => val >= 0, 'Agency fee must be positive or zero'),
   waterway: normalizeNumber.refine((val) => val >= 0, 'Waterway cost must be positive or zero'),
+  customLines: z.array(customCostLineSchema).optional()
 });
 
 // Cost comments schema
@@ -46,6 +55,7 @@ export const fullCostEntrySchema = z.object({
 });
 
 // Export types
+export type CustomCostLine = z.infer<typeof customCostLineSchema>;
 export type CostEntry = z.infer<typeof costEntrySchema>;
 export type CostComments = z.infer<typeof costCommentsSchema>;
 export type FullCostEntry = z.infer<typeof fullCostEntrySchema>;

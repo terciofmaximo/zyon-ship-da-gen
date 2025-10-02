@@ -59,6 +59,14 @@ export const PDAInputSchema = z.object({
   // Cost items - flexible structure to maintain compatibility
   costItems: z.record(z.string(), z.preprocess(toNumber, z.number().min(0))).optional().default({}),
   
+  // Custom cost lines
+  customLines: z.array(z.object({
+    id: z.string(),
+    label: z.string(),
+    costUSD: z.preprocess(toNumber, z.number().min(0)),
+    comment: z.string()
+  })).optional(),
+  
   // Additional fields
   remarks: z.string().optional(),
   comments: z.record(z.string(), z.string()).optional(),
