@@ -462,17 +462,11 @@ export default function FDANew() {
         {/* Ledger */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <CardTitle>Ledger Entries</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Legenda: AP = A pagar (fornecedores) · AR = A receber (cliente)
-                </p>
-              </div>
-              <Button type="button" onClick={addLedgerLine} size="sm">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Line
-              </Button>
+            <div className="space-y-1">
+              <CardTitle>Ledger Entries</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Legenda: AP = A pagar (fornecedores) · AR = A receber (cliente)
+              </p>
             </div>
           </CardHeader>
           <CardContent>
@@ -549,6 +543,14 @@ export default function FDANew() {
                 </TableBody>
               </Table>
             )}
+            
+            {/* Add Line button below table */}
+            <div className="mt-4">
+              <Button type="button" onClick={addLedgerLine} size="sm">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Line
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

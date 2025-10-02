@@ -416,17 +416,13 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader>
         <div className="space-y-1">
           <CardTitle>Ledger Details</CardTitle>
           <p className="text-sm text-muted-foreground">
             Legenda: AP = A pagar (fornecedores) · AR = A receber (cliente)
           </p>
         </div>
-        <Button onClick={handleAddLine} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Line
-        </Button>
       </CardHeader>
       <CardContent>
         {/* Column Headers */}
@@ -490,6 +486,14 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
             <LedgerRows data={filterLedger('AP')} />
           </TabsContent>
         </Tabs>
+
+        {/* Add Line button below table */}
+        <div className="mt-4">
+          <Button onClick={handleAddLine} size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Line
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
