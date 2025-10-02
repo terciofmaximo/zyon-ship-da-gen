@@ -71,6 +71,8 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
   const [sortField, setSortField] = useState<string>('line_no');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [openDatePickers, setOpenDatePickers] = useState<Record<string, boolean>>({});
+  const [tempUSDValues, setTempUSDValues] = useState<Record<string, string>>({});
+  const [tempBRLValues, setTempBRLValues] = useState<Record<string, string>>({});
   const { toast } = useToast();
   const navigate = useNavigate();
   const { activeOrg } = useOrg();
@@ -115,6 +117,22 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
     return isNaN(num) ? 0 : num;
   };
 
+  // Normalize BRL input (Brazilian format: 1.234,56 -> 1234.56)
+  const normalizeBRL = (value: string): number => {
+    if (!value || value.trim() === '') return 0;
+    const normalized = value.replace(/\./g, '').replace(',', '.');
+    const num = parseFloat(normalized);
+    return isNaN(num) ? 0 : num;
+  };
+
+  // Normalize USD input (US format: 1,234.56 -> 1234.56)
+  const normalizeUSD = (value: string): number => {
+    if (!value || value.trim() === '') return 0;
+    const normalized = value.replace(/,/g, '');
+    const num = parseFloat(normalized);
+    return isNaN(num) ? 0 : num;
+  };
+
   const saveLineChange = useCallback(async (lineId: string, field: EditableFDALedgerField, value: FDALedgerFieldValue) => {
     const lineIndex = fullLedger.findIndex(l => l.id === lineId);
     if (lineIndex === -1) return;
@@ -150,6 +168,40 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
       onLedgerUpdate(newFullLedger);
     }
   }, [fullLedger, exchangeRate, onLedgerUpdate, ledgerService, safeParseNumber]);
+
+  // Commit USD value on blur
+  const commitUSDValue = useCallback(async (lineId: string) => {
+    const tempValue = tempUSDValues[lineId];
+    if (tempValue === undefined) return;
+
+    const usdValue = normalizeUSD(tempValue);
+    await saveLineChange(lineId, 'amount_usd', usdValue);
+    
+    // Clear temp value
+    setTempUSDValues(prev => {
+      const newValues = { ...prev };
+      delete newValues[lineId];
+      return newValues;
+    });
+  }, [tempUSDValues, saveLineChange]);
+
+  // Commit BRL value on blur
+  const commitBRLValue = useCallback(async (lineId: string) => {
+    const tempValue = tempBRLValues[lineId];
+    if (tempValue === undefined) return;
+
+    const brlValue = normalizeBRL(tempValue);
+    const usdValue = exchangeRate > 0 ? brlValue / exchangeRate : 0;
+    
+    await saveLineChange(lineId, 'amount_usd', usdValue);
+    
+    // Clear temp value
+    setTempBRLValues(prev => {
+      const newValues = { ...prev };
+      delete newValues[lineId];
+      return newValues;
+    });
+  }, [tempBRLValues, exchangeRate, saveLineChange]);
 
   // Debounced save for date picker
   const [saveTimeouts, setSaveTimeouts] = useState<Record<string, NodeJS.Timeout>>({});
@@ -248,17 +300,27 @@ export const FDALedgerTable: React.FC<FDALedgerTableProps> = ({
 
             {/* Amount USD */}
             <Input
-              type="number"
-              value={line.amount_usd || ''}
-              onChange={(e) => handleCellEdit(line.id, 'amount_usd', e.target.value)}
-              className="h-8"
+              value={tempUSDValues[line.id] !== undefined 
+                ? tempUSDValues[line.id] 
+                : (line.amount_usd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+              }
+              onChange={(e) => setTempUSDValues(prev => ({ ...prev, [line.id]: e.target.value }))}
+              onBlur={() => commitUSDValue(line.id)}
+              className="h-8 text-right"
               placeholder="0.00"
             />
 
-            {/* Amount BRL (read-only) */}
-            <div className="h-8 px-2 bg-gray-50 border rounded text-right leading-8 text-gray-600">
-              {fmtBRL(line.amount_local || 0)}
-            </div>
+            {/* Amount BRL */}
+            <Input
+              value={tempBRLValues[line.id] !== undefined 
+                ? tempBRLValues[line.id] 
+                : (line.amount_local || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+              }
+              onChange={(e) => setTempBRLValues(prev => ({ ...prev, [line.id]: e.target.value }))}
+              onBlur={() => commitBRLValue(line.id)}
+              className="h-8 text-right"
+              placeholder="0,00"
+            />
 
             {/* Invoice # */}
             <Input
