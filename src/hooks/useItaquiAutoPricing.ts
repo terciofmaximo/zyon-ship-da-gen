@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { 
   PILOTAGE_GROUPS, 
   TOWAGE_TABLE, 
@@ -51,6 +51,12 @@ export function useItaquiAutoPricing({
     },
     warnings: []
   });
+
+  // Use ref to avoid infinite loop
+  const onCostsUpdateRef = useRef(onCostsUpdate);
+  useEffect(() => {
+    onCostsUpdateRef.current = onCostsUpdate;
+  }, [onCostsUpdate]);
 
   // Function to calculate auto prices
   const calculatePrices = useCallback(() => {
@@ -144,16 +150,19 @@ export function useItaquiAutoPricing({
       meta: newMeta,
       warnings
     });
-
-    // Notify parent component
-    onCostsUpdate?.(newCosts, newMeta);
-
-  }, [port, terminal, berths, dwt, exchangeRate, onCostsUpdate]);
+  }, [port, terminal, berths, dwt, exchangeRate]);
 
   // Recalculate when dependencies change
   useEffect(() => {
     calculatePrices();
   }, [calculatePrices]);
+
+  // Notify parent component when costs change
+  useEffect(() => {
+    if (autoPricingState.costs && Object.keys(autoPricingState.costs).length > 0) {
+      onCostsUpdateRef.current?.(autoPricingState.costs, autoPricingState.meta);
+    }
+  }, [autoPricingState.costs, autoPricingState.meta]);
 
   // Function to disable auto-pricing for a specific item
   const disableAutoPricing = useCallback((costItem: keyof Pick<CostData, 'pilotageIn' | 'towageIn' | 'lightDues'>) => {

@@ -55,7 +55,7 @@ type LedgerLineFieldValue = string | number;
 // Editable fields from LedgerLine
 type EditableLedgerLineField = keyof LedgerLine;
 
-// Fixed 13 cost items matching PDA Cost Entry
+// Fixed cost items matching PDA Cost Entry (including IOF and Bank Charges)
 const INITIAL_LEDGER_LINES: Omit<LedgerLine, "id">[] = [
   { side: "AP", category: "Pilot IN/OUT", description: "Pilot IN/OUT", amount_usd: 0, counterparty: "Vendor — to assign", status: "Open" },
   { side: "AP", category: "Towage IN/OUT", description: "Towage IN/OUT", amount_usd: 0, counterparty: "Vendor — to assign", status: "Open" },
@@ -70,6 +70,8 @@ const INITIAL_LEDGER_LINES: Omit<LedgerLine, "id">[] = [
   { side: "AP", category: "Paperless Port System", description: "Paperless Port System", amount_usd: 0, counterparty: "Vendor — to assign", status: "Open" },
   { side: "AR", category: "Agency fee", description: "Agency fee", amount_usd: 0, counterparty: "Client", status: "Open" },
   { side: "AP", category: "Waterway channel (Table I)", description: "Waterway channel (Table I)", amount_usd: 0, counterparty: "Vendor — to assign", status: "Open" },
+  { side: "AP", category: "Bank charges", description: "Bank charges", amount_usd: 0, counterparty: "Vendor — to assign", status: "Open" },
+  { side: "AP", category: "IOF", description: "IOF", amount_usd: 0, counterparty: "Vendor — to assign", status: "Open" },
 ];
 
 export default function FDANew() {
@@ -108,6 +110,7 @@ export default function FDANew() {
   );
 
   const [tempLedgerUSD, setTempLedgerUSD] = useState<Record<string, string>>({});
+  const [tempLedgerBRL, setTempLedgerBRL] = useState<Record<string, string>>({});
 
   // Auto-fill exchange rate when PTAX data is available
   useEffect(() => {
@@ -164,6 +167,31 @@ export default function FDANew() {
   const calculateAmountLocal = (amountUsd: number) => {
     const rate = new Decimal(formData.exchange_rate || "1");
     return new Decimal(amountUsd).mul(rate).toFixed(2);
+  };
+
+  // Normalize BRL input (Brazilian format: 1.234,56 -> 1234.56)
+  const normalizeBRL = (value: string): number => {
+    if (!value || value.trim() === '') return 0;
+    const normalized = value.replace(/\./g, '').replace(',', '.');
+    const num = parseFloat(normalized);
+    return isNaN(num) ? 0 : num;
+  };
+
+  // Handle BRL input and convert to USD
+  const handleBRLInput = (lineId: string, value: string) => {
+    setTempLedgerBRL(prev => ({ ...prev, [lineId]: value }));
+    const brlValue = normalizeBRL(value);
+    const rate = parseFloat(formData.exchange_rate || "1");
+    const usdValue = rate > 0 ? brlValue / rate : 0;
+    updateLedgerLine(lineId, 'amount_usd', usdValue);
+  };
+
+  const commitBRLValue = (lineId: string) => {
+    setTempLedgerBRL(prev => {
+      const newValues = { ...prev };
+      delete newValues[lineId];
+      return newValues;
+    });
   };
 
   const calculateTotals = () => {
@@ -524,9 +552,18 @@ export default function FDANew() {
                         />
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm text-muted-foreground">
-                          {calculateAmountLocal(line.amount_usd)}
-                        </span>
+                        <Input
+                          type="text"
+                          value={
+                            tempLedgerBRL[line.id] !== undefined && tempLedgerBRL[line.id] !== ''
+                              ? tempLedgerBRL[line.id]
+                              : (line.amount_usd ? parseFloat(calculateAmountLocal(line.amount_usd)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '')
+                          }
+                          onChange={(e) => handleBRLInput(line.id, e.target.value)}
+                          onBlur={() => commitBRLValue(line.id)}
+                          className="w-28"
+                          placeholder="0,00"
+                        />
                       </TableCell>
                       <TableCell>
                         <Button
