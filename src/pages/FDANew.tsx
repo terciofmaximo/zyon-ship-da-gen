@@ -35,6 +35,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useUsdBrlToday } from "@/hooks/useExchangeRate";
+import { normalizeNumericInput } from "@/utils/pdaValidationUtils";
 
 interface LedgerLine {
   id: string;
@@ -105,6 +106,8 @@ export default function FDANew() {
       id: `initial_${index}`
     }))
   );
+
+  const [tempLedgerUSD, setTempLedgerUSD] = useState<Record<string, string>>({});
 
   // Auto-fill exchange rate when PTAX data is available
   useEffect(() => {
@@ -509,11 +512,21 @@ export default function FDANew() {
                       </TableCell>
                       <TableCell>
                         <Input
-                          type="number"
-                          step="0.01"
-                          value={line.amount_usd}
-                          onChange={(e) => updateLedgerLine(line.id, "amount_usd", parseFloat(e.target.value) || 0)}
+                          type="text"
+                          value={
+                            tempLedgerUSD[line.id] !== undefined && tempLedgerUSD[line.id] !== ''
+                              ? tempLedgerUSD[line.id]
+                              : (line.amount_usd ? line.amount_usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '')
+                          }
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setTempLedgerUSD(prev => ({ ...prev, [line.id]: v }));
+                            const num = normalizeNumericInput(v, 'en-US');
+                            updateLedgerLine(line.id, 'amount_usd', num);
+                          }}
+                          onBlur={() => setTempLedgerUSD(prev => ({ ...prev, [line.id]: '' }))}
                           className="w-24"
+                          placeholder="0.00"
                         />
                       </TableCell>
                       <TableCell>
