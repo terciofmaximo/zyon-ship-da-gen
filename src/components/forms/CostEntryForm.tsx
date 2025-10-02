@@ -309,25 +309,43 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
   };
 
   const handleBRLChange = (field: keyof Omit<CostData, 'customLines'>, brlValue: string) => {
-    // Store the temporary BRL value for display
+    // Store the temporary BRL value for display only (do not convert while typing)
     setTempBRLValues(prev => ({ ...prev, [field]: brlValue }));
-    
-    const numericBRL = normalizeBRL(brlValue);
-    const usdValue = numericBRL / exchangeRate;
-    const newCosts = { ...costs, [field]: usdValue };
-    
-    // Clear temp USD value when BRL is edited
+
+    // Clear temp USD value when BRL is edited to avoid conflicting displays
     setTempUSDValues(prev => ({ ...prev, [field]: '' }));
-    
+
     // Mark this field as manually edited
     setManuallyEdited(prev => ({ ...prev, [field]: true }));
-    
+
     // Disable auto-pricing for this specific field
     if (['pilotageIn', 'towageIn', 'lightDues'].includes(field)) {
       disableAutoPricing(field as 'pilotageIn' | 'towageIn' | 'lightDues');
     }
-    
-    debouncedCalculation(newCosts);
+  };
+
+  // Commit BRL input on blur: convert to USD and update costs
+  const commitBRLValue = (field: keyof Omit<CostData, 'customLines'>) => {
+    const current = tempBRLValues[field] ?? '';
+    const numericBRL = normalizeBRL(current);
+    const usdValue = exchangeRate ? (numericBRL / exchangeRate) : 0;
+
+    setCosts(prev => ({ ...prev, [field]: usdValue }));
+    setTempBRLValues(prev => ({ ...prev, [field]: '' }));
+  };
+
+  // Commit custom BRL input on blur
+  const commitCustomBRLValue = (id: string) => {
+    const current = tempCustomBRLValues[id] ?? '';
+    const numericBRL = normalizeBRL(current);
+    const usdValue = exchangeRate ? (numericBRL / exchangeRate) : 0;
+
+    setCustomLines(prev => prev.map(line => (
+      line.id === id ? { ...line, costUSD: usdValue } : line
+    )));
+
+    setTempCustomBRLValues(prev => ({ ...prev, [id]: '' }));
+    setTempCustomUSDValues(prev => ({ ...prev, [id]: '' }));
   };
 
   const handleCommentChange = (field: string, value: string) => {
@@ -530,7 +548,7 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                             : formatBRLNumber(costs[item.id] * exchangeRate)
                         }
                         onChange={(e) => handleBRLChange(item.id, e.target.value)}
-                        onBlur={() => setTempBRLValues(prev => ({ ...prev, [item.id]: '' }))}
+                        onBlur={() => commitBRLValue(item.id)}
                         className="w-32"
                         placeholder="0,00"
                       />
