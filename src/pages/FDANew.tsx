@@ -585,7 +585,7 @@ export default function FDANew() {
                 </div>
                 <div>
                   <Label htmlFor="received_from_client" className="text-sm text-muted-foreground">
-                    Amount Received as Cash Advance (USD)
+                    Received as Cash in Advance (USD)
                   </Label>
                   <Input
                     id="received_from_client"
