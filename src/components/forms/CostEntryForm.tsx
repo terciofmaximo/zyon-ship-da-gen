@@ -613,12 +613,8 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                         }
                         onChange={(e) => {
                           setTempCustomBRLValues(prev => ({ ...prev, [line.id]: e.target.value }));
-                          setTempCustomUSDValues(prev => ({ ...prev, [line.id]: '' }));
-                          const brlValue = normalizeBRL(e.target.value);
-                          const usdValue = brlValue / exchangeRate;
-                          handleCustomLineChange(line.id, 'costUSD', usdValue);
                         }}
-                        onBlur={() => setTempCustomBRLValues(prev => ({ ...prev, [line.id]: '' }))}
+                        onBlur={() => commitCustomBRLValue(line.id)}
                         className="w-32"
                         placeholder="0,00"
                       />
