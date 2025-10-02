@@ -349,9 +349,8 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
   };
 
   const handleCustomLineChange = (id: string, field: keyof CustomCostLine, value: string | number) => {
-    // Clear temp values when the corresponding field is edited
+    // When editing USD, clear only the BRL temp to avoid interfering with typing in USD
     if (field === 'costUSD') {
-      setTempCustomUSDValues(prev => ({ ...prev, [id]: '' }));
       setTempCustomBRLValues(prev => ({ ...prev, [id]: '' }));
     }
     
