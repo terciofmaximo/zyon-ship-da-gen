@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PDAList from "./pages/PDAList";
 import PDAReview from "./pages/PDAReview";
+import PDAEdit from "./pages/PDAEdit";
 import { NewPDAWizard } from "@/components/forms/NewPDAWizard";
 import AuthPage from "@/pages/Auth";
 import FDAList from "@/pages/FDAList";
@@ -85,6 +86,7 @@ const App = () => (
                 <Route path="/pda/new" element={<RequireAuth><DashboardLayout><PublicPDANew /></DashboardLayout></RequireAuth>} />
                 <Route path="/pda/:trackingId" element={<RequireAuth><DashboardLayout><PublicPDAView /></DashboardLayout></RequireAuth>} />
                 <Route path="/pda/:id/review" element={<RequireAuth><DashboardLayout><PDAReview /></DashboardLayout></RequireAuth>} />
+                <Route path="/pda/:id/edit" element={<RequireAuth><DashboardLayout><PDAEdit /></DashboardLayout></RequireAuth>} />
                 <Route path="/fda" element={<RequireAuth><DashboardLayout><FDAList /></DashboardLayout></RequireAuth>} />
                 <Route path="/fda/new" element={<RequireAuth><DashboardLayout><FDANew /></DashboardLayout></RequireAuth>} />
                 <Route path="/fda/:id" element={<RequireAuth><DashboardLayout><FDADetail /></DashboardLayout></RequireAuth>} />

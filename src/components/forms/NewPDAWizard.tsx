@@ -19,18 +19,32 @@ const steps = [
 type NewPDAWizardProps = {
   isPublic?: boolean;
   sessionId?: string;
+  editMode?: boolean;
+  pdaId?: string;
+  initialShipData?: Partial<PDAStep1Data> & {
+    remarks?: string;
+    comments?: Record<string, string>;
+  };
+  initialCostData?: Partial<CostData>;
 };
 
-export function NewPDAWizard({ isPublic = false, sessionId }: NewPDAWizardProps = {}) {
+export function NewPDAWizard({ 
+  isPublic = false, 
+  sessionId,
+  editMode = false,
+  pdaId,
+  initialShipData,
+  initialCostData
+}: NewPDAWizardProps = {}) {
   const [currentStep, setCurrentStep] = useState(1);
   const [shipData, setShipData] = useState<Partial<PDAStep1Data> & {
     remarks?: string;
     comments?: Record<string, string>;
-  }>({});
-  const [costData, setCostData] = useState<Partial<CostData>>({});
-  const [remarks, setRemarks] = useState<string>("");
-  const [comments, setComments] = useState<Record<string, string>>({});
-  const [savedPdaId, setSavedPdaId] = useState<string | null>(null);
+  }>(initialShipData || {});
+  const [costData, setCostData] = useState<Partial<CostData>>(initialCostData || {});
+  const [remarks, setRemarks] = useState<string>(initialShipData?.remarks || "");
+  const [comments, setComments] = useState<Record<string, string>>(initialShipData?.comments || {});
+  const [savedPdaId, setSavedPdaId] = useState<string | null>(pdaId || null);
   const { savePDA } = usePDA(sessionId);
 
   const handleNext = async (
@@ -42,13 +56,15 @@ export function NewPDAWizard({ isPublic = false, sessionId }: NewPDAWizardProps 
       const updatedShipData = data as Partial<PDAStep1Data>;
       setShipData(updatedShipData);
       
-      // Save PDA on first step completion
+      // Save PDA on first step completion (or update if in edit mode)
       try {
         const savedPda = await savePDA({
           shipData: updatedShipData,
-          costData: {}
-        });
-        setSavedPdaId(savedPda.id);
+          costData: editMode ? initialCostData || {} : {}
+        }, savedPdaId || undefined);
+        if (!savedPdaId) {
+          setSavedPdaId(savedPda.id);
+        }
       } catch (error) {
         console.error("Error saving PDA:", error);
         return; // Don't proceed if save fails
@@ -98,7 +114,7 @@ export function NewPDAWizard({ isPublic = false, sessionId }: NewPDAWizardProps 
               return <IconComponent className="h-4 w-4 text-primary-foreground" />;
             })()}
           </div>
-          Create New PDA
+          {editMode ? "Edit PDA" : "Create New PDA"}
         </CardTitle>
         <div className="space-y-4">
           <Progress value={progressValue} className="h-2" />

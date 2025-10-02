@@ -16,7 +16,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, Send, Check } from "lucide-react";
+import { ArrowLeft, Download, Send, Check, Edit } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { usePDA } from "@/hooks/usePDA";
@@ -448,6 +448,13 @@ export default function PDAReview() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate(`/pda/${id}/edit`)}
+            >
+              <Edit className="mr-2 h-4 w-4" />
+              Editar PDA
+            </Button>
             <Button onClick={handleGeneratePDF} className="bg-blue-600 hover:bg-blue-700 text-white">
               <Download className="mr-2 h-4 w-4" />
               Generate PDF
