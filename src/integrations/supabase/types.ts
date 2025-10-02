@@ -627,6 +627,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           created_by_session_id: string | null
+          custom_lines: Json | null
           date_field: string | null
           days_alongside: string | null
           dockage: number | null
@@ -677,6 +678,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           created_by_session_id?: string | null
+          custom_lines?: Json | null
           date_field?: string | null
           days_alongside?: string | null
           dockage?: number | null
@@ -727,6 +729,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           created_by_session_id?: string | null
+          custom_lines?: Json | null
           date_field?: string | null
           days_alongside?: string | null
           dockage?: number | null
@@ -912,6 +915,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           created_by_session_id: string | null
+          custom_lines: Json | null
           date_field: string | null
           days_alongside: string | null
           dockage: number | null
@@ -965,6 +969,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           created_by_session_id: string | null
+          custom_lines: Json | null
           date_field: string | null
           days_alongside: string | null
           dockage: number | null

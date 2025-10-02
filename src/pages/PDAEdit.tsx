@@ -71,7 +71,7 @@ export default function PDAEdit() {
         paperlessPort: data.paperless_port || 0,
         agencyFee: data.agency_fee || 0,
         waterway: data.waterway || 0,
-        customLines: data.custom_lines ? JSON.parse(data.custom_lines as string) : [],
+        customLines: (data as any).custom_lines ? JSON.parse((data as any).custom_lines as string) : [],
       });
     } catch (error) {
       console.error("Error fetching PDA:", error);

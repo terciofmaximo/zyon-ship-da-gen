@@ -274,8 +274,29 @@ export function ReviewForm({ onBack, shipData, costData, pdaId, sessionId }: Rev
                        R$ {((item.value || 0) * parseFloat(shipData.exchangeRate || "5.25")).toFixed(2)}
                      </TableCell>
                    </TableRow>
-                ))}
-                <TableRow className="border-t-2 border-primary font-bold">
+                 ))}
+                 
+                 {/* Custom Lines */}
+                 {(costData.customLines || []).map((line, index) => (
+                   <TableRow key={line.id} className="bg-muted/20">
+                     <TableCell className="font-medium text-xs sm:text-sm">
+                       {costItems.length + index + 1}. {line.label}
+                     </TableCell>
+                     <TableCell className="text-right text-xs sm:text-sm">
+                       <div className="flex flex-col sm:block">
+                         <span>${line.costUSD.toFixed(2)}</span>
+                         <span className="sm:hidden text-muted-foreground text-xs">
+                           R$ {(line.costUSD * parseFloat(shipData.exchangeRate || "5.25")).toFixed(2)}
+                         </span>
+                       </div>
+                     </TableCell>
+                     <TableCell className="text-right text-xs sm:text-sm hidden sm:table-cell">
+                       R$ {(line.costUSD * parseFloat(shipData.exchangeRate || "5.25")).toFixed(2)}
+                     </TableCell>
+                   </TableRow>
+                 ))}
+                 
+                 <TableRow className="border-t-2 border-primary font-bold">
                   <TableCell className="text-xs sm:text-sm">TOTAL</TableCell>
                   <TableCell className="text-right text-primary text-xs sm:text-sm">
                     <div className="flex flex-col sm:block">
