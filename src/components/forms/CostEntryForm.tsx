@@ -31,7 +31,7 @@ interface CostItem {
   defaultComment: string;
 }
 
-// Fixed 13 cost items with default comments
+// Fixed 15 cost items with default comments
 const COST_ITEMS: CostItem[] = [
   { id: "pilotageIn", order: 1, label: "Pilot IN/OUT", defaultComment: "DWT range tariff +10% for draft ≥11m" },
   { id: "towageIn", order: 2, label: "Towage IN/OUT", defaultComment: "DWT range tariff. For reference only" },
@@ -46,6 +46,8 @@ const COST_ITEMS: CostItem[] = [
   { id: "paperlessPort", order: 11, label: "Paperless Port System", defaultComment: "Mandatory digital port system fee" },
   { id: "agencyFee", order: 12, label: "Agency fee", defaultComment: "Lumpsum value" },
   { id: "waterway", order: 13, label: "Waterway channel (Table I)", defaultComment: "DWT Range x factor tariff. Please see details below" },
+  { id: "iof", order: 14, label: "IOF", defaultComment: "Tax on financial operations" },
+  { id: "bankCharges", order: 15, label: "Bank Charges", defaultComment: "Banking fees" },
 ];
 
 // Agency address for PDF generation (not displayed in this screen)
@@ -151,6 +153,8 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
     paperlessPort: initialData.paperlessPort || 0,
     agencyFee: initialData.agencyFee || 9804,
     waterway: initialData.waterway || 0,
+    iof: initialData.iof || 0,
+    bankCharges: initialData.bankCharges || 0,
     customLines: initialData.customLines || [],
   });
 
@@ -173,7 +177,9 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
       clearance: "Customs & Harbor Master expenses",
       paperlessPort: "Mandatory digital port system fee",
       agencyFee: "Lumpsum value",
-      waterway: "DWT Range x factor tariff. Please see details below"
+      waterway: "DWT Range x factor tariff. Please see details below",
+      iof: "Tax on financial operations",
+      bankCharges: "Banking fees"
     };
     return defaultComments;
   });

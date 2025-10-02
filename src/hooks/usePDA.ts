@@ -132,7 +132,9 @@ export function usePDA(sessionId?: string) {
           clearance: data.costData.clearance || 0,
           paperless_port: data.costData.paperlessPort || 0,
           agency_fee: data.costData.agencyFee || 0,
-          waterway: data.costData.waterway || 0
+          waterway: data.costData.waterway || 0,
+          iof: data.costData.iof || 0,
+          bank_charges: data.costData.bankCharges || 0
         },
         customLines: data.costData.customLines || [],
         remarks: data.shipData.remarks,
@@ -221,6 +223,8 @@ export function usePDA(sessionId?: string) {
         paperless_port: validatedData.costItems?.paperless_port || 0,
         agency_fee: validatedData.costItems?.agency_fee || 0,
         waterway: validatedData.costItems?.waterway || 0,
+        iof: validatedData.costItems?.iof || 0,
+        bank_charges: validatedData.costItems?.bank_charges || 0,
         
         // Additional fields
         remarks: validatedData.remarks,

@@ -30,6 +30,8 @@ export const generatePDAHTML = ({ shipData, costData, remarks, comments }: PDADo
     { id: "paperlessPort", description: "Paperless Port", usd: costData.paperlessPort },
     { id: "agencyFee", description: "Agency Fee", usd: costData.agencyFee },
     { id: "waterway", description: "Waterway", usd: costData.waterway },
+    { id: "iof", description: "IOF", usd: costData.iof },
+    { id: "bankCharges", description: "Bank Charges", usd: costData.bankCharges },
   ];
 
   const totalUSD = costItems.reduce((sum, item) => sum + item.usd, 0) + 

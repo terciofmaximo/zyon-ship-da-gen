@@ -80,6 +80,8 @@ export default function PDAEdit() {
         paperlessPort: data.paperless_port || 0,
         agencyFee: data.agency_fee || 0,
         waterway: data.waterway || 0,
+        iof: (data as any).iof || 0,
+        bankCharges: (data as any).bank_charges || 0,
         customLines: (data as any).custom_lines ? JSON.parse((data as any).custom_lines as string) : [],
       });
     } catch (error) {

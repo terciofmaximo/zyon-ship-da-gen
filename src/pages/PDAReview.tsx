@@ -221,6 +221,8 @@ export default function PDAReview() {
         paperlessPort: pda.paperless_port || 0,
         agencyFee: pda.agency_fee || 0,
         waterway: pda.waterway || 0,
+        iof: (pda as any).iof || 0,
+        bankCharges: (pda as any).bank_charges || 0,
       };
       
       const htmlContent = generatePDAHTML({ 

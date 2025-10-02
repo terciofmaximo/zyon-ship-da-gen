@@ -35,6 +35,8 @@ export interface CostData {
   paperlessPort: number;
   agencyFee: number;
   waterway: number;
+  iof: number;
+  bankCharges: number;
   customLines?: CustomCostLine[];
 }
 
