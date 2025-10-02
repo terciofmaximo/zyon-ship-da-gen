@@ -349,7 +349,7 @@ export default function PDAList() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">PDAs</h1>
-          <p className="text-muted-foreground">Gerencie suas Pro Forma Accounts</p>
+          <p className="text-muted-foreground">Gerencie suas Port Disbursement Accounts</p>
         </div>
         <Button onClick={() => navigate("/pda/new")}>
           <Plus className="mr-2 h-4 w-4" />

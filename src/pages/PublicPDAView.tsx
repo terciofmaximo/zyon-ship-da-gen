@@ -188,7 +188,7 @@ export default function PublicPDAView() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Pre-Departure Approval</CardTitle>
+              <CardTitle>Port Disbursement Account</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">

@@ -1,6 +1,6 @@
 /*
  * @ai-context
- * Role: Hook for PDA (Pro Forma Disbursement Account) operations - handles creation, updates,
+ * Role: Hook for PDA (Port Disbursement Account) operations - handles creation, updates,
  *       schema validation, rate limiting, and port validation.
  * DoD:
  * - Never alter database schema directly - use migrations.

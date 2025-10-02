@@ -11,7 +11,7 @@ export default function PublicPDANew() {
       <div className="container mx-auto">
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Pre-Departure Approval Form</CardTitle>
+            <CardTitle>Port Disbursement Account</CardTitle>
             <CardDescription>
               Create a new PDA. Your form will be saved and you'll receive a tracking link to share.
             </CardDescription>
