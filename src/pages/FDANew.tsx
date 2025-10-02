@@ -28,7 +28,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useFDA } from "@/hooks/useFDA";
 import Decimal from "decimal.js";
 import { useOrg } from "@/context/OrgProvider";
-import { getActiveTenantId } from "@/lib/utils";
+import { getActiveTenantId, formatCurrency } from "@/lib/utils";
 import { Combobox } from "@/components/ui/combobox";
 import { usePortDirectory } from "@/hooks/usePortDirectory";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -602,13 +602,13 @@ export default function FDANew() {
                 <div>
                   <div className="text-sm text-muted-foreground">Total Payable (USD)</div>
                   <div className="text-lg font-semibold text-red-600">
-                    ${totals.totalAP_USD.toFixed(2)}
+                    {formatCurrency(totals.totalAP_USD, 'USD')}
                   </div>
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground">Total Receivable (USD)</div>
                   <div className="text-lg font-semibold text-green-600">
-                    ${totals.totalAR_USD.toFixed(2)}
+                    {formatCurrency(totals.totalAR_USD, 'USD')}
                   </div>
                 </div>
                 <div>
@@ -616,7 +616,7 @@ export default function FDANew() {
                   <div className={`text-lg font-semibold ${
                     totals.net_USD >= 0 ? "text-blue-600" : "text-orange-600"
                   }`}>
-                    ${Math.abs(totals.net_USD).toFixed(2)}
+                    {formatCurrency(Math.abs(totals.net_USD), 'USD')}
                     {totals.net_USD < 0 && " (owe)"}
                   </div>
                 </div>
@@ -640,11 +640,11 @@ export default function FDANew() {
               <div className="border-t pt-4 mt-4">
                 <div className="text-sm text-muted-foreground">Amount Due from Client (USD)</div>
                 <div className="text-lg font-semibold">
-                  ${Math.max(0, totals.net_USD - receivedFromClient).toFixed(2)}
+                  {formatCurrency(Math.max(0, totals.net_USD - receivedFromClient), 'USD')}
                 </div>
                 {receivedFromClient > 0 && (
                   <div className="text-xs text-muted-foreground mt-1">
-                    Considering ${receivedFromClient.toFixed(2)} already received
+                    Considering {formatCurrency(receivedFromClient, 'USD')} already received
                   </div>
                 )}
               </div>
