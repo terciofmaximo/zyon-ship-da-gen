@@ -38,6 +38,13 @@ export default function PDAEdit() {
       if (error) throw error;
 
       // Map PDA data to wizard format
+      // Helper to format exchange rate for display
+      const formatExchangeRate = (rate?: string | null): string => {
+        if (!rate) return '5.25';
+        const parsed = parseFloat(rate);
+        return isNaN(parsed) ? '5.25' : parsed.toFixed(4);
+      };
+
       setInitialShipData({
         vesselName: data.vessel_name || '',
         imoNumber: data.imo_number || undefined,
@@ -50,7 +57,9 @@ export default function PDAEdit() {
         berth: data.berth || undefined,
         cargo: data.cargo || undefined,
         date: data.date_field || undefined,
-        exchangeRate: data.exchange_rate || '',
+        exchangeRate: formatExchangeRate(data.exchange_rate),
+        exchangeRateSource: (data.exchange_rate_source as "BCB_PTAX_D1" | "MANUAL" | "PROVIDER_X") || 'MANUAL',
+        exchangeRateTimestamp: data.exchange_rate_timestamp || undefined,
         remarks: data.remarks || undefined,
         comments: (data.comments && typeof data.comments === 'object' && !Array.isArray(data.comments)) 
           ? data.comments as Record<string, string>

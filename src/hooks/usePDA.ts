@@ -170,6 +170,17 @@ export function usePDA(sessionId?: string) {
       }
       
       // Step 5: Transform to database format
+      // Helper function to normalize exchange rate
+      const normalizeExchangeRate = (rate?: string | number): string => {
+        if (!rate) return '5.25';
+        // Convert to string and handle both comma and dot separators
+        const rateStr = rate.toString();
+        // Remove thousand separators and convert comma to dot
+        const normalized = rateStr.replace(/\./g, '').replace(',', '.');
+        const parsed = parseFloat(normalized);
+        return isNaN(parsed) ? '5.25' : parsed.toFixed(4);
+      };
+
       const dbData = {
         tenant_id: tenantId,
         vessel_name: validatedData.vessel.name,
@@ -190,7 +201,7 @@ export function usePDA(sessionId?: string) {
         to_client_id: validatedData.toClientId,
         to_display_name: validatedData.to,
         date_field: validatedData.date,
-        exchange_rate: validatedData.exchangeRate?.toString(),
+        exchange_rate: normalizeExchangeRate(validatedData.exchangeRate),
         exchange_rate_source: validatedData.exchangeRateSource,
         exchange_rate_source_url: validatedData.exchangeRateSourceUrl,
         exchange_rate_timestamp: validatedData.exchangeRateTimestamp,
