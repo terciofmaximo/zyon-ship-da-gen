@@ -34,8 +34,21 @@ export function Header() {
                    (activeCompany && ['admin', 'owner'].includes(activeCompany.role));
 
   return (
-    <header className="sticky top-0 z-50 border-b bg-background shadow-soft">
-      <div className="flex h-16 items-center justify-between px-6">
+    <>
+      {/* Platform Admin Global Banner */}
+      {isPlatformAdmin && (
+        <div className="sticky top-0 z-[60] bg-warning/90 backdrop-blur-sm border-b border-warning-foreground/20">
+          <div className="flex h-10 items-center justify-center px-6 text-warning-foreground">
+            <div className="flex items-center gap-2 font-medium text-sm">
+              <span className="text-lg">⚠️</span>
+              <span>Modo Platform Admin - Suas ações afetam TODOS os tenants</span>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      <header className={`sticky ${isPlatformAdmin ? 'top-10' : 'top-0'} z-50 border-b bg-background shadow-soft`}>
+        <div className="flex h-16 items-center justify-between px-6">
         <div className="flex items-center gap-4">
           <SidebarTrigger className="h-8 w-8" />
         </div>
@@ -102,5 +115,6 @@ export function Header() {
         </div>
       </div>
     </header>
+    </>
   );
 }

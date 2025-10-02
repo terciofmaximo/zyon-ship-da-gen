@@ -76,6 +76,7 @@ interface PDA {
   status: "IN_PROGRESS" | "SENT" | "APPROVED" | "CREATED" | "REJECTED" | "UNDER_REVIEW";
   created_at: string;
   updated_at: string;
+  org_name?: string;
 }
 
 // New English status constants
@@ -161,7 +162,11 @@ export default function PDAList() {
     try {
       let query = supabase
         .from("pdas")
-        .select("id, pda_number, vessel_name, port_name, to_display_name, date_field, sent_at, sent_by_user_id, created_by, status, created_at, updated_at");
+        .select(`
+          id, pda_number, vessel_name, port_name, to_display_name, date_field, 
+          sent_at, sent_by_user_id, created_by, status, created_at, updated_at,
+          organizations(name)
+        `);
 
       // platformAdmin sees all orgs, regular users only see their active org
       if (!isPlatformAdmin && activeOrg) {
@@ -204,7 +209,14 @@ export default function PDAList() {
       const { data, error } = await query;
 
       if (error) throw error;
-      setPdas(data || []);
+      
+      // Map organization name from nested object
+      const pdasWithOrgName = (data || []).map((pda: any) => ({
+        ...pda,
+        org_name: pda.organizations?.name,
+      }));
+      
+      setPdas(pdasWithOrgName);
     } catch (error) {
       console.error("Error fetching PDAs:", error);
       toast({
@@ -348,7 +360,14 @@ export default function PDAList() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">PDAs</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight">PDAs</h1>
+            {isPlatformAdmin && (
+              <Badge variant="outline" className="bg-warning/10 text-warning-foreground border-warning">
+                Visualizando: Todos os Tenants
+              </Badge>
+            )}
+          </div>
           <p className="text-muted-foreground">Gerencie suas Port Disbursement Accounts</p>
         </div>
         <Button onClick={() => navigate("/pda/new")}>
@@ -430,6 +449,7 @@ export default function PDAList() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>PDA #</TableHead>
+                    {isPlatformAdmin && <TableHead>Tenant</TableHead>}
                     <TableHead>Vessel</TableHead>
                     <TableHead>Port</TableHead>
                     <TableHead>Client (To)</TableHead>
@@ -460,6 +480,13 @@ export default function PDAList() {
                           {pda.pda_number}
                         </Button>
                       </TableCell>
+                      {isPlatformAdmin && (
+                        <TableCell>
+                          <div className="max-w-[150px] truncate text-xs text-muted-foreground" title={pda.org_name || ""}>
+                            {pda.org_name || "—"}
+                          </div>
+                        </TableCell>
+                      )}
                       <TableCell>
                         <div className="max-w-[150px] truncate" title={pda.vessel_name || ""}>
                           {pda.vessel_name || "—"}

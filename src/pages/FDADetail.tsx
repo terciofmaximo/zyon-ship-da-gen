@@ -29,6 +29,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 import { useUsdBrlToday } from "@/hooks/useExchangeRate";
+import { useUserRole } from "@/hooks/useUserRole";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Format timestamp like PDA (DD/MM/YYYY HH:MM (BRT))
 const formatTimestamp = (timestamp?: string): string => {
@@ -60,10 +62,12 @@ export default function FDADetail() {
   const { toast } = useToast();
   const { getFDA, updateFDAStatus, calculateFDATotals, resyncFromPda, loading } = useFDA();
   const { data: ptaxData, loading: ptaxLoading, error: ptaxError, refresh: refreshPtax } = useUsdBrlToday(false);
+  const { isPlatformAdmin } = useUserRole();
   const [fda, setFda] = useState<FDAWithLedger | null>(null);
   const [loadingPage, setLoadingPage] = useState(true);
   const [confirmPost, setConfirmPost] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
+  const [platformAdminConfirmed, setPlatformAdminConfirmed] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
@@ -329,6 +333,7 @@ export default function FDADetail() {
       setIsDirty(false);
     }
     setConfirmPost(false);
+    setPlatformAdminConfirmed(false);
   };
 
   const handleClose = async () => {
@@ -345,6 +350,17 @@ export default function FDADetail() {
       setIsDirty(false);
     }
     setConfirmClose(false);
+    setPlatformAdminConfirmed(false);
+  };
+  
+  const handlePublishClick = () => {
+    setConfirmPost(true);
+    setPlatformAdminConfirmed(false);
+  };
+  
+  const handleCloseClick = () => {
+    setConfirmClose(true);
+    setPlatformAdminConfirmed(false);
   };
 
 
@@ -877,16 +893,43 @@ export default function FDADetail() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Post FDA</DialogTitle>
-            <DialogDescription>
-              Posting the FDA will lock the structure. You'll only be able to edit invoice fields and line status after posting. 
-              Are you sure you want to post this FDA?
+            <DialogDescription className="space-y-3">
+              <p>
+                Posting the FDA will lock the structure. You'll only be able to edit invoice fields and line status after posting.
+              </p>
+              {isPlatformAdmin && (
+                <div className="bg-warning/10 border border-warning rounded-md p-3">
+                  <p className="text-warning-foreground font-medium text-sm">
+                    ⚠️ Como Platform Admin, esta ação afetará TODOS os tenants associados a este FDA.
+                  </p>
+                </div>
+              )}
+              <p>Are you sure you want to post this FDA?</p>
             </DialogDescription>
           </DialogHeader>
+          {isPlatformAdmin && (
+            <div className="flex items-center space-x-2 py-2">
+              <Checkbox 
+                id="platform-admin-confirm-post" 
+                checked={platformAdminConfirmed}
+                onCheckedChange={(checked) => setPlatformAdminConfirmed(checked === true)}
+              />
+              <label
+                htmlFor="platform-admin-confirm-post"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Confirmo que entendo o impacto desta ação
+              </label>
+            </div>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmPost(false)}>
               Cancel
             </Button>
-            <Button onClick={handlePost} disabled={loading}>
+            <Button 
+              onClick={handlePost}
+              disabled={(isPlatformAdmin && !platformAdminConfirmed) || loading}
+            >
               {loading ? "Posting..." : "Post FDA"}
             </Button>
           </DialogFooter>
@@ -898,16 +941,44 @@ export default function FDADetail() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Close FDA</DialogTitle>
-            <DialogDescription>
-              Closing the FDA will finalize all transactions. No further edits will be allowed after closing.
-              Are you sure you want to close this FDA?
+            <DialogDescription className="space-y-3">
+              <p>
+                Closing the FDA will finalize all transactions. No further edits will be allowed after closing.
+              </p>
+              {isPlatformAdmin && (
+                <div className="bg-warning/10 border border-warning rounded-md p-3">
+                  <p className="text-warning-foreground font-medium text-sm">
+                    ⚠️ Como Platform Admin, esta ação afetará TODOS os tenants associados a este FDA.
+                  </p>
+                </div>
+              )}
+              <p>Are you sure you want to close this FDA?</p>
             </DialogDescription>
           </DialogHeader>
+          {isPlatformAdmin && (
+            <div className="flex items-center space-x-2 py-2">
+              <Checkbox 
+                id="platform-admin-confirm-close" 
+                checked={platformAdminConfirmed}
+                onCheckedChange={(checked) => setPlatformAdminConfirmed(checked === true)}
+              />
+              <label
+                htmlFor="platform-admin-confirm-close"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Confirmo que entendo o impacto desta ação
+              </label>
+            </div>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmClose(false)}>
               Cancel
             </Button>
-            <Button onClick={handleClose} disabled={loading}>
+            <Button 
+              variant="destructive" 
+              onClick={handleClose}
+              disabled={(isPlatformAdmin && !platformAdminConfirmed) || loading}
+            >
               {loading ? "Closing..." : "Close FDA"}
             </Button>
           </DialogFooter>

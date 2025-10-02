@@ -23,6 +23,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import zyonLogoFinal from "@/assets/zyon-logo-final.png";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useAuth } from "@/context/AuthProvider";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -38,6 +40,8 @@ const menuItems = [
 
 export function AppSidebar() {
   const { state } = useSidebar();
+  const { isPlatformAdmin } = useUserRole();
+  const { user } = useAuth();
   const collapsed = state === "collapsed";
 
   return (
@@ -85,14 +89,28 @@ export function AppSidebar() {
 
       {/* Footer with User Info */}
       <SidebarFooter className="bg-sidebar border-t border-sidebar-border">
-        <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3">
-          <div className="flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 bg-sidebar-accent rounded-full flex-shrink-0">
-            <User className="h-3 w-3 sm:h-4 sm:w-4 text-sidebar-accent-foreground" />
+        <div className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 ${
+          isPlatformAdmin ? 'bg-warning/10 border-t-2 border-warning' : ''
+        }`}>
+          <div className={`flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-full flex-shrink-0 ${
+            isPlatformAdmin ? 'bg-warning' : 'bg-sidebar-accent'
+          }`}>
+            <User className={`h-3 w-3 sm:h-4 sm:w-4 ${
+              isPlatformAdmin ? 'text-warning-foreground' : 'text-sidebar-accent-foreground'
+            }`} />
           </div>
           {!collapsed && (
             <div className="min-w-0 flex-1">
-              <p className="text-sidebar-foreground text-xs sm:text-sm font-medium truncate">Administrator</p>
-              <p className="text-sidebar-foreground/70 text-xs truncate">admin@zyonshipping.com</p>
+              <p className={`text-xs sm:text-sm font-medium truncate ${
+                isPlatformAdmin ? 'text-warning-foreground' : 'text-sidebar-foreground'
+              }`}>
+                {isPlatformAdmin ? 'PLATFORM ADMIN' : 'Administrator'}
+              </p>
+              <p className={`text-xs truncate ${
+                isPlatformAdmin ? 'text-warning-foreground/80' : 'text-sidebar-foreground/70'
+              }`}>
+                {user?.email || 'admin@zyonshipping.com'}
+              </p>
             </div>
           )}
         </div>

@@ -62,6 +62,7 @@ interface FDAWithTotals extends FDA {
   total_ar_usd: number;
   net_usd: number;
   pda_number?: string;
+  org_name?: string;
 }
 
 export default function FDAList() {
@@ -97,7 +98,8 @@ export default function FDAList() {
         .from("fda")
         .select(`
           *,
-          fda_ledger(amount_usd, side)
+          fda_ledger(amount_usd, side),
+          organizations(name)
         `);
 
       // @ai-guard:start - RLS tenant filter
@@ -160,6 +162,7 @@ export default function FDAList() {
           total_ar_usd: totals.totalAR_USD,
           net_usd: totals.net_USD,
           pda_number: fda.pda_id ? pdaNumbers[fda.pda_id] : undefined,
+          org_name: fda.organizations?.name,
         };
       });
 
@@ -278,7 +281,14 @@ export default function FDAList() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">FDAs</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight">FDAs</h1>
+            {isPlatformAdmin && (
+              <Badge variant="outline" className="bg-warning/10 text-warning-foreground border-warning">
+                Visualizando: Todos os Tenants
+              </Badge>
+            )}
+          </div>
           <p className="text-muted-foreground">Manage your Final Disbursement Accounts</p>
         </div>
         <Button onClick={() => navigate("/fda/new")}>
@@ -344,6 +354,7 @@ export default function FDAList() {
                 <TableRow>
                   <TableHead>FDA #</TableHead>
                   <TableHead>PDA #</TableHead>
+                  {isPlatformAdmin && <TableHead>Tenant</TableHead>}
                   <TableHead>Client</TableHead>
                   <TableHead>Vessel</TableHead>
                   <TableHead>Port</TableHead>
@@ -365,6 +376,13 @@ export default function FDAList() {
                       </Button>
                     </TableCell>
                     <TableCell>{fda.pda_number || "—"}</TableCell>
+                    {isPlatformAdmin && (
+                      <TableCell>
+                        <div className="max-w-[150px] truncate text-xs text-muted-foreground" title={fda.org_name || ""}>
+                          {fda.org_name || "—"}
+                        </div>
+                      </TableCell>
+                    )}
                     <TableCell>
                       <div className="max-w-[120px] truncate" title={fda.client_name || ""}>
                         {fda.client_name || "—"}

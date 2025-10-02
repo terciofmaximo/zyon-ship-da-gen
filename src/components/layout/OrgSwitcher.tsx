@@ -36,7 +36,7 @@ export function OrgSwitcher() {
   const active = activeOrg ?? null;
   
   // label shown in button
-  const selectedLabel = active?.name ?? (isMaster ? "All Tenants" : (orgs[0]?.name ?? "Select organization"));
+  const selectedLabel = active?.name ?? (isMaster ? "Todos os Tenants" : (orgs[0]?.name ?? "Select organization"));
   
   // enable switcher for master or users with multiple orgs
   const canSwitchTenants = isMaster || orgs.length > 1;
@@ -64,17 +64,22 @@ export function OrgSwitcher() {
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-[200px] justify-between"
+          className="w-[240px] justify-between"
           disabled={!canSwitchTenants}
         >
-          <div className="flex items-center gap-2">
-            <Building2 className="h-4 w-4" />
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <Building2 className="h-4 w-4 flex-shrink-0" />
             <span className="truncate">{selectedLabel}</span>
+            {isPlatformAdmin && (
+              <span className="ml-auto flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded bg-warning text-warning-foreground">
+                ADMIN
+              </span>
+            )}
           </div>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0">
+      <PopoverContent className="w-[240px] p-0">
         <Command>
           <CommandInput placeholder="Search organizations..." />
           <CommandEmpty>No organization found.</CommandEmpty>
