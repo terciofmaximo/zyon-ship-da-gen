@@ -7,6 +7,7 @@ import { FileText, Download, Save, RefreshCw, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { usePDA } from "@/hooks/usePDA";
+import { useFDA } from "@/hooks/useFDA";
 import type { CostData } from "@/types";
 import type { PDAStep1Data } from "@/schemas/pdaSchema";
 import { generatePDAHTML } from "@/components/pdf/PDADocument";
@@ -26,6 +27,7 @@ export function ReviewForm({ onBack, shipData, costData, pdaId, sessionId }: Rev
   const { toast } = useToast();
   const navigate = useNavigate();
   const { savePDA, loading } = usePDA(sessionId);
+  const { convertPdaToFda, loading: fdaLoading } = useFDA();
   const [isSaving, setIsSaving] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const totalUSD = Object.entries(costData)
@@ -176,8 +178,15 @@ export function ReviewForm({ onBack, shipData, costData, pdaId, sessionId }: Rev
         currentPdaId = result.id;
       }
 
-      // Navigate to FDA creation with PDA reference
-      navigate(`/fda/new?fromPdaId=${currentPdaId}`);
+      // Convert PDA to FDA (creates FDA with all fields populated)
+      const fdaId = await convertPdaToFda(currentPdaId);
+      if (fdaId) {
+        toast({
+          title: "Sucesso",
+          description: "FDA criada com sucesso a partir da PDA.",
+        });
+        navigate(`/fda/${fdaId}`);
+      }
     } catch (error) {
       console.error("Error converting to FDA:", error);
       toast({
@@ -345,10 +354,10 @@ export function ReviewForm({ onBack, shipData, costData, pdaId, sessionId }: Rev
             
             <Button 
               onClick={handleConvertToFDA} 
-              disabled={isConverting || isSaving}
+              disabled={isConverting || isSaving || fdaLoading}
               className="h-10 sm:h-12 text-xs sm:text-sm bg-secondary text-secondary-foreground hover:bg-secondary/80"
             >
-              {isConverting ? (
+              {(isConverting || fdaLoading) ? (
                 <>
                   <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 animate-spin" />
                   Converting...
