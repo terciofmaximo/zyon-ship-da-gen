@@ -104,12 +104,12 @@ export function AppSidebar() {
               <p className={`text-xs sm:text-sm font-medium truncate ${
                 isPlatformAdmin ? 'text-warning-foreground' : 'text-sidebar-foreground'
               }`}>
-                {isPlatformAdmin ? 'PLATFORM ADMIN' : 'Administrator'}
+                {isPlatformAdmin ? 'PLATFORM ADMIN' : (user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User')}
               </p>
               <p className={`text-xs truncate ${
                 isPlatformAdmin ? 'text-warning-foreground/80' : 'text-sidebar-foreground/70'
               }`}>
-                {user?.email || 'admin@zyonshipping.com'}
+                {user?.email || '—'}
               </p>
             </div>
           )}
