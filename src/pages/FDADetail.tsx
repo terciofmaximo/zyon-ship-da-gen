@@ -134,7 +134,7 @@ export default function FDADetail() {
         editForm.terminal !== (fda.terminal || "") ||
         editForm.client_name !== (fda.client_name || "") ||
         editForm.client_id !== (fda.client_id || "") ||
-        editForm.exchange_rate !== (fda.exchange_rate?.toString() || "") ||
+        editForm.exchange_rate !== (fda.exchange_rate?.toString().replace('.', ',') || "") ||
         editForm.fx_source !== ((fda.meta as any)?.fx_source || "") ||
         editForm.ptax_timestamp !== ((fda.meta as any)?.ptax_timestamp || "") ||
         editForm.received_from_client_usd !== ((fda.meta as any)?.received_from_client_usd || 0) ||
@@ -161,7 +161,7 @@ export default function FDADetail() {
           terminal: fdaData.terminal || "",
           client_name: fdaData.client_name || "",
           client_id: fdaData.client_id || "",
-          exchange_rate: fdaData.exchange_rate?.toString() || "",
+          exchange_rate: fdaData.exchange_rate?.toString().replace('.', ',') || "",
           fx_source: (fdaData.meta as any)?.fx_source || "BCB PTAX (buy)",
           ptax_timestamp: (fdaData.meta as any)?.ptax_timestamp || "",
           received_from_client_usd: (fdaData.meta as any)?.received_from_client_usd || 0,
@@ -223,6 +223,9 @@ export default function FDADetail() {
       // @ai-guard:end
 
       // Update FDA header
+      // Convert exchange_rate from BR format (5,42) to decimal (5.42)
+      const exchangeRateValue = parseFloat(editForm.exchange_rate.replace(',', '.')) || 0;
+      
       const { error } = await supabase
         .from("fda")
         .update({
@@ -232,7 +235,7 @@ export default function FDADetail() {
           terminal: editForm.terminal,
           client_name: editForm.client_name,
           client_id: editForm.client_id,
-          exchange_rate: parseFloat(editForm.exchange_rate) || 0,
+          exchange_rate: exchangeRateValue,
           fx_source: editForm.fx_source,
           eta: editForm.eta?.toISOString() || null,
           etb: editForm.etb?.toISOString() || null,
@@ -249,8 +252,8 @@ export default function FDADetail() {
       if (error) throw error;
 
       // Recalculate BRL amounts if exchange rate changed
-      if (fda.exchange_rate !== parseFloat(editForm.exchange_rate)) {
-        const newRate = parseFloat(editForm.exchange_rate) || 0;
+      if (fda.exchange_rate !== exchangeRateValue) {
+        const newRate = exchangeRateValue;
         const updates = fda.ledger.map(entry => ({
           id: entry.id,
           amount_local: (entry.amount_usd || 0) * newRate,
@@ -297,7 +300,7 @@ export default function FDADetail() {
         terminal: fda.terminal || "",
         client_name: fda.client_name || "",
         client_id: fda.client_id || "",
-        exchange_rate: fda.exchange_rate?.toString() || "",
+        exchange_rate: fda.exchange_rate?.toString().replace('.', ',') || "",
         fx_source: (fda.meta as any)?.fx_source || "BCB PTAX (buy)",
         ptax_timestamp: (fda.meta as any)?.ptax_timestamp || "",
         received_from_client_usd: (fda.meta as any)?.received_from_client_usd || 0,
@@ -602,7 +605,7 @@ export default function FDADetail() {
                            if (ptaxData) {
                              setEditForm({ 
                                ...editForm, 
-                               exchange_rate: ptaxData.rate.toFixed(4),
+                               exchange_rate: ptaxData.rate.toString().replace('.', ','),
                                fx_source: "BCB PTAX (buy)",
                                ptax_timestamp: ptaxData.ts
                              });
@@ -621,7 +624,7 @@ export default function FDADetail() {
                          id="exchange_rate"
                          value={editForm.exchange_rate}
                          onChange={(e) => setEditForm({ ...editForm, exchange_rate: e.target.value })}
-                         placeholder="Ex.: 5.4321"
+                         placeholder="Ex.: 5,4321"
                        />
                        {ptaxError ? (
                          <p className="text-xs text-destructive mt-1">Falha ao buscar PTAX</p>
@@ -638,7 +641,7 @@ export default function FDADetail() {
                     ) : (
                       <div>
                         <div className="text-sm mt-1">
-                          {fda.exchange_rate ? parseFloat(fda.exchange_rate.toString()).toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : "—"}
+                          {fda.exchange_rate ? fda.exchange_rate.toString().replace('.', ',') : "—"}
                         </div>
                        {(fda.meta as any)?.ptax_timestamp && (
                          <p className="text-xs text-muted-foreground mt-1">
