@@ -619,11 +619,11 @@ export default function FDADetail() {
                          </p>
                        ) : null}
                      </>
-                   ) : (
-                     <div>
-                       <div className="text-sm mt-1">
-                         {fda.exchange_rate ? fda.exchange_rate.toString() : "—"}
-                       </div>
+                    ) : (
+                      <div>
+                        <div className="text-sm mt-1">
+                          {fda.exchange_rate ? parseFloat(fda.exchange_rate.toString()).toFixed(4) : "—"}
+                        </div>
                        {(fda.meta as any)?.ptax_timestamp && (
                          <p className="text-xs text-muted-foreground mt-1">
                            PTAX (buy) • {formatTimestamp((fda.meta as any).ptax_timestamp)} • BCB
