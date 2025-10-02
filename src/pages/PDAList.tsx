@@ -163,11 +163,7 @@ export default function PDAList() {
     try {
       let query = supabase
         .from("pdas")
-        .select(`
-          id, pda_number, vessel_name, port_name, to_display_name, date_field, 
-          sent_at, sent_by_user_id, created_by, status, created_at, updated_at,
-          organizations(name)
-        `);
+        .select("id, pda_number, vessel_name, port_name, to_display_name, date_field, sent_at, sent_by_user_id, created_by, status, created_at, updated_at, tenant_id");
 
       // platformAdmin sees all orgs, regular users only see their active org
       if (!isPlatformAdmin && activeOrg) {
@@ -211,10 +207,31 @@ export default function PDAList() {
 
       if (error) throw error;
       
-      // Map organization name from nested object
+      // Get organization names for PDAs that have tenant_id (only for platformAdmin)
+      let orgNames: Record<string, string> = {};
+      
+      if (isPlatformAdmin && data && data.length > 0) {
+        const tenantIds = [...new Set(data.map(pda => pda.tenant_id).filter(Boolean))];
+        
+        if (tenantIds.length > 0) {
+          const { data: orgData } = await supabase
+            .from("organizations")
+            .select("id, name")
+            .in("id", tenantIds);
+          
+          if (orgData) {
+            orgNames = orgData.reduce((acc, org) => {
+              acc[org.id] = org.name;
+              return acc;
+            }, {} as Record<string, string>);
+          }
+        }
+      }
+      
+      // Map organization name from lookup
       const pdasWithOrgName = (data || []).map((pda: any) => ({
         ...pda,
-        org_name: pda.organizations?.name,
+        org_name: pda.tenant_id ? orgNames[pda.tenant_id] : undefined,
       }));
       
       setPdas(pdasWithOrgName);
