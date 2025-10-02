@@ -13,7 +13,7 @@
  */
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Search, Plus, MoreHorizontal, Eye, Check, Download, RefreshCw } from "lucide-react";
+import { Search, Plus, MoreHorizontal, Eye, Check, Download, RefreshCw, Trash2, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -123,6 +123,7 @@ export default function PDAList() {
   const [pageSize, setPageSize] = useState(25);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [convertingId, setConvertingId] = useState<string | null>(null);
+  const [deleteConfirmDialog, setDeleteConfirmDialog] = useState<{ open: boolean; pdaId: string; pdaNumber: string } | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
 
   useEffect(() => {
@@ -339,6 +340,36 @@ export default function PDAList() {
         description: "Error updating PDA status",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleDeletePDA = async () => {
+    if (!deleteConfirmDialog) return;
+
+    try {
+      const { error } = await supabase
+        .from("pdas")
+        .delete()
+        .eq("id", deleteConfirmDialog.pdaId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "PDA excluído com sucesso",
+      });
+
+      // Refresh the list
+      fetchPDAs();
+    } catch (error) {
+      console.error("Error deleting PDA:", error);
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir PDA",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteConfirmDialog(null);
     }
   };
 
@@ -567,9 +598,20 @@ export default function PDAList() {
                               <Eye className="mr-2 h-4 w-4" />
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => {/* PDF generation logic */}}>
-                              <Download className="mr-2 h-4 w-4" />
-                              Generate PDF
+                            <DropdownMenuItem onClick={() => navigate(`/pda/${pda.id}/edit`)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit PDA
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setDeleteConfirmDialog({ 
+                                open: true, 
+                                pdaId: pda.id, 
+                                pdaNumber: pda.pda_number 
+                              })}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete PDA
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -619,6 +661,30 @@ export default function PDAList() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog 
+        open={deleteConfirmDialog?.open || false} 
+        onOpenChange={(open) => !open && setDeleteConfirmDialog(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir PDA</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir o PDA <strong>{deleteConfirmDialog?.pdaNumber}</strong>? 
+              Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmDialog(null)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDeletePDA}>
+              Excluir PDA
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
