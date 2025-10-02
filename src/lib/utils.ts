@@ -11,17 +11,26 @@ export function formatRange(min: number, max: number, unit: string): string {
 
 // Format numbers with Brazilian locale (comma as decimal separator)
 export function formatCurrency(value: number, currency: 'USD' | 'BRL' = 'USD'): string {
-  return value.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
+  if (currency === 'USD') {
+    return value.toLocaleString('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  } else {
+    return value.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
 }
 
-// Format decimal numbers with comma separator
-export function formatNumber(value: number, decimals: number = 2): string {
-  return value.toLocaleString('pt-BR', {
+// Format decimal numbers - USD format (1,234.56) or BRL format (1.234,56)
+export function formatNumber(value: number, decimals: number = 2, locale: 'pt-BR' | 'en-US' = 'pt-BR'): string {
+  return value.toLocaleString(locale, {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals
   });

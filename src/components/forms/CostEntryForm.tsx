@@ -95,12 +95,42 @@ const DEFAULT_REMARKS = `**Pilotage IN/OUT** – Pilotage charges as per DWT ran
 | From 60,001 to 80,000 of DWT | 2,13 |
 | Over 80,000 of DWT | 2,25 |`;
 
-// Utility functions
-const normalizeNumber = (value: string): number => {
+// Utility functions for number formatting and parsing
+
+// Normalize USD input (accepts decimal point, comma as thousands separator)
+const normalizeUSD = (value: string): number => {
   if (!value) return 0;
-  const normalized = value.replace(/,/g, '.').replace(/[^\d.-]/g, '');
+  // Remove commas (thousands separator), keep decimal point
+  const normalized = value.replace(/,/g, '');
   const parsed = parseFloat(normalized);
   return isNaN(parsed) ? 0 : Math.round(parsed * 100) / 100;
+};
+
+// Normalize BRL input (accepts comma as decimal, dot as thousands separator)
+const normalizeBRL = (value: string): number => {
+  if (!value) return 0;
+  // Remove dots (thousands separator), convert comma to decimal point
+  const normalized = value.replace(/\./g, '').replace(',', '.');
+  const parsed = parseFloat(normalized);
+  return isNaN(parsed) ? 0 : Math.round(parsed * 100) / 100;
+};
+
+// Format number for USD display (1,234.56)
+const formatUSDNumber = (value: number): string => {
+  if (value === 0) return '';
+  return value.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+};
+
+// Format number for BRL display (1.234,56)
+const formatBRLNumber = (value: number): string => {
+  if (value === 0) return '';
+  return value.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
 };
 
 const formatUSD = (value: number): string => {
@@ -256,7 +286,7 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
   );
 
   const handleCostChange = (field: keyof Omit<CostData, 'customLines'>, value: string) => {
-    const numericValue = normalizeNumber(value);
+    const numericValue = normalizeUSD(value);
     const newCosts = { ...costs, [field]: numericValue };
     
     // Clear temp BRL value when USD is edited
@@ -277,7 +307,7 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
     // Store the temporary BRL value for display
     setTempBRLValues(prev => ({ ...prev, [field]: brlValue }));
     
-    const numericBRL = normalizeNumber(brlValue);
+    const numericBRL = normalizeBRL(brlValue);
     const usdValue = numericBRL / exchangeRate;
     const newCosts = { ...costs, [field]: usdValue };
     
@@ -460,7 +490,7 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                         <DollarSign className="h-3 w-3 text-muted-foreground" />
                         <Input
                           type="text"
-                          value={costs[item.id] === 0 ? '' : costs[item.id].toString()}
+                          value={formatUSDNumber(costs[item.id])}
                           onChange={(e) => handleCostChange(item.id, e.target.value)}
                           className="w-32"
                           placeholder="0.00"
@@ -484,14 +514,12 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                         value={
                           tempBRLValues[item.id] !== undefined && tempBRLValues[item.id] !== '' 
                             ? tempBRLValues[item.id]
-                            : costs[item.id] === 0 
-                              ? '' 
-                              : (costs[item.id] * exchangeRate).toFixed(2)
+                            : formatBRLNumber(costs[item.id] * exchangeRate)
                         }
                         onChange={(e) => handleBRLChange(item.id, e.target.value)}
                         onBlur={() => setTempBRLValues(prev => ({ ...prev, [item.id]: '' }))}
                         className="w-32"
-                        placeholder="0.00"
+                        placeholder="0,00"
                       />
                     </div>
                   </TableCell>
@@ -527,8 +555,8 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                       <DollarSign className="h-3 w-3 text-muted-foreground" />
                       <Input
                         type="text"
-                        value={line.costUSD === 0 ? '' : line.costUSD.toString()}
-                        onChange={(e) => handleCustomLineChange(line.id, 'costUSD', normalizeNumber(e.target.value))}
+                        value={formatUSDNumber(line.costUSD)}
+                        onChange={(e) => handleCustomLineChange(line.id, 'costUSD', normalizeUSD(e.target.value))}
                         className="w-32"
                         placeholder="0.00"
                       />
@@ -542,19 +570,17 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                         value={
                           tempCustomBRLValues[line.id] !== undefined && tempCustomBRLValues[line.id] !== ''
                             ? tempCustomBRLValues[line.id]
-                            : line.costUSD === 0 
-                              ? '' 
-                              : (line.costUSD * exchangeRate).toFixed(2)
+                            : formatBRLNumber(line.costUSD * exchangeRate)
                         }
                         onChange={(e) => {
                           setTempCustomBRLValues(prev => ({ ...prev, [line.id]: e.target.value }));
-                          const brlValue = normalizeNumber(e.target.value);
+                          const brlValue = normalizeBRL(e.target.value);
                           const usdValue = brlValue / exchangeRate;
                           handleCustomLineChange(line.id, 'costUSD', usdValue);
                         }}
                         onBlur={() => setTempCustomBRLValues(prev => ({ ...prev, [line.id]: '' }))}
                         className="w-32"
-                        placeholder="0.00"
+                        placeholder="0,00"
                       />
                     </div>
                   </TableCell>

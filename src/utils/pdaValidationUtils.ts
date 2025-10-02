@@ -42,22 +42,28 @@ export function validateFormData(
   });
 }
 
-// Normalize numeric input (handle locale formats)
-export function normalizeNumericInput(value: string | number): number {
+// Normalize numeric input (handle both locale formats)
+export function normalizeNumericInput(value: string | number, locale: 'pt-BR' | 'en-US' = 'pt-BR'): number {
   if (typeof value === 'number') return value;
   
-  // Remove thousands separators (dots) and convert comma to decimal point
-  const normalized = value
-    .replace(/\./g, '') // Remove dots (thousands separator)
-    .replace(',', '.'); // Convert comma to dot (decimal separator)
-    
-  const num = parseFloat(normalized);
-  return isNaN(num) ? 0 : num;
+  if (locale === 'pt-BR') {
+    // Brazilian format: dot as thousands separator, comma as decimal
+    const normalized = value
+      .replace(/\./g, '') // Remove dots (thousands separator)
+      .replace(',', '.'); // Convert comma to dot (decimal separator)
+    const num = parseFloat(normalized);
+    return isNaN(num) ? 0 : num;
+  } else {
+    // US format: comma as thousands separator, dot as decimal
+    const normalized = value.replace(/,/g, ''); // Remove commas (thousands separator)
+    const num = parseFloat(normalized);
+    return isNaN(num) ? 0 : num;
+  }
 }
 
 // Format number for display in locale format
-export function formatNumberForLocale(value: number): string {
-  return value.toLocaleString('pt-BR', {
+export function formatNumberForLocale(value: number, locale: 'pt-BR' | 'en-US' = 'pt-BR'): string {
+  return value.toLocaleString(locale, {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2
   });
