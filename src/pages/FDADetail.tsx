@@ -30,6 +30,24 @@ import { format } from "date-fns";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 import { useUsdBrlToday } from "@/hooks/useExchangeRate";
 
+// Format timestamp like PDA (DD/MM/YYYY HH:MM (BRT))
+const formatTimestamp = (timestamp?: string): string => {
+  if (!timestamp) return '';
+  try {
+    const date = new Date(timestamp);
+    return date.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'America/Sao_Paulo'
+    }) + ' (BRT)';
+  } catch {
+    return '';
+  }
+};
+
 const statusVariants = {
   Draft: "secondary",
   Posted: "default", 
@@ -139,7 +157,7 @@ export default function FDADetail() {
           terminal: fdaData.terminal || "",
           client_name: fdaData.client_name || "",
           client_id: fdaData.client_id || "",
-          exchange_rate: fdaData.exchange_rate?.toFixed(4) || "",
+          exchange_rate: fdaData.exchange_rate?.toString() || "",
           fx_source: (fdaData.meta as any)?.fx_source || "BCB PTAX (buy)",
           ptax_timestamp: (fdaData.meta as any)?.ptax_timestamp || "",
           received_from_client_usd: (fdaData.meta as any)?.received_from_client_usd || 0,
@@ -275,7 +293,7 @@ export default function FDADetail() {
         terminal: fda.terminal || "",
         client_name: fda.client_name || "",
         client_id: fda.client_id || "",
-        exchange_rate: fda.exchange_rate?.toFixed(4) || "",
+        exchange_rate: fda.exchange_rate?.toString() || "",
         fx_source: (fda.meta as any)?.fx_source || "BCB PTAX (buy)",
         ptax_timestamp: (fda.meta as any)?.ptax_timestamp || "",
         received_from_client_usd: (fda.meta as any)?.received_from_client_usd || 0,
@@ -555,51 +573,14 @@ export default function FDADetail() {
                   <div className="text-sm mt-1">{fda.currency_local}</div>
                 </div>
                  <div>
-                   <Label htmlFor="exchange_rate">Exchange Rate (USD/BRL)</Label>
-                   {isEditing ? (
-                     <>
-                       <Input
-                         id="exchange_rate"
-                         type="number"
-                         step="0.0001"
-                         value={editForm.exchange_rate}
-                         onChange={(e) => setEditForm({ ...editForm, exchange_rate: e.target.value })}
-                         placeholder="Enter exchange rate"
-                       />
-                       {editForm.ptax_timestamp && (
-                         <p className="text-xs text-muted-foreground mt-1">
-                           PTAX (buy) • {editForm.ptax_timestamp} • BCB
-                         </p>
-                       )}
-                     </>
-                   ) : (
-                     <div>
-                       <div className="text-sm mt-1">
-                         {fda.exchange_rate ? formatNumber(parseFloat(fda.exchange_rate.toString()), 4) : "—"}
-                       </div>
-                       {(fda.meta as any)?.ptax_timestamp && (
-                         <p className="text-xs text-muted-foreground mt-1">
-                           PTAX (buy) • {(fda.meta as any).ptax_timestamp} • BCB
-                         </p>
-                       )}
-                     </div>
-                   )}
-                 </div>
-                 <div>
-                   <Label htmlFor="fx_source">FX Source</Label>
-                   {isEditing ? (
-                     <div className="space-y-2">
-                       <Input
-                         id="fx_source"
-                         value="BCB PTAX (buy)"
-                         readOnly
-                         disabled
-                         className="bg-muted"
-                       />
-                       <Button 
-                         variant="outline" 
-                         size="sm" 
-                         className="w-full"
+                   <Label htmlFor="exchange_rate" className="flex items-center gap-2">
+                     Exchange Rate (USD/BRL)
+                     {isEditing && (
+                       <Button
+                         type="button"
+                         variant="link"
+                         size="sm"
+                         className="h-auto p-0 text-xs"
                          onClick={async () => {
                            await refreshPtax();
                            if (ptaxData) {
@@ -616,149 +597,180 @@ export default function FDADetail() {
                        >
                          {ptaxLoading ? "Buscando..." : "Usar taxa PTAX de hoje"}
                        </Button>
+                     )}
+                   </Label>
+                   {isEditing ? (
+                     <>
+                       <Input
+                         id="exchange_rate"
+                         value={editForm.exchange_rate}
+                         onChange={(e) => setEditForm({ ...editForm, exchange_rate: e.target.value })}
+                         placeholder="Ex.: 5.4321"
+                       />
                        {ptaxError ? (
-                         <p className="text-xs text-destructive">Falha ao buscar PTAX</p>
+                         <p className="text-xs text-destructive mt-1">Falha ao buscar PTAX</p>
                        ) : ptaxData ? (
-                         <p className="text-xs text-muted-foreground">
-                           PTAX (compra) • {new Date(ptaxData.ts).toLocaleString('pt-BR')} • BCB
+                         <p className="text-xs text-muted-foreground mt-1">
+                           PTAX (buy) • {formatTimestamp(ptaxData.ts)} • BCB
+                         </p>
+                       ) : editForm.ptax_timestamp ? (
+                         <p className="text-xs text-muted-foreground mt-1">
+                           PTAX (buy) • {formatTimestamp(editForm.ptax_timestamp)} • BCB
                          </p>
                        ) : null}
+                     </>
+                   ) : (
+                     <div>
+                       <div className="text-sm mt-1">
+                         {fda.exchange_rate ? fda.exchange_rate.toString() : "—"}
+                       </div>
+                       {(fda.meta as any)?.ptax_timestamp && (
+                         <p className="text-xs text-muted-foreground mt-1">
+                           PTAX (buy) • {formatTimestamp((fda.meta as any).ptax_timestamp)} • BCB
+                         </p>
+                       )}
                      </div>
-                    ) : (
-                      <div className="text-sm mt-1">BCB PTAX (buy)</div>
-                    )}
-                  </div>
-              </div>
-            </div>
+                   )}
+                 </div>
+                 <div>
+                   <Label htmlFor="fx_source">FX Source</Label>
+                   {isEditing ? (
+                     <Input
+                       id="fx_source"
+                       value="BCB PTAX (buy)"
+                       readOnly
+                       disabled
+                       className="bg-muted"
+                     />
+                   ) : (
+                     <div className="text-sm mt-1">{(fda.meta as any)?.fx_source || "BCB PTAX (buy)"}</div>
+                   )}
+                 </div>
+               </div>
+             </div>
+           </div>
 
-            {/* Vessel Schedule */}
-            <div className="space-y-4 md:col-span-3 border-t pt-4 mt-4">
-              <h4 className="font-semibold text-sm text-muted-foreground uppercase">Vessel Schedule</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="eta">ETA (Estimated Time of Arrival)</Label>
-                  {isEditing ? (
-                    <Input
-                      id="eta"
-                      type="datetime-local"
-                      value={editForm.eta ? format(editForm.eta, "yyyy-MM-dd'T'HH:mm") : ""}
-                      onChange={(e) => setEditForm({ ...editForm, eta: e.target.value ? new Date(e.target.value) : null })}
-                    />
-                  ) : (
-                    <div className="text-sm mt-1">
-                      {fda.eta ? format(new Date(fda.eta), "MMM dd, yyyy HH:mm") : "—"}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <Label htmlFor="etb">ETB (Estimated Time of Berthing)</Label>
-                  {isEditing ? (
-                    <Input
-                      id="etb"
-                      type="datetime-local"
-                      value={editForm.etb ? format(editForm.etb, "yyyy-MM-dd'T'HH:mm") : ""}
-                      onChange={(e) => setEditForm({ ...editForm, etb: e.target.value ? new Date(e.target.value) : null })}
-                    />
-                  ) : (
-                    <div className="text-sm mt-1">
-                      {fda.etb ? format(new Date(fda.etb), "MMM dd, yyyy HH:mm") : "—"}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <Label htmlFor="ets">ETS (Estimated Time of Sailing)</Label>
-                  {isEditing ? (
-                    <Input
-                      id="ets"
-                      type="datetime-local"
-                      value={editForm.ets ? format(editForm.ets, "yyyy-MM-dd'T'HH:mm") : ""}
-                      onChange={(e) => setEditForm({ ...editForm, ets: e.target.value ? new Date(e.target.value) : null })}
-                    />
-                  ) : (
-                    <div className="text-sm mt-1">
-                      {fda.ets ? format(new Date(fda.ets), "MMM dd, yyyy HH:mm") : "—"}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+           {/* Save indicator */}
+           {!isEditing && lastSavedAt && (
+             <div className="mt-6 pt-6 border-t">
+               <p className="text-xs text-muted-foreground">
+                 Last saved {formatDate(lastSavedAt)} {lastSavedBy && `by ${lastSavedBy}`}
+               </p>
+             </div>
+           )}
+         </CardContent>
+       </Card>
 
-      {/* Totals Panel */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Financial Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center p-6 bg-destructive/10 rounded-lg border border-destructive/20">
-              <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase">USD</h4>
-              <div className="text-3xl font-bold text-destructive mb-2">{fmtUSD(totals.totalAP_USD)}</div>
-              <div className="text-sm text-muted-foreground">{fmtBRL(totals.totalAP_BRL)}</div>
-              <div className="text-xs font-semibold text-destructive mt-3">Total Payables (AP)</div>
+       {/* Financial Summary */}
+       <Card>
+         <CardHeader>
+           <CardTitle>Financial Summary</CardTitle>
+         </CardHeader>
+         <CardContent>
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Total Payables (AP)</p>
+              <p className="text-2xl font-bold text-destructive">
+                {fmtUSD(totals.totalAP_USD)} / {fmtBRL(totals.totalAP_BRL)}
+              </p>
             </div>
-            <div className="text-center p-6 bg-primary/10 rounded-lg border border-primary/20">
-              <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase">USD</h4>
-              <div className="text-3xl font-bold text-primary mb-2">{fmtUSD(totals.totalAR_USD)}</div>
-              <div className="text-sm text-muted-foreground">{fmtBRL(totals.totalAR_BRL)}</div>
-              <div className="text-xs font-semibold text-primary mt-3">Total Receivables (AR)</div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Total Receivables (AR)</p>
+              <p className="text-2xl font-bold text-success">
+                {fmtUSD(totals.totalAR_USD)} / {fmtBRL(totals.totalAR_BRL)}
+              </p>
             </div>
-            <div className="text-center p-6 bg-accent rounded-lg border">
-              <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase">USD</h4>
-              <div className="text-3xl font-bold mb-2">{fmtUSD(dueFromClientUSD)}</div>
-              <div className="text-sm text-muted-foreground">{fmtBRL(dueFromClientBRL)}</div>
-              <div className="text-xs font-semibold mt-3">Due from Client</div>
-              {receivedFromClientUSD > 0 && (
-                <div className="text-xs text-muted-foreground mt-1">
-                  Considerando {fmtUSD(receivedFromClientUSD)} já recebidos
-                </div>
+             <div className="space-y-1">
+               <p className="text-sm text-muted-foreground">Net Balance</p>
+               <p className="text-2xl font-bold">
+                 {fmtUSD(totals.net_USD)} / {fmtBRL(totals.net_BRL)}
+               </p>
+             </div>
+           </div>
+
+           <div className="mt-6 pt-6 border-t space-y-4">
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+               <div className="space-y-1">
+                 <p className="text-sm text-muted-foreground">Received from Client</p>
+                 <p className="text-lg font-semibold">
+                   {fmtUSD(receivedFromClientUSD)}
+                 </p>
+               </div>
+               <div className="space-y-1">
+                 <p className="text-sm text-muted-foreground">Due from Client</p>
+                 <p className="text-lg font-semibold text-amber-600">
+                   {fmtUSD(dueFromClientUSD)} / {fmtBRL(dueFromClientBRL)}
+                 </p>
+               </div>
+             </div>
+
+             {isEditing && (
+               <div className="mt-4">
+                 <Label htmlFor="temp_client_paid">Received from Client (USD)</Label>
+                 <Input
+                   id="temp_client_paid"
+                   type="number"
+                   step="0.01"
+                   value={tempClientPaid}
+                   onChange={(e) => {
+                     setTempClientPaid(e.target.value);
+                     setEditForm({ 
+                       ...editForm, 
+                       received_from_client_usd: parseFloat(e.target.value) || 0 
+                     });
+                   }}
+                   placeholder="0.00"
+                 />
+               </div>
+             )}
+           </div>
+         </CardContent>
+       </Card>
+
+       {/* Ledger Table */}
+       {fda && (
+         <FDALedgerTable
+           fdaId={fda.id}
+           ledger={fda.ledger}
+           exchangeRate={parseFloat(editForm.exchange_rate) || parseFloat(fda.exchange_rate?.toString() || "0")}
+           onLedgerUpdate={(updatedLedger) => {
+             setFda({ ...fda, ledger: updatedLedger });
+           }}
+         />
+       )}
+
+       {/* Action Buttons */}
+       <Card>
+         <CardContent className="pt-6">
+           <div className="flex gap-4 justify-end">
+             {fda.status === "Draft" && (
+               <>
+                 <Button
+                   variant="outline"
+                   onClick={() => setConfirmPost(true)}
+                   disabled={loading || isDirty}
+                 >
+                   Post FDA
+                 </Button>
+                  {isDirty && (
+                    <p className="text-sm text-muted-foreground self-center">
+                      Save changes before posting
+                    </p>
+                  )}
+                </>
               )}
-              <div className="mt-4 space-y-2">
-                <Label htmlFor="client_paid_usd" className="text-xs">Pago pelo Cliente (USD)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="client_paid_usd"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={tempClientPaid}
-                    onChange={(e) => setTempClientPaid(e.target.value)}
-                    className="h-8 text-center"
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      const val = parseFloat(tempClientPaid) || 0;
-                      setEditForm({ ...editForm, received_from_client_usd: val });
-                      setIsDirty(true);
-                      toast({
-                        title: "Value Updated",
-                        description: "Click 'Save Draft' to persist changes.",
-                      });
-                    }}
-                  >
-                    <Check className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+              {fda.status === "Posted" && (
+                <Button
+                  variant="outline"
+                  onClick={() => setConfirmClose(true)}
+                  disabled={loading || isDirty}
+                >
+                  Close FDA
+                </Button>
+              )}
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Ledger Details - Fully Editable Table */}
-      <FDALedgerTable
-        fdaId={id!}
-        ledger={fda.ledger}
-        exchangeRate={parseFloat(editForm.exchange_rate) || 1}
-        onLedgerUpdate={(updatedLedger) => {
-          setFda({ ...fda, ledger: updatedLedger });
-        }}
-      />
+          </CardContent>
+        </Card>
 
       {/* Remarks Field */}
       <Card>
