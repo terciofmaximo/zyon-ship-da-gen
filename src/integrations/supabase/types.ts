@@ -618,6 +618,7 @@ export type Database = {
       pdas: {
         Row: {
           agency_fee: number | null
+          bank_charges: number | null
           beam: string | null
           berth: string | null
           berths: Json | null
@@ -642,6 +643,7 @@ export type Database = {
           id: string
           immigration: number | null
           imo_number: string | null
+          iof: number | null
           launch_boat: number | null
           light_dues: number | null
           linesman: number | null
@@ -669,6 +671,7 @@ export type Database = {
         }
         Insert: {
           agency_fee?: number | null
+          bank_charges?: number | null
           beam?: string | null
           berth?: string | null
           berths?: Json | null
@@ -693,6 +696,7 @@ export type Database = {
           id?: string
           immigration?: number | null
           imo_number?: string | null
+          iof?: number | null
           launch_boat?: number | null
           light_dues?: number | null
           linesman?: number | null
@@ -720,6 +724,7 @@ export type Database = {
         }
         Update: {
           agency_fee?: number | null
+          bank_charges?: number | null
           beam?: string | null
           berth?: string | null
           berths?: Json | null
@@ -744,6 +749,7 @@ export type Database = {
           id?: string
           immigration?: number | null
           imo_number?: string | null
+          iof?: number | null
           launch_boat?: number | null
           light_dues?: number | null
           linesman?: number | null
@@ -906,6 +912,7 @@ export type Database = {
         Args: { p_tracking_id: string }
         Returns: {
           agency_fee: number | null
+          bank_charges: number | null
           beam: string | null
           berth: string | null
           berths: Json | null
@@ -930,6 +937,7 @@ export type Database = {
           id: string
           immigration: number | null
           imo_number: string | null
+          iof: number | null
           launch_boat: number | null
           light_dues: number | null
           linesman: number | null
@@ -960,6 +968,7 @@ export type Database = {
         Args: { p_session_id: string }
         Returns: {
           agency_fee: number | null
+          bank_charges: number | null
           beam: string | null
           berth: string | null
           berths: Json | null
@@ -984,6 +993,7 @@ export type Database = {
           id: string
           immigration: number | null
           imo_number: string | null
+          iof: number | null
           launch_boat: number | null
           light_dues: number | null
           linesman: number | null
