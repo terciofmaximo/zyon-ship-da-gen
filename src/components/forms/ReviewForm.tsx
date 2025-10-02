@@ -71,6 +71,7 @@ export function ReviewForm({ onBack, shipData, costData, pdaId, sessionId }: Rev
         paperlessPort: costData.paperlessPort || 0,
         agencyFee: costData.agencyFee || 0,
         waterway: costData.waterway || 0,
+        customLines: costData.customLines || [],
       };
       
       const htmlContent = generatePDAHTML({ 

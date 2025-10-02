@@ -32,7 +32,8 @@ export const generatePDAHTML = ({ shipData, costData, remarks, comments }: PDADo
     { id: "waterway", description: "Waterway", usd: costData.waterway },
   ];
 
-  const totalUSD = costItems.reduce((sum, item) => sum + item.usd, 0);
+  const totalUSD = costItems.reduce((sum, item) => sum + item.usd, 0) + 
+    (costData.customLines || []).reduce((sum, line) => sum + line.costUSD, 0);
   const totalBRL = totalUSD * exchangeRate;
 
   return `
@@ -317,6 +318,14 @@ export const generatePDAHTML = ({ shipData, costData, remarks, comments }: PDADo
             <td class="amount">$${item.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             <td class="amount">R$${(item.usd * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             <td style="font-size: 10px;">${comments?.[item.id as keyof CostData] || ''}</td>
+          </tr>
+        `).join('')}
+        ${(costData.customLines || []).map(line => `
+          <tr style="background: #f8fafc;">
+            <td>${line.label}</td>
+            <td class="amount">$${line.costUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td class="amount">R$${(line.costUSD * exchangeRate).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td style="font-size: 10px;">${line.comment || ''}</td>
           </tr>
         `).join('')}
         <tr class="total-row">
