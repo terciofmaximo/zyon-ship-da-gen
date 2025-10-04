@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { Ship, MapPin, DollarSign, AlertTriangle } from "lucide-react";
+import { Ship, MapPin, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { cn, formatRange } from "@/lib/utils";
 import { VESSEL_TYPES } from "@/lib/vesselData";
-import { SHIP_TYPE_RANGES, getShipTypeFromName, calculateMeanValue, isValueInRange, formatRange as formatShipRange } from "@/lib/shipTypeRanges";
+import { SHIP_TYPE_RANGES, getShipTypeFromName, calculateMeanValue } from "@/lib/shipTypeRanges";
 import { usePortDirectory } from "@/hooks/usePortDirectory";
 import { pdaStep1Schema, type PDAStep1Data } from "@/schemas/pdaSchema";
 import { useUsdBrlToday } from "@/hooks/useExchangeRate";
@@ -54,7 +54,6 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
   const [autoFilledValues, setAutoFilledValues] = useState<Record<string, boolean>>({});
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const [pendingShipType, setPendingShipType] = useState<string | null>(null);
-  const [validationWarnings, setValidationWarnings] = useState<Record<string, string>>({});
 
   const vesselOptions = useMemo(() => {
     const typeOptions = VESSEL_TYPES.map(v => ({
@@ -128,28 +127,6 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
     setSelectedVessel(vesselName);
   };
 
-  const validateFieldValue = (fieldName: string, value: string) => {
-    if (!currentShipType || !value) {
-      setValidationWarnings(prev => ({ ...prev, [fieldName]: "" }));
-      return;
-    }
-
-    const ranges = SHIP_TYPE_RANGES[currentShipType];
-    if (!ranges) return;
-
-    const numValue = parseFloat(value);
-    if (isNaN(numValue)) return;
-
-    const fieldRange = ranges[fieldName as keyof typeof ranges];
-    if (!isValueInRange(numValue, fieldRange)) {
-      setValidationWarnings(prev => ({ 
-        ...prev, 
-        [fieldName]: `Valor fora do range típico para ${currentShipType} (${fieldRange[0]}–${fieldRange[1]}).`
-      }));
-    } else {
-      setValidationWarnings(prev => ({ ...prev, [fieldName]: "" }));
-    }
-  };
 
   useEffect(() => {
     if (vesselName && vesselName !== selectedVessel) {
@@ -251,9 +228,8 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
     setShowUpdateDialog(false);
   };
 
-  const handleFieldChange = (fieldName: string, value: string) => {
+  const handleFieldChange = (fieldName: string) => {
     setAutoFilledValues(prev => ({ ...prev, [fieldName]: false }));
-    validateFieldValue(fieldName, value);
   };
 
   const onSubmit = (data: PDAStep1Data) => {
@@ -466,21 +442,10 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                             {...field}
                             onChange={(e) => {
                               field.onChange(e);
-                              handleFieldChange("dwt", e.target.value);
+                              handleFieldChange("dwt");
                             }}
                           />
                         </FormControl>
-                        {currentShipType && SHIP_TYPE_RANGES[currentShipType] && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {formatShipRange(SHIP_TYPE_RANGES[currentShipType].dwt, "MT")}
-                          </p>
-                        )}
-                        {validationWarnings.dwt && (
-                          <div className="flex items-center gap-1 text-xs text-amber-600 mt-1">
-                            <AlertTriangle className="h-3 w-3" />
-                            {validationWarnings.dwt}
-                          </div>
-                        )}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -505,21 +470,10 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                             {...field}
                             onChange={(e) => {
                               field.onChange(e);
-                              handleFieldChange("loa", e.target.value);
+                              handleFieldChange("loa");
                             }}
                           />
                         </FormControl>
-                        {currentShipType && SHIP_TYPE_RANGES[currentShipType] && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {formatShipRange(SHIP_TYPE_RANGES[currentShipType].loa, "m")}
-                          </p>
-                        )}
-                        {validationWarnings.loa && (
-                          <div className="flex items-center gap-1 text-xs text-amber-600 mt-1">
-                            <AlertTriangle className="h-3 w-3" />
-                            {validationWarnings.loa}
-                          </div>
-                        )}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -544,21 +498,10 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                             {...field}
                             onChange={(e) => {
                               field.onChange(e);
-                              handleFieldChange("beam", e.target.value);
+                              handleFieldChange("beam");
                             }}
                           />
                         </FormControl>
-                        {currentShipType && SHIP_TYPE_RANGES[currentShipType] && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {formatShipRange(SHIP_TYPE_RANGES[currentShipType].beam, "m")}
-                          </p>
-                        )}
-                        {validationWarnings.beam && (
-                          <div className="flex items-center gap-1 text-xs text-amber-600 mt-1">
-                            <AlertTriangle className="h-3 w-3" />
-                            {validationWarnings.beam}
-                          </div>
-                        )}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -583,21 +526,10 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                             {...field}
                             onChange={(e) => {
                               field.onChange(e);
-                              handleFieldChange("draft", e.target.value);
+                              handleFieldChange("draft");
                             }}
                           />
                         </FormControl>
-                        {currentShipType && SHIP_TYPE_RANGES[currentShipType] && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {formatShipRange(SHIP_TYPE_RANGES[currentShipType].draft, "m")}
-                          </p>
-                        )}
-                        {validationWarnings.draft && (
-                          <div className="flex items-center gap-1 text-xs text-amber-600 mt-1">
-                            <AlertTriangle className="h-3 w-3" />
-                            {validationWarnings.draft}
-                          </div>
-                        )}
                         <FormMessage />
                       </FormItem>
                     )}
