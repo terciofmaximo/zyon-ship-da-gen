@@ -352,6 +352,13 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
     setComments(prev => ({ ...prev, [field]: value }));
   };
 
+  // Helper to commit values on Tab key press
+  const handleTabKey = (e: React.KeyboardEvent, commitFn: () => void) => {
+    if (e.key === 'Tab') {
+      commitFn();
+    }
+  };
+
   const handleAddCustomLine = () => {
     const newLine: CustomCostLine = {
       id: `custom_${Date.now()}`,
@@ -523,6 +530,7 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                           }
                           onChange={(e) => handleCostChange(item.id, e.target.value)}
                           onBlur={() => setTempUSDValues(prev => ({ ...prev, [item.id]: '' }))}
+                          onKeyDown={(e) => handleTabKey(e, () => setTempUSDValues(prev => ({ ...prev, [item.id]: '' })))}
                           className="w-32"
                           placeholder="0.00"
                         />
@@ -549,6 +557,7 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                         }
                         onChange={(e) => handleBRLChange(item.id, e.target.value)}
                         onBlur={() => commitBRLValue(item.id)}
+                        onKeyDown={(e) => handleTabKey(e, () => commitBRLValue(item.id))}
                         className="w-32"
                         placeholder="0,00"
                       />
@@ -596,6 +605,7 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                           handleCustomLineChange(line.id, 'costUSD', normalizeUSD(e.target.value));
                         }}
                         onBlur={() => setTempCustomUSDValues(prev => ({ ...prev, [line.id]: '' }))}
+                        onKeyDown={(e) => handleTabKey(e, () => setTempCustomUSDValues(prev => ({ ...prev, [line.id]: '' })))}
                         className="w-32"
                         placeholder="0.00"
                       />
@@ -615,6 +625,7 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                           setTempCustomBRLValues(prev => ({ ...prev, [line.id]: e.target.value }));
                         }}
                         onBlur={() => commitCustomBRLValue(line.id)}
+                        onKeyDown={(e) => handleTabKey(e, () => commitCustomBRLValue(line.id))}
                         className="w-32"
                         placeholder="0,00"
                       />
