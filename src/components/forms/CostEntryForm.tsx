@@ -325,8 +325,8 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
   };
 
   // Commit BRL input on blur: convert to USD and update costs
-  const commitBRLValue = (field: keyof Omit<CostData, 'customLines'>) => {
-    const current = tempBRLValues[field] ?? '';
+  const commitBRLValue = (field: keyof Omit<CostData, 'customLines'>, currentRaw?: string) => {
+    const current = currentRaw ?? tempBRLValues[field] ?? '';
     const numericBRL = normalizeBRL(current);
     const usdValue = exchangeRate ? (numericBRL / exchangeRate) : 0;
 
@@ -335,8 +335,8 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
   };
 
   // Commit custom BRL input on blur
-  const commitCustomBRLValue = (id: string) => {
-    const current = tempCustomBRLValues[id] ?? '';
+  const commitCustomBRLValue = (id: string, currentRaw?: string) => {
+    const current = currentRaw ?? tempCustomBRLValues[id] ?? '';
     const numericBRL = normalizeBRL(current);
     const usdValue = exchangeRate ? (numericBRL / exchangeRate) : 0;
 
@@ -352,10 +352,51 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
     setComments(prev => ({ ...prev, [field]: value }));
   };
 
-  // Helper to commit values on Tab key press
-  const handleTabKey = (e: React.KeyboardEvent, commitFn: () => void) => {
+  // Commit USD input on Tab
+  const commitUSDValue = (field: keyof Omit<CostData, 'customLines'>, currentRaw?: string) => {
+    const raw = currentRaw ?? tempUSDValues[field] ?? '';
+    if (raw) {
+      const numericValue = normalizeUSD(raw);
+      setCosts(prev => ({ ...prev, [field]: numericValue }));
+    }
+    setTempUSDValues(prev => ({ ...prev, [field]: '' }));
+  };
+
+  // Commit custom USD input on Tab
+  const commitCustomUSDValue = (id: string, currentRaw?: string) => {
+    const raw = currentRaw ?? tempCustomUSDValues[id] ?? '';
+    if (raw) {
+      const numericValue = normalizeUSD(raw);
+      setCustomLines(prev => prev.map(line => 
+        line.id === id ? { ...line, costUSD: numericValue } : line
+      ));
+    }
+    setTempCustomUSDValues(prev => ({ ...prev, [id]: '' }));
+  };
+
+  // Commit comment on Tab
+  const commitComment = (field: string, currentRaw?: string) => {
+    if (currentRaw !== undefined) {
+      setComments(prev => ({ ...prev, [field]: currentRaw }));
+    }
+  };
+
+  // Commit custom comment on Tab
+  const commitCustomComment = (id: string, currentRaw?: string) => {
+    if (currentRaw !== undefined) {
+      setCustomLines(prev => prev.map(line => 
+        line.id === id ? { ...line, comment: currentRaw } : line
+      ));
+    }
+  };
+
+  // Helper to commit values on Tab key press with current input value
+  const onTabCommit = (
+    commitFn: (currentRaw?: string) => void
+  ) => (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (e.key === 'Tab') {
-      commitFn();
+      const raw = e.currentTarget.value;
+      commitFn(raw);
     }
   };
 
@@ -529,8 +570,8 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                               : formatUSDNumber(costs[item.id])
                           }
                           onChange={(e) => handleCostChange(item.id, e.target.value)}
-                          onBlur={() => setTempUSDValues(prev => ({ ...prev, [item.id]: '' }))}
-                          onKeyDown={(e) => handleTabKey(e, () => setTempUSDValues(prev => ({ ...prev, [item.id]: '' })))}
+                          onBlur={() => commitUSDValue(item.id)}
+                          onKeyDown={onTabCommit((raw) => commitUSDValue(item.id, raw))}
                           className="w-32"
                           placeholder="0.00"
                         />
@@ -557,7 +598,7 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                         }
                         onChange={(e) => handleBRLChange(item.id, e.target.value)}
                         onBlur={() => commitBRLValue(item.id)}
-                        onKeyDown={(e) => handleTabKey(e, () => commitBRLValue(item.id))}
+                        onKeyDown={onTabCommit((raw) => commitBRLValue(item.id, raw))}
                         className="w-32"
                         placeholder="0,00"
                       />
@@ -568,6 +609,7 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                       type="text"
                       value={comments[item.id] || ''}
                       onChange={(e) => handleCommentChange(item.id, e.target.value)}
+                      onKeyDown={onTabCommit((raw) => commitComment(item.id, raw))}
                       className="min-w-[250px] comment-input"
                       placeholder="Comment..."
                     />
@@ -604,8 +646,8 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                           setTempCustomUSDValues(prev => ({ ...prev, [line.id]: e.target.value }));
                           handleCustomLineChange(line.id, 'costUSD', normalizeUSD(e.target.value));
                         }}
-                        onBlur={() => setTempCustomUSDValues(prev => ({ ...prev, [line.id]: '' }))}
-                        onKeyDown={(e) => handleTabKey(e, () => setTempCustomUSDValues(prev => ({ ...prev, [line.id]: '' })))}
+                        onBlur={() => commitCustomUSDValue(line.id)}
+                        onKeyDown={onTabCommit((raw) => commitCustomUSDValue(line.id, raw))}
                         className="w-32"
                         placeholder="0.00"
                       />
@@ -625,7 +667,7 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                           setTempCustomBRLValues(prev => ({ ...prev, [line.id]: e.target.value }));
                         }}
                         onBlur={() => commitCustomBRLValue(line.id)}
-                        onKeyDown={(e) => handleTabKey(e, () => commitCustomBRLValue(line.id))}
+                        onKeyDown={onTabCommit((raw) => commitCustomBRLValue(line.id, raw))}
                         className="w-32"
                         placeholder="0,00"
                       />
@@ -637,6 +679,7 @@ export function CostEntryForm({ onNext, onBack, shipData, initialData }: CostEnt
                         type="text"
                         value={line.comment}
                         onChange={(e) => handleCustomLineChange(line.id, 'comment', e.target.value)}
+                        onKeyDown={onTabCommit((raw) => commitCustomComment(line.id, raw))}
                         className="min-w-[250px] comment-input"
                         placeholder="Comment..."
                       />
