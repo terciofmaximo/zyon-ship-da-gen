@@ -42,22 +42,6 @@ const vesselSuggestions = [
   { value: "MT ULCC TBN", label: "MT ULCC TBN" },
 ];
 
-const vesselOptions = useMemo(() => {
-  const typeOptions = VESSEL_TYPES.map(v => ({
-    value: v.classification,
-    label: v.classification,
-  }));
-
-  const seen = new Set<string>();
-  const merged = [...vesselSuggestions, ...typeOptions].filter(opt => {
-    if (seen.has(opt.value)) return false;
-    seen.add(opt.value);
-    return true;
-  }).sort((a, b) => a.label.localeCompare(b.label));
-
-  return merged;
-}, []);
-
 interface PdaCreationStep1Props {
   onNext?: (data: PDAStep1Data) => void;
   initialData?: Partial<PDAStep1Data>;
@@ -71,6 +55,22 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const [pendingShipType, setPendingShipType] = useState<string | null>(null);
   const [validationWarnings, setValidationWarnings] = useState<Record<string, string>>({});
+
+  const vesselOptions = useMemo(() => {
+    const typeOptions = VESSEL_TYPES.map(v => ({
+      value: v.classification,
+      label: v.classification,
+    }));
+
+    const seen = new Set<string>();
+    const merged = [...vesselSuggestions, ...typeOptions].filter(opt => {
+      if (seen.has(opt.value)) return false;
+      seen.add(opt.value);
+      return true;
+    }).sort((a, b) => a.label.localeCompare(b.label));
+
+    return merged;
+  }, []);
 
   const form = useForm<PDAStep1Data>({
     resolver: zodResolver(pdaStep1Schema),
