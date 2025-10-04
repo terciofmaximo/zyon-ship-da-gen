@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
@@ -41,6 +41,22 @@ const vesselSuggestions = [
   { value: "MT VLCC TBN", label: "MT VLCC TBN" },
   { value: "MT ULCC TBN", label: "MT ULCC TBN" },
 ];
+
+const vesselOptions = useMemo(() => {
+  const typeOptions = VESSEL_TYPES.map(v => ({
+    value: v.classification,
+    label: v.classification,
+  }));
+
+  const seen = new Set<string>();
+  const merged = [...vesselSuggestions, ...typeOptions].filter(opt => {
+    if (seen.has(opt.value)) return false;
+    seen.add(opt.value);
+    return true;
+  }).sort((a, b) => a.label.localeCompare(b.label));
+
+  return merged;
+}, []);
 
 interface PdaCreationStep1Props {
   onNext?: (data: PDAStep1Data) => void;
@@ -401,7 +417,7 @@ export default function PdaCreationStep1({ onNext, initialData }: PdaCreationSte
                         <FormLabel>Ship's Name *</FormLabel>
                         <FormControl>
                           <Combobox
-                            options={vesselSuggestions}
+                            options={vesselOptions}
                             value={field.value}
                             onValueChange={field.onChange}
                             placeholder="e.g. MV Panamax TBN"
