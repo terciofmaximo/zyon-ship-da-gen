@@ -25,12 +25,24 @@ export const SHIP_TYPE_RANGES: Record<string, ShipTypeRange> = {
     draft: [12.0, 13.0] 
   },
   "Panamax": { 
-    dwt: [60000, 79999], 
+    dwt: [60000, 82000], 
     loa: [215, 230], 
     beam: [32.0, 32.3], 
     draft: [12.0, 13.0] 
   },
-  "Capesize": { 
+  "Kamsarmax": { 
+    dwt: [82001, 85000], 
+    loa: [225, 235], 
+    beam: [32.0, 32.3], 
+    draft: [13.5, 14.5] 
+  },
+  "Post-Panamax": { 
+    dwt: [85001, 120000], 
+    loa: [260, 290], 
+    beam: [36, 40], 
+    draft: [14.5, 15.5] 
+  },
+  "Capesize": {
     dwt: [150000, 199999], 
     loa: [280, 300], 
     beam: [45, 50], 
