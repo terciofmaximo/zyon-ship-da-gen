@@ -14,7 +14,7 @@ import { NewPDAWizard } from "@/components/forms/NewPDAWizard";
 import AuthPage from "@/pages/Auth";
 import FDAList from "@/pages/FDAList";
 import FDADetail from "@/pages/FDADetail";
-import FDANew from "@/pages/FDANew";
+// FDANew removed - FDA can only be created via PDA conversion
 import FDALineDetail from "@/pages/FDALineDetail";
 import InviteAccept from "@/pages/InviteAccept";
 import AcceptInvite from "@/pages/AcceptInvite";
@@ -88,7 +88,7 @@ const App = () => (
                 <Route path="/pda/:id/review" element={<RequireAuth><DashboardLayout><PDAReview /></DashboardLayout></RequireAuth>} />
                 <Route path="/pda/:id/edit" element={<RequireAuth><DashboardLayout><PDAEdit /></DashboardLayout></RequireAuth>} />
                 <Route path="/fda" element={<RequireAuth><DashboardLayout><FDAList /></DashboardLayout></RequireAuth>} />
-                <Route path="/fda/new" element={<RequireAuth><DashboardLayout><FDANew /></DashboardLayout></RequireAuth>} />
+                <Route path="/fda/new" element={<Navigate to="/pda" replace />} />
                 <Route path="/fda/:id" element={<RequireAuth><DashboardLayout><FDADetail /></DashboardLayout></RequireAuth>} />
                 <Route path="/fda/:fdaId/line/:lineId" element={<RequireAuth><DashboardLayout><FDALineDetail /></DashboardLayout></RequireAuth>} />
                 <Route path="/financial" element={<RequireAuth><DashboardLayout><Financial /></DashboardLayout></RequireAuth>} />

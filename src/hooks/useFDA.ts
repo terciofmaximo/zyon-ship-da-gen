@@ -155,6 +155,48 @@ export const useFDA = () => {
         });
       });
 
+      // Process custom lines from PDA
+      if (pda.custom_lines) {
+        try {
+          const customLines = typeof pda.custom_lines === 'string' 
+            ? JSON.parse(pda.custom_lines) 
+            : pda.custom_lines;
+          
+          if (Array.isArray(customLines)) {
+            customLines.forEach((customLine: any) => {
+              const exchangeRate = new Decimal(fdaData.exchange_rate);
+              const amountUSD = new Decimal(customLine.costUSD || 0);
+              const amountLocal = amountUSD.mul(exchangeRate);
+
+              ledgerEntries.push({
+                fda_id: newFda.id,
+                line_no: lineNo++,
+                side: "AP",
+                category: "Other",
+                description: customLine.label || "Custom line",
+                counterparty: "Vendor — to assign",
+                amount_usd: amountUSD.toNumber(),
+                amount_local: amountLocal.toNumber(),
+                status: "Open",
+                tenant_id: tenantId,
+                pda_field: `custom_${customLine.id}`,
+                origin: 'PDA' as const,
+                source: {
+                  pdaField: `custom_${customLine.id}`,
+                  originalAmount: customLine.costUSD,
+                  exchangeRate: fdaData.exchange_rate,
+                  pda_item_id: `custom_${customLine.id}`,
+                  comment: customLine.comment,
+                  customLineLabel: customLine.label,
+                },
+              });
+            });
+          }
+        } catch (e) {
+          console.warn("Failed to parse custom_lines from PDA:", e);
+        }
+      }
+
       if (ledgerEntries.length > 0) {
         const { error: ledgerError } = await supabase
           .from("fda_ledger")
@@ -306,6 +348,48 @@ export const useFDA = () => {
           },
         });
       });
+
+      // Process custom lines from PDA
+      if (pda.custom_lines) {
+        try {
+          const customLines = typeof pda.custom_lines === 'string' 
+            ? JSON.parse(pda.custom_lines) 
+            : pda.custom_lines;
+          
+          if (Array.isArray(customLines)) {
+            customLines.forEach((customLine: any) => {
+              const exchangeRate = new Decimal(fda.exchange_rate || 5.25);
+              const amountUSD = new Decimal(customLine.costUSD || 0);
+              const amountLocal = amountUSD.mul(exchangeRate);
+
+              ledgerEntries.push({
+                fda_id: fdaId,
+                line_no: lineNo++,
+                side: "AP",
+                category: "Other",
+                description: customLine.label || "Custom line",
+                counterparty: "Vendor — to assign",
+                amount_usd: amountUSD.toNumber(),
+                amount_local: amountLocal.toNumber(),
+                status: "Open",
+                tenant_id: tenantId,
+                pda_field: `custom_${customLine.id}`,
+                origin: 'PDA' as const,
+                source: {
+                  pdaField: `custom_${customLine.id}`,
+                  originalAmount: customLine.costUSD,
+                  exchangeRate: fda.exchange_rate,
+                  pda_item_id: `custom_${customLine.id}`,
+                  comment: customLine.comment,
+                  customLineLabel: customLine.label,
+                },
+              });
+            });
+          }
+        } catch (e) {
+          console.warn("Failed to parse custom_lines from PDA:", e);
+        }
+      }
 
       if (ledgerEntries.length > 0) {
         const { error: insertError } = await supabase

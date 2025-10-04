@@ -308,8 +308,8 @@ export default function FDAList() {
           </div>
           <p className="text-muted-foreground">Manage your Final Disbursement Accounts</p>
         </div>
-        <Button onClick={() => navigate("/fda/new")}>
-          Create New FDA
+        <Button onClick={() => navigate("/pda")}>
+          Create PDA → FDA
         </Button>
       </div>
 
